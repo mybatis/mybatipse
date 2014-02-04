@@ -167,6 +167,8 @@ public class MybatipseXmlUtil
 
 	public static IDOMNode getNodeByXpath(IFile mapperXmlFile, String expression)
 	{
+		if (mapperXmlFile == null)
+			return null;
 		IStructuredModel model = null;
 		try
 		{
