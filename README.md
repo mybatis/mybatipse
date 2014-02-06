@@ -9,7 +9,7 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 ### XML Editor Enhancements
 #### Auto-completion
 
-- Mapper namespace : Calculates from the path.  
+- Mapper namespace : Calculated from the path.  
 ![autocomplete namespace](screen/ac-ns1.png)![autocomplete namespace](screen/ac-ns2.png)
 - Java class/Type alias : Propose Java classes and Type Aliases (translucent icons). Camelcase match is supported. [1] [2]  
 ![autocomplete class](screen/ac-class.png) ![autocomplete class](screen/ac-class-cc.png)
@@ -19,7 +19,7 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 ![autocomplete statement id](screen/ac-stmt.png)
 - Reference to resultMap/select/sql : Propose ID of the referenced resultMap/select/sql. External reference is supported (blue icons).  
 ![autocomplete reference](screen/ac-ref.png)
-- Result elements in resultMap/collection/association : Generates <result /> elements for the parent java class.  
+- Result elements in resultMap/collection/association : Generates <result /> elements for the parent java class properties.  
 ![autocomplete results 1](screen/ac-results1.png) ![autocomplete results 2](screen/ac-results2.png)
 
 - __[1]__ For better performance, classes in the application libraries (loaded as JARs) are listed only when at least one package segment is specified.
@@ -61,8 +61,8 @@ For example, with the above settings:
 
 There are several ways to install MyBatipse.
 
-- [Not available yet] Drag this button ->  from browser to your Eclipse workbench (i.e. window).
-- [Not available yet] Choose __Eclipse Marketplace...__ in __Help__ menu of your Eclipse and search __MyBatipse__.
+- Drag this button [![drag-to-install button](http://marketplace.eclipse.org/misc/installbutton.png)](http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=1467819)  from browser to your Eclipse workbench (i.e. window).
+- Choose __Eclipse Marketplace...__ in __Help__ menu of your Eclipse and search __MyBatipse__.
 - Choose __Install New Software...__ in __Help__ menu and enter the following URL.  
 http://dl.bintray.com/harawata/eclipse
 
