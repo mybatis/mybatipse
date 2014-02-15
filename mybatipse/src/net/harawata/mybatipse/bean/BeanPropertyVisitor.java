@@ -154,7 +154,7 @@ public class BeanPropertyVisitor extends ASTVisitor
 	public void endVisit(TypeDeclaration node)
 	{
 		Type superclassType = node.getSuperclassType();
-		if (superclassType != null)
+		if (superclassType != null && !node.isMemberTypeDeclaration())
 		{
 			ITypeBinding binding = superclassType.resolveBinding();
 			BeanPropertyCache.parseBean(project, binding.getQualifiedName(), readableFields,
