@@ -11,12 +11,20 @@
 
 package net.harawata.mybatipse.bean;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.xml.crypto.Data;
 
 import net.harawata.mybatipse.Activator;
 
@@ -43,6 +51,13 @@ public class BeanPropertyCache
 {
 	private static final Map<IProject, Map<String, BeanPropertyInfo>> projectCache = new ConcurrentHashMap<IProject, Map<String, BeanPropertyInfo>>();
 
+	private static final List<String> ignoredTypes = Arrays.asList(String.class.getName(),
+		Byte.class.getName(), Long.class.getName(), Short.class.getName(), Integer.class.getName(),
+		Double.class.getName(), Float.class.getName(), Boolean.class.getName(),
+		Data.class.getName(), BigInteger.class.getName(), BigDecimal.class.getName(),
+		Object.class.getName(), Map.class.getName(), HashMap.class.getName(), List.class.getName(),
+		ArrayList.class.getName(), Collection.class.getName(), Iterator.class.getName());
+
 	public static void clearBeanPropertyCache()
 	{
 		projectCache.clear();
@@ -64,7 +79,7 @@ public class BeanPropertyCache
 
 	public static BeanPropertyInfo getBeanPropertyInfo(IJavaProject project, String fqn)
 	{
-		if (fqn == null)
+		if (fqn == null || ignoredTypes.contains(fqn))
 		{
 			return null;
 		}
