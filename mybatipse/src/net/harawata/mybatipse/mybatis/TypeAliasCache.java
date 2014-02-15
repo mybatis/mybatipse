@@ -15,6 +15,7 @@ import static net.harawata.mybatipse.MybatipseConstants.*;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -51,6 +52,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -167,6 +169,25 @@ public class TypeAliasCache
 			}
 		}
 		return false;
+	}
+
+	public Map<String, String> searchTypeAliases(IJavaProject javaProject, String matchString)
+	{
+		Map<String, String> results = new HashMap<String, String>();
+		TypeAliasMap typeAliasMap = getTypeAliasMap(javaProject, null);
+		for (TypeAliasInfo typeAliasInfo : typeAliasMap.values())
+		{
+			String alias = typeAliasInfo.getAliasToInsert();
+			String qualifiedName = typeAliasInfo.getQualifiedName();
+			char[] aliasChrs = alias.toCharArray();
+			char[] matchChrs = matchString.toCharArray();
+			if (matchString.length() == 0 || CharOperation.camelCaseMatch(matchChrs, aliasChrs)
+				|| CharOperation.prefixEquals(matchChrs, aliasChrs, false))
+			{
+				results.put(qualifiedName, alias);
+			}
+		}
+		return results;
 	}
 
 	public TypeAliasMap getTypeAliasMap(IJavaProject javaProject, IReporter reporter)
