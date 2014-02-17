@@ -325,4 +325,26 @@
             name="net.harawata.mybatipse.MapperQuickAssistProcessor">
       </quickAssistProcessor>
    </extension>
+   <extension
+         id="net.harawata.mybatipse.proposalComputer.java"
+         name="MyBatis Proposal"
+         point="org.eclipse.jdt.ui.javaCompletionProposalComputer">
+      <javaCompletionProposalComputer
+            activate="true"
+            categoryId="net.harawata.mybatipse.javaStringProposalCategory"
+            class="net.harawata.mybatipse.mybatis.JavaCompletionProposalComputer"
+            needsSortingAfterFiltering="false">
+         <partition
+               type="__java_string">
+         </partition>
+      </javaCompletionProposalComputer>
+   </extension>
+   <extension
+         id="javaStringProposalCategory"
+         name="MyBatis Proposals"
+         point="org.eclipse.jdt.ui.javaCompletionProposalComputer">
+      <proposalCategory
+            icon="icons/mybatis.png">
+      </proposalCategory>
+   </extension>
 </plugin>

@@ -11,23 +11,16 @@
 
 package net.harawata.mybatipse.mybatis;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import net.harawata.mybatipse.Activator;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.ISourceRange;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
@@ -78,9 +71,10 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 				if (!method.getDeclaringType().isInterface() || method.getParameters().length == 0)
 					return null;
 
-				CompilationUnit astNode = getAstNode(compilationUnit, method);
+				CompilationUnit astNode = JavaMapperUtil.getAstNode(compilationUnit);
 				astNode.recordModifications();
-				MethodDeclaration methodDeclaration = getMethodDeclaration(astNode, method);
+				MethodDeclaration methodDeclaration = JavaMapperUtil.getMethodDeclaration(astNode,
+					method);
 				if (methodDeclaration == null)
 					return null;
 
@@ -101,7 +95,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 								List<IExtendedModifier> modifiers = param.modifiers();
 								if (!hasParamAnnotation(modifiers))
 								{
-									if ("org.apache.ibatis.session.RowBounds".equals(param.resolveBinding()
+									if (JavaMapperUtil.TYPE_ROW_BOUNDS.equals(param.resolveBinding()
 										.getType()
 										.getQualifiedName()))
 										continue;
@@ -191,38 +185,5 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			}
 		}
 		return null;
-	}
-
-	private CompilationUnit getAstNode(ICompilationUnit compilationUnit, IMethod method)
-		throws JavaModelException
-	{
-		ISourceRange methodRange = method.getSourceRange();
-		ASTParser parser = ASTParser.newParser(AST.JLS4);
-		parser.setSource(compilationUnit);
-		parser.setSourceRange(methodRange.getOffset(), methodRange.getLength());
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setResolveBindings(true);
-		return (CompilationUnit)parser.createAST(new NullProgressMonitor());
-	}
-
-	private MethodDeclaration getMethodDeclaration(ASTNode astNode, final IMethod targetMethod)
-		throws JavaModelException
-	{
-		final List<MethodDeclaration> holder = new ArrayList<MethodDeclaration>();
-		astNode.accept(new ASTVisitor()
-		{
-			@Override
-			public boolean visit(MethodDeclaration node)
-			{
-				if (targetMethod.getElementName().equals(node.getName().getFullyQualifiedName()))
-				{
-					IMethod method = (IMethod)node.resolveBinding().getJavaElement();
-					if (targetMethod.isSimilar(method))
-						holder.add(node);
-				}
-				return false;
-			}
-		});
-		return holder.size() == 1 ? holder.get(0) : null;
 	}
 }
