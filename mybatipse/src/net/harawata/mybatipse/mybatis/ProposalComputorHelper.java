@@ -18,11 +18,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.xml.xpath.XPathExpressionException;
+
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.JavaCompletionProposal;
 import net.harawata.mybatipse.util.NameUtil;
+import net.harawata.mybatipse.util.XpathUtil;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IJavaProject;
@@ -36,12 +40,111 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.TypeNameRequestor;
 import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 /**
  * @author Iwao AVE!
  */
 public class ProposalComputorHelper
 {
+	public static List<ICompletionProposal> proposeReference(IJavaProject project,
+		Document domDoc, String matchString, int start, int length, String targetElement)
+	{
+		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
+		try
+		{
+			int lastDot = matchString.lastIndexOf('.');
+			if (lastDot == -1)
+			{
+				char[] matchChrs = matchString.toCharArray();
+				NodeList nodes = XpathUtil.xpathNodes(domDoc, "//" + targetElement + "/@id");
+				results.addAll(proposalFromNodes(nodes, null, matchChrs, start, length));
+				results.addAll(proposeNamespace(project, domDoc, "", matchChrs, start, length));
+			}
+			else
+			{
+				String namespace = matchString.substring(0, lastDot);
+				char[] matchChrs = matchString.substring(lastDot + 1).toCharArray();
+				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
+				if (mapperFile != null)
+				{
+					Document mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
+					if (mapperDoc != null)
+					{
+						NodeList nodes = XpathUtil.xpathNodes(mapperDoc, "//" + targetElement + "/@id");
+						results.addAll(proposalFromNodes(nodes, namespace, matchChrs, start, length));
+					}
+					results.addAll(proposeNamespace(project, domDoc, namespace, matchChrs, start, length));
+				}
+			}
+		}
+		catch (XPathExpressionException e)
+		{
+			Activator.log(Status.ERROR, e.getMessage(), e);
+		}
+		return results;
+	}
+
+	private static List<ICompletionProposal> proposalFromNodes(NodeList nodes, String namespace,
+		char[] matchChrs, int start, int length)
+	{
+		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
+		for (int j = 0; j < nodes.getLength(); j++)
+		{
+			String id = nodes.item(j).getNodeValue();
+			if (matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, id.toCharArray()))
+			{
+				StringBuilder replacementStr = new StringBuilder();
+				if (namespace != null && namespace.length() > 0)
+					replacementStr.append(namespace).append('.');
+				replacementStr.append(id);
+				int cursorPos = replacementStr.length();
+				ICompletionProposal proposal = new JavaCompletionProposal(replacementStr.toString(),
+					start, length, cursorPos, Activator.getIcon(), id, null, null, 200);
+				results.add(proposal);
+			}
+		}
+		return results;
+	}
+
+	private static List<? extends ICompletionProposal> proposeNamespace(IJavaProject project,
+		Document domDoc, String partialNamespace, char[] matchChrs, int start, int length)
+	{
+		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
+		try
+		{
+			String currentNamespace = XpathUtil.xpathString(domDoc, "//mapper/@namespace");
+			for (String namespace : MapperNamespaceCache.getInstance()
+				.getCacheMap(project, null)
+				.keySet())
+			{
+				if (!namespace.equals(currentNamespace) && namespace.startsWith(partialNamespace)
+					&& !namespace.equals(partialNamespace))
+				{
+					char[] simpleName = CharOperation.lastSegment(namespace.toCharArray(), '.');
+					if (matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, simpleName))
+					{
+						StringBuilder replacementStr = new StringBuilder().append(namespace).append('.');
+						int cursorPos = replacementStr.length();
+						String displayString = new StringBuilder().append(simpleName)
+							.append(" - ")
+							.append(namespace)
+							.toString();
+						results.add(new JavaCompletionProposal(replacementStr.toString(), start, length,
+							cursorPos, Activator.getIcon("/icons/mybatis-ns.png"), displayString, null, null,
+							100));
+					}
+				}
+			}
+		}
+		catch (XPathExpressionException e)
+		{
+			Activator.log(Status.ERROR, e.getMessage(), e);
+		}
+		return results;
+	}
+
 	public static List<ICompletionProposal> proposeOptionName(int offset, int length,
 		String matchString)
 	{

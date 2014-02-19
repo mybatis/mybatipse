@@ -44,6 +44,7 @@ import org.eclipse.wst.sse.core.internal.provisional.text.ITextRegion;
 import org.eclipse.wst.sse.core.internal.provisional.text.ITextRegionList;
 import org.eclipse.wst.sse.core.utils.StringUtils;
 import org.eclipse.wst.xml.core.internal.document.ElementImpl;
+import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
 import org.eclipse.wst.xml.core.internal.regions.DOMRegionContext;
 import org.w3c.dom.Document;
@@ -172,7 +173,8 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 			String elementId = attrValue.substring(lastDot + 1);
 			IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
 
-			IDOMNode domNode = MybatipseXmlUtil.getNodeByXpath(mapperFile, "//" + targetElement
+			IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
+			IDOMNode domNode = (IDOMNode)XpathUtil.xpathNode(mapperDocument, "//" + targetElement
 				+ "[@id='" + elementId + "']");
 			if (domNode != null)
 			{

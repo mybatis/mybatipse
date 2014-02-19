@@ -28,7 +28,6 @@ import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.BeanPropertyInfo;
 import net.harawata.mybatipse.util.XpathUtil;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
@@ -52,20 +51,17 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
-import org.eclipse.wst.sse.core.StructuredModelManager;
-import org.eclipse.wst.sse.core.internal.provisional.IStructuredModel;
 import org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocumentRegion;
 import org.eclipse.wst.sse.core.internal.provisional.text.ITextRegion;
 import org.eclipse.wst.sse.core.internal.provisional.text.ITextRegionList;
 import org.eclipse.wst.sse.core.utils.StringUtils;
 import org.eclipse.wst.sse.ui.contentassist.CompletionProposalInvocationContext;
 import org.eclipse.wst.sse.ui.internal.contentassist.ContentAssistUtils;
-import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
-import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
 import org.eclipse.wst.xml.core.internal.regions.DOMRegionContext;
 import org.eclipse.wst.xml.ui.internal.contentassist.ContentAssistRequest;
 import org.eclipse.wst.xml.ui.internal.contentassist.DefaultXMLCompletionProposalComputer;
+import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -177,7 +173,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		{
 			String matchString = parser.getMatchString();
 			offset -= matchString.length();
-			int length = matchString.length() + parser.getReplacementLength();
+			int length = parser.getReplacementLength();
 			final IJavaProject project = getJavaProject(contentAssistRequest);
 			String proposalTarget = parser.getProposalTarget();
 
@@ -354,7 +350,6 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			return;
 		}
 
-		IJavaProject project = getJavaProject(contentAssistRequest);
 		String currentValue = null;
 		if (contentAssistRequest.getRegion().getType() == DOMRegionContext.XML_TAG_ATTRIBUTE_VALUE)
 			currentValue = contentAssistRequest.getText();
@@ -372,12 +367,14 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			matchString = currentValue.substring(1, matchStrLen);
 			start++;
 			length = currentValue.length() - 2;
+			currentValue = currentValue.substring(1, length + 1);
 		}
 		else
 		{
 			matchString = currentValue.substring(0, matchStrLen);
 		}
 
+		IJavaProject project = getJavaProject(contentAssistRequest);
 		try
 		{
 			switch (proposalType)
@@ -412,17 +409,19 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					break;
 				case ResultMap:
 					// TODO: Exclude the current resultMap id when proposing 'extends'
-					proposeResultMapReference(contentAssistRequest, project, node, currentValue,
-						matchString, matchStrLen, start, length);
+					addProposals(
+						contentAssistRequest,
+						proposeResultMapReference(project, node.getOwnerDocument(), matchString, start,
+							currentValue));
 					break;
 				case Include:
-					proposeReference(contentAssistRequest, project, node, matchString, start, length,
-						"sql", null);
+					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
+						node.getOwnerDocument(), matchString, start, length, "sql"));
 					break;
 				case SelectId:
 					// TODO: include mapper methods with @Select.
-					proposeReference(contentAssistRequest, project, node, matchString, start, length,
-						"select", null);
+					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
+						node.getOwnerDocument(), matchString, start, length, "select"));
 					break;
 				default:
 					break;
@@ -434,133 +433,19 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		}
 	}
 
-	private void proposeResultMapReference(ContentAssistRequest contentAssistRequest,
-		IJavaProject project, IDOMNode node, String currentValue, String matchString,
-		int matchStrLen, int start, int length) throws XPathExpressionException, IOException,
-		CoreException
+	private List<ICompletionProposal> proposeResultMapReference(IJavaProject project,
+		Document domDoc, String matchString, int start, String currentValue)
+		throws XPathExpressionException, IOException, CoreException
 	{
-		String latterMaps = null;
-		if (currentValue.indexOf(',') > -1)
-		{
-			int leftComma = matchString.lastIndexOf(',');
-			int rightComma = currentValue.indexOf(',', matchStrLen);
-			if (rightComma > -1)
-			{
-				latterMaps = currentValue.substring(rightComma,
-					currentValue.length()
-						- (currentValue.endsWith("\"") || currentValue.endsWith("'") ? 1 : 0));
-			}
-			if (leftComma > -1)
-			{
-				start += leftComma + 1;
-				matchString = matchString.substring(leftComma + 1).trim();
-				length -= leftComma + 1;
-			}
-		}
-		proposeReference(contentAssistRequest, project, node, matchString, start, length,
-			"resultMap", latterMaps);
-	}
-
-	private void proposeReference(ContentAssistRequest contentAssistRequest,
-		IJavaProject project, IDOMNode node, String matchString, int start, int length,
-		String targetElement, String replacementSuffix) throws XPathExpressionException,
-		IOException, CoreException
-	{
-		int lastDot = matchString.lastIndexOf('.');
-		if (lastDot == -1)
-		{
-			char[] matchChrs = matchString.toCharArray();
-			NodeList nodes = XpathUtil.xpathNodes(node.getOwnerDocument(), "//" + targetElement
-				+ "/@id");
-			proposalFromNodes(contentAssistRequest, nodes, null, matchChrs, start, length,
-				replacementSuffix);
-			proposeNamespace(contentAssistRequest, project, node, "", matchChrs, start, length,
-				replacementSuffix);
-		}
-		else
-		{
-			String namespace = matchString.substring(0, lastDot);
-			char[] matchChrs = matchString.substring(lastDot + 1).toCharArray();
-			IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
-			IStructuredModel model = null;
-			try
-			{
-				if (mapperFile != null)
-				{
-					model = StructuredModelManager.getModelManager().getModelForRead(mapperFile);
-					IDOMModel domModel = (IDOMModel)model;
-					IDOMDocument mapperDoc = domModel.getDocument();
-					NodeList nodes = XpathUtil.xpathNodes(mapperDoc, "//" + targetElement + "/@id");
-					proposalFromNodes(contentAssistRequest, nodes, namespace, matchChrs, start, length,
-						replacementSuffix);
-				}
-				proposeNamespace(contentAssistRequest, project, node, namespace, matchChrs, start,
-					length, replacementSuffix);
-			}
-			finally
-			{
-				if (model != null)
-				{
-					model.releaseFromRead();
-				}
-			}
-		}
-	}
-
-	private void proposalFromNodes(ContentAssistRequest contentAssistRequest, NodeList nodes,
-		String namespace, char[] matchChrs, int start, int length, String replacementSuffix)
-	{
-		for (int j = 0; j < nodes.getLength(); j++)
-		{
-			String id = nodes.item(j).getNodeValue();
-			if (matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, id.toCharArray()))
-			{
-				StringBuilder replacementStr = new StringBuilder();
-				if (namespace != null && namespace.length() > 0)
-					replacementStr.append(namespace).append('.');
-				replacementStr.append(id);
-				int cursorPos = replacementStr.length();
-				if (replacementSuffix != null)
-					replacementStr.append(replacementSuffix);
-				ICompletionProposal proposal = new CompletionProposal(replacementStr.toString(), start,
-					length, cursorPos, Activator.getIcon(), id, null, null);
-				contentAssistRequest.addProposal(proposal);
-			}
-		}
-	}
-
-	private void proposeNamespace(ContentAssistRequest contentAssistRequest,
-		IJavaProject project, IDOMNode node, String partialNamespace, char[] matchChrs, int start,
-		int length, String replacementSuffix) throws XPathExpressionException
-	{
-		String currentNamespace = XpathUtil.xpathString(node.getOwnerDocument(),
-			"//mapper/@namespace");
-
-		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
-		for (String namespace : MapperNamespaceCache.getInstance()
-			.getCacheMap(project, null)
-			.keySet())
-		{
-			if (!namespace.equals(currentNamespace) && namespace.startsWith(partialNamespace)
-				&& !namespace.equals(partialNamespace))
-			{
-				char[] simpleName = CharOperation.lastSegment(namespace.toCharArray(), '.');
-				if (matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, simpleName))
-				{
-					StringBuilder replacementStr = new StringBuilder().append(namespace).append('.');
-					int cursorPos = replacementStr.length();
-					if (replacementSuffix != null)
-						replacementStr.append(replacementSuffix);
-					String displayString = new StringBuilder().append(simpleName)
-						.append(" - ")
-						.append(namespace)
-						.toString();
-					results.add(new CompletionProposal(replacementStr.toString(), start, length,
-						cursorPos, Activator.getIcon("/icons/mybatis-ns.png"), displayString, null, null));
-				}
-			}
-		}
-		addProposals(contentAssistRequest, results);
+		int offsetInText = matchString.length();
+		int leftComma = currentValue.lastIndexOf(',', offsetInText);
+		int rightComma = currentValue.indexOf(',', offsetInText);
+		String newMatchString = currentValue.substring(leftComma + 1, offsetInText).trim();
+		int newStart = start + offsetInText - newMatchString.length();
+		int newLength = currentValue.length() - (offsetInText - newMatchString.length())
+			- (rightComma > -1 ? currentValue.length() - rightComma : 0);
+		return ProposalComputorHelper.proposeReference(project, domDoc, newMatchString, newStart,
+			newLength, "resultMap");
 	}
 
 	private void proposeMapperNamespace(ContentAssistRequest contentAssistRequest,

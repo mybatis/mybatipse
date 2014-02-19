@@ -120,12 +120,12 @@ public class ExpressionProposalParser
 			if (Character.isJavaIdentifierPart(c) || c == '[' || c == ']' || c == '.')
 			{
 				if (inWhitespace)
-					return i - offset - 1;
+					return i - offset - 1 + matchString.length();
 			}
 			else if (c <= 0x20)
 			{
 				if (c == 0x0A || c == 0x0D)
-					return i - offset - 1;
+					return i - offset - 1 + matchString.length();
 				inWhitespace = true;
 			}
 			else
@@ -133,7 +133,7 @@ public class ExpressionProposalParser
 				break;
 			}
 		}
-		return i - offset - 1;
+		return i - offset - 1 + matchString.length();
 	}
 
 	public String getMatchString()

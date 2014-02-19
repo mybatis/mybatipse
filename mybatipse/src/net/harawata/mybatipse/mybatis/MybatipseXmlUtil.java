@@ -44,7 +44,6 @@ import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.sse.core.internal.provisional.IStructuredModel;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
-import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -165,7 +164,7 @@ public class MybatipseXmlUtil
 		return null;
 	}
 
-	public static IDOMNode getNodeByXpath(IFile mapperXmlFile, String expression)
+	public static IDOMDocument getMapperDocument(IFile mapperXmlFile)
 	{
 		if (mapperXmlFile == null)
 			return null;
@@ -174,8 +173,8 @@ public class MybatipseXmlUtil
 		{
 			model = StructuredModelManager.getModelManager().getModelForRead(mapperXmlFile);
 			IDOMModel domModel = (IDOMModel)model;
-			IDOMDocument mapperDoc = domModel.getDocument();
-			return (IDOMNode)XpathUtil.xpathNode(mapperDoc, expression);
+			IDOMDocument mapperDocument = domModel.getDocument();
+			return mapperDocument;
 		}
 		catch (Exception e)
 		{

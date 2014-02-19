@@ -11,8 +11,11 @@
 
 package net.harawata.mybatipse.mybatis;
 
+import javax.xml.xpath.XPathExpressionException;
+
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.hyperlink.ToXmlHyperlink;
+import net.harawata.mybatipse.util.XpathUtil;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
@@ -28,6 +31,7 @@ import org.eclipse.jface.text.hyperlink.AbstractHyperlinkDetector;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.texteditor.ITextEditor;
+import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
 
 /**
@@ -85,15 +89,26 @@ public class JavaHyperlinkDetector extends AbstractHyperlinkDetector
 					primaryType.getFullyQualifiedName(), null);
 				if (mapperFile != null)
 				{
-					IDOMNode domNode = MybatipseXmlUtil.getNodeByXpath(mapperFile, expression);
-					if (domNode != null)
+					IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
+					if (mapperDocument != null)
 					{
-						Region destRegion = new Region(domNode.getStartOffset(), domNode.getEndOffset()
-							- domNode.getStartOffset());
-						String label = "Open <" + domNode.getNodeName() + "/> in XML mapper.";
-						return new IHyperlink[]{
-							new ToXmlHyperlink(mapperFile, srcRegion, label, destRegion)
-						};
+						try
+						{
+							IDOMNode domNode = (IDOMNode)XpathUtil.xpathNode(mapperDocument, expression);
+							if (domNode != null)
+							{
+								Region destRegion = new Region(domNode.getStartOffset(), domNode.getEndOffset()
+									- domNode.getStartOffset());
+								String label = "Open <" + domNode.getNodeName() + "/> in XML mapper.";
+								return new IHyperlink[]{
+									new ToXmlHyperlink(mapperFile, srcRegion, label, destRegion)
+								};
+							}
+						}
+						catch (XPathExpressionException e)
+						{
+							Activator.log(Status.ERROR, e.getMessage(), e);
+						}
 					}
 				}
 			}

@@ -11,7 +11,6 @@
 
 package net.harawata.mybatipse.mybatis;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +18,7 @@ import java.util.Map;
 
 import net.harawata.mybatipse.Activator;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IAnnotatable;
@@ -28,6 +28,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ISourceRange;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.ui.text.java.ContentAssistInvocationContext;
@@ -35,6 +36,7 @@ import org.eclipse.jdt.ui.text.java.IJavaCompletionProposalComputer;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContextInformation;
+import org.w3c.dom.Document;
 
 /**
  * @author Iwao AVE!
@@ -52,14 +54,16 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 	public List<ICompletionProposal> computeCompletionProposals(
 		ContentAssistInvocationContext context, IProgressMonitor monitor)
 	{
-		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		if (context instanceof JavaContentAssistInvocationContext)
 		{
 			JavaContentAssistInvocationContext javaContext = (JavaContentAssistInvocationContext)context;
 			ICompilationUnit unit = javaContext.getCompilationUnit();
 			try
 			{
-				if (unit == null || !unit.isStructureKnown() || !unit.findPrimaryType().isInterface())
+				if (unit == null || !unit.isStructureKnown())
+					return Collections.emptyList();
+				IType primaryType = unit.findPrimaryType();
+				if (primaryType == null || !primaryType.isInterface())
 					return Collections.emptyList();
 
 				int offset = javaContext.getInvocationOffset();
@@ -74,36 +78,25 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				IMethod method = (IMethod)element;
 				if (isStatementAnnotation(annotation))
 				{
-					if (method.getParameters().length == 0)
-						return Collections.emptyList();
+					return proposeStatementText(javaContext, unit, offset, annotation, method);
+				}
+				else if ("ResultMap".equals(annotation.getElementName()))
+				{
 					String text = annotation.getSource();
-					int offsetInText = offset - annotation.getSourceRange().getOffset() - 1;
-					ExpressionProposalParser parser = new ExpressionProposalParser(text, offsetInText);
-					if (parser.isProposable())
+					// This can be null right after emptying the literal, for example.
+					if (text == null)
+						return Collections.emptyList();
+					SimpleParser parser = new SimpleParser(text, offset
+						- annotation.getSourceRange().getOffset() - 1);
+					final IJavaProject project = javaContext.getProject();
+					IFile mapperFile = MapperNamespaceCache.getInstance().get(project,
+						primaryType.getFullyQualifiedName(), null);
+					if (mapperFile != null)
 					{
+						Document mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
 						String matchString = parser.getMatchString();
-						offset -= matchString.length();
-						int length = matchString.length() + parser.getReplacementLength();
-						final IJavaProject project = javaContext.getProject();
-						String proposalTarget = parser.getProposalTarget();
-						if (proposalTarget == null || proposalTarget.length() == 0)
-							proposals = ProposalComputorHelper.proposeOptionName(offset, length, matchString);
-						else if ("property".equals(proposalTarget))
-						{
-							CompilationUnit astNode = JavaMapperUtil.getAstNode(unit);
-							Map<String, String> paramMap = JavaMapperUtil.getMethodParameters(astNode, method);
-							proposals = ProposalComputorHelper.proposeParameters(project, offset, length,
-								paramMap, matchString);
-						}
-						else if ("jdbcType".equals(proposalTarget))
-							proposals = ProposalComputorHelper.proposeJdbcType(offset, length, matchString);
-						else if ("javaType".equals(proposalTarget))
-							proposals = ProposalComputorHelper.proposeJavaType(project, offset, length, true,
-								matchString);
-						else if ("typeHandler".equals(proposalTarget))
-							proposals = ProposalComputorHelper.proposeTypeHandler(project, offset, length,
-								matchString);
-						return proposals;
+						return ProposalComputorHelper.proposeReference(project, mapperDoc, matchString,
+							offset - matchString.length(), parser.getReplacementLength(), "resultMap");
 					}
 				}
 			}
@@ -111,6 +104,43 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 			{
 				Activator.log(Status.ERROR, "Something went wrong.", e);
 			}
+		}
+		return Collections.emptyList();
+	}
+
+	private List<ICompletionProposal> proposeStatementText(
+		JavaContentAssistInvocationContext javaContext, ICompilationUnit unit, int offset,
+		IAnnotation annotation, IMethod method) throws JavaModelException
+	{
+		if (method.getParameters().length == 0)
+			return Collections.emptyList();
+
+		String text = annotation.getSource();
+		int offsetInText = offset - annotation.getSourceRange().getOffset() - 1;
+		ExpressionProposalParser parser = new ExpressionProposalParser(text, offsetInText);
+		if (parser.isProposable())
+		{
+			String matchString = parser.getMatchString();
+			offset -= matchString.length();
+			int length = parser.getReplacementLength();
+			final IJavaProject project = javaContext.getProject();
+			String proposalTarget = parser.getProposalTarget();
+			if (proposalTarget == null || proposalTarget.length() == 0)
+				return ProposalComputorHelper.proposeOptionName(offset, length, matchString);
+			else if ("property".equals(proposalTarget))
+			{
+				CompilationUnit astNode = JavaMapperUtil.getAstNode(unit);
+				Map<String, String> paramMap = JavaMapperUtil.getMethodParameters(astNode, method);
+				return ProposalComputorHelper.proposeParameters(project, offset, length, paramMap,
+					matchString);
+			}
+			else if ("jdbcType".equals(proposalTarget))
+				return ProposalComputorHelper.proposeJdbcType(offset, length, matchString);
+			else if ("javaType".equals(proposalTarget))
+				return ProposalComputorHelper.proposeJavaType(project, offset, length, true,
+					matchString);
+			else if ("typeHandler".equals(proposalTarget))
+				return ProposalComputorHelper.proposeTypeHandler(project, offset, length, matchString);
 		}
 		return Collections.emptyList();
 	}
@@ -163,5 +193,55 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 	public void sessionEnded()
 	{
 		// Nothing todo for now.
+	}
+
+	private class SimpleParser
+	{
+		private String text;
+
+		private int offset;
+
+		private String matchString;
+
+		private SimpleParser(String text, int offset)
+		{
+			super();
+			this.text = text;
+			this.offset = offset;
+			parse();
+		}
+
+		private void parse()
+		{
+			int start = text.lastIndexOf('"', offset);
+			matchString = text.substring(start + 1, offset + 1);
+		}
+
+		public int getReplacementLength()
+		{
+			int i = offset + 1;
+			for (; i < text.length(); i++)
+			{
+				char c = text.charAt(i);
+				if (c == 0x0A || c == 0x0D)
+				{
+					return i - offset - 1 + matchString.length();
+				}
+				else if (c == '"')
+				{
+					return i - offset - 1 + matchString.length();
+				}
+				else
+				{
+					// continue
+				}
+			}
+			return i - offset - 1 + matchString.length();
+		}
+
+		public String getMatchString()
+		{
+			return matchString;
+		}
 	}
 }
