@@ -265,7 +265,7 @@ public class TypeAliasCache
 			}
 
 			// Search calls registering type aliases in java code.
-			// scanJavaConfig(javaProject, aliasMap, packages, reporter);
+			scanJavaConfig(javaProject, aliasMap, packages, reporter);
 
 			// Scan classes in the packages.
 			if (!packages.isEmpty())

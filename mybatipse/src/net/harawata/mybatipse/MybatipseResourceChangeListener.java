@@ -33,6 +33,7 @@ import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 
 /**
  * @author Iwao AVE!
@@ -115,7 +116,20 @@ public class MybatipseResourceChangeListener implements IResourceChangeListener
 
 				BeanPropertyCache.clearBeanPropertyCache(project, qualifiedName);
 
-				if (delta.getKind() == IResourceDelta.REMOVED)
+				String superType = null;
+				try
+				{
+					superType = type.getSuperclassName();
+				}
+				catch (JavaModelException e)
+				{
+					Activator.log(Status.ERROR, e.getMessage(), e);
+				}
+				if (superType != null && "MyBatisModule".equals(superType))
+				{
+					TypeAliasCache.getInstance().remove(project);
+				}
+				else if (delta.getKind() == IResourceDelta.REMOVED)
 				{
 					TypeAliasCache.getInstance().removeType(project.getName(), qualifiedName);
 				}
