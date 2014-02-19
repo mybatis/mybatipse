@@ -231,10 +231,6 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				{
 					return i - offset - 1 + matchString.length();
 				}
-				else
-				{
-					// continue
-				}
 			}
 			return i - offset - 1 + matchString.length();
 		}

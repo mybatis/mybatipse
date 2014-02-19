@@ -411,8 +411,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					// TODO: Exclude the current resultMap id when proposing 'extends'
 					addProposals(
 						contentAssistRequest,
-						proposeResultMapReference(project, node.getOwnerDocument(), matchString, start,
-							currentValue));
+						proposeResultMapReference(project, node.getOwnerDocument(), start, currentValue,
+							matchString.length()));
 					break;
 				case Include:
 					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
@@ -434,15 +434,14 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 	}
 
 	private List<ICompletionProposal> proposeResultMapReference(IJavaProject project,
-		Document domDoc, String matchString, int start, String currentValue)
+		Document domDoc, int start, String currentValue, int offsetInCurrentValue)
 		throws XPathExpressionException, IOException, CoreException
 	{
-		int offsetInText = matchString.length();
-		int leftComma = currentValue.lastIndexOf(',', offsetInText);
-		int rightComma = currentValue.indexOf(',', offsetInText);
-		String newMatchString = currentValue.substring(leftComma + 1, offsetInText).trim();
-		int newStart = start + offsetInText - newMatchString.length();
-		int newLength = currentValue.length() - (offsetInText - newMatchString.length())
+		int leftComma = currentValue.lastIndexOf(',', offsetInCurrentValue);
+		int rightComma = currentValue.indexOf(',', offsetInCurrentValue);
+		String newMatchString = currentValue.substring(leftComma + 1, offsetInCurrentValue).trim();
+		int newStart = start + offsetInCurrentValue - newMatchString.length();
+		int newLength = currentValue.length() - (offsetInCurrentValue - newMatchString.length())
 			- (rightComma > -1 ? currentValue.length() - rightComma : 0);
 		return ProposalComputorHelper.proposeReference(project, domDoc, newMatchString, newStart,
 			newLength, "resultMap");
