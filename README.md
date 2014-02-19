@@ -19,6 +19,10 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 ![autocomplete statement id](screen/ac-stmt.png)
 - Reference to resultMap/select/sql : Propose ID of the referenced resultMap/select/sql. External reference is supported (blue icons).  
 ![autocomplete reference](screen/ac-ref.png)
+- Parameter properties : #{} and ${} in select/insert/udpate/delte statements. Also works in some attributes.  
+![autocomplete properties](screen/ac-stmt-prop-xml.png) ![autocomplete properties 2](screen/ac-prop-test.png)
+- javaType, jdbcType, typeHandler in #{}  
+![autocomplete jdbcType](screen/ac-jdbc-type.png)
 - Result elements in resultMap/collection/association : Generates <result /> elements for the parent java class properties.  
 ![autocomplete results 1](screen/ac-results1.png) ![autocomplete results 2](screen/ac-results2.png)
 
@@ -37,7 +41,20 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 ![problem view](screen/prblm-view.png)
 
 ### Java Editor Enhancements
-- TODO
+
+#### Auto-completion
+- Parameter properties : #{} and ${} in select/insert/udpate/delte annotations.
+![autocomplete properties in java](screen/ac-stmt-prop-java.png)  
+- javaType, jdbcType, typeHandler in #{}  : See the XML example.
+- Reference to resultMap in @ResultMap  
+![autocomplete resultmap annotation](screen/ac-rmap-java.png)  
+
+
+#### Quick Assist
+- Add @Param to method parameters : Put the cursor on the method name and press cmd + 1 (or ctrl + 1).  
+![param-annotation1](screen/qa-add-param1.png)  
+![param-annotation2](screen/qa-add-param2.png)  
+
 
 ## Configuration
 
@@ -55,6 +72,11 @@ For example, with the above settings:
   - The second entry registers the single class ```domain.Person```.  
   - The third entry registers the single class ```domain.SomeLongNamedBean``` under the alias ```SomeBean```.
   - Note that, in any case, MyBatipse respects ```@Alias``` annotation if it exists.
+
+## Tips
+- To move MyBatis proposals to the top of the XML proposal list, quit Eclipse and open the following file in the workspace: ```.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.wst.xml.ui.prefs``` Find the line started with ```xml_content_assist_default_page_sort_order=``` and insert ```net.harawata.mybatis.proposalCategory.xml\u0000``` right after the equal sign.  
+![xml proposal order](screen/xml-proposal-order.png)  
+
 
 
 ## Installation
