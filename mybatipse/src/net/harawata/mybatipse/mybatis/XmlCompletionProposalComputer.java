@@ -85,7 +85,9 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		Include,
 		Package,
 		TypeAlias,
-		SelectId
+		SelectId,
+		ParamProperty,
+		ParamPropertyPartial
 	}
 
 	@Override
@@ -423,6 +425,20 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
 						node.getOwnerDocument(), matchString, start, length, "select"));
 					break;
+				case ParamProperty:
+					addProposals(
+						contentAssistRequest,
+						proposeParameter(project, start, length,
+							findEnclosingStatementNode(node.getParentNode()), matchString));
+					break;
+				case ParamPropertyPartial:
+					AttrTextParser parser = new AttrTextParser(currentValue, matchString.length());
+					addProposals(
+						contentAssistRequest,
+						proposeParameter(project, start + parser.getMatchStringStart(),
+							parser.getReplacementLength(), findEnclosingStatementNode(node.getParentNode()),
+							parser.getMatchString()));
+					break;
 				default:
 					break;
 			}
@@ -572,8 +588,6 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			return ProposalType.ResultProperty;
 		else if ("package".equals(tag) && "name".equals(attr))
 			return ProposalType.Package;
-		else if ("keyProperty".equals(attr))
-			return ProposalType.None; // TODO propose key property?
 		else if ("typeHandler".equals(attr) || "handler".equals(attr))
 			return ProposalType.TypeHandlerType;
 		else if ("resultMap".equals(attr) || "extends".equals(attr))
@@ -582,6 +596,10 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			return ProposalType.Include;
 		else if ("select".equals(attr))
 			return ProposalType.SelectId;
+		else if ("collection".equals(attr) || "keyProperty".equals(attr))
+			return ProposalType.ParamProperty;
+		else if ("test".equals(attr) || ("bind".equals(tag) && "value".equals(attr)))
+			return ProposalType.ParamPropertyPartial;
 		else if ("id".equals(attr)
 			&& ("select".equals(tag) || "update".equals(tag) || "insert".equals(tag) || "delete".equals(tag)))
 			return ProposalType.StatementId;
@@ -616,6 +634,61 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					return diff;
 			}
 			return p1.getDisplayString().compareToIgnoreCase(p2.getDisplayString());
+		}
+	}
+
+	private class AttrTextParser
+	{
+		private String text;
+
+		private int offset;
+
+		private String matchString;
+
+		public AttrTextParser(String text, int offset)
+		{
+			super();
+			this.text = text;
+			this.offset = offset;
+			parse();
+		}
+
+		private void parse()
+		{
+			for (int i = offset - 1; i > 0; i--)
+			{
+				char c = text.charAt(i);
+				if (!(Character.isJavaIdentifierPart(c) || c == '[' || c == ']' || c == '.'))
+				{
+					matchString = text.substring(i + 1, offset);
+					return;
+				}
+			}
+			matchString = text.substring(0, offset);
+		}
+
+		public int getMatchStringStart()
+		{
+			return offset - matchString.length();
+		}
+
+		public int getReplacementLength()
+		{
+			int i = offset;
+			for (; i < text.length(); i++)
+			{
+				char c = text.charAt(i);
+				if (!(Character.isJavaIdentifierPart(c) || c == '[' || c == ']' || c == '.'))
+				{
+					break;
+				}
+			}
+			return i - offset + matchString.length();
+		}
+
+		public String getMatchString()
+		{
+			return matchString;
 		}
 	}
 }
