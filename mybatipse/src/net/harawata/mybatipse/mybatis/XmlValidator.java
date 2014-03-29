@@ -26,11 +26,13 @@ import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.wst.sse.core.StructuredModelManager;
@@ -346,19 +348,12 @@ public class XmlValidator extends AbstractValidator
 		{
 			qualifiedName = TypeAliasCache.getInstance().resolveAlias(project, qualifiedName,
 				reporter);
+			if (qualifiedName != null)
+				type = project.findType(qualifiedName);
 		}
-		else
+		if (type == null || !isValidatable(project, type))
 		{
-			for (String interfaceName : type.getSuperInterfaceNames())
-			{
-				// quick check
-				if ("java.util.Map".equals(interfaceName))
-					return;
-			}
-		}
-		if (qualifiedName == null)
-		{
-			// Enclosing type is missing. Valitationg properties is meaningless.
+			// Skip validation when enclosing type is missing or it's a map.
 			return;
 		}
 		Map<String, String> fields = BeanPropertyCache.searchFields(project, qualifiedName,
@@ -369,6 +364,19 @@ public class XmlValidator extends AbstractValidator
 				IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH, "Property '" + attrValue
 					+ "' not found in class " + qualifiedName);
 		}
+	}
+
+	private boolean isValidatable(IJavaProject project, IType type) throws JavaModelException
+	{
+		// Subclass of Map is not validatable.
+		IType map = project.findType("java.util.Map");
+		return !isAssignable(type, map);
+	}
+
+	private boolean isAssignable(IType type, IType targetType) throws JavaModelException
+	{
+		final ITypeHierarchy supertypes = type.newSupertypeHierarchy(new NullProgressMonitor());
+		return supertypes.contains(targetType);
 	}
 
 	private void validateJavaType(IJavaProject project, IFile file, IDOMDocument doc,
