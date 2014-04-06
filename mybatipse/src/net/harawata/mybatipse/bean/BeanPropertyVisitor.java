@@ -11,6 +11,7 @@
 
 package net.harawata.mybatipse.bean;
 
+import java.beans.Introspector;
 import java.util.List;
 import java.util.Map;
 
@@ -164,25 +165,18 @@ public class BeanPropertyVisitor extends ASTVisitor
 
 	public static String getFieldNameFromAccessor(String methodName)
 	{
-		if (methodName == null)
-			return "";
-		StringBuilder sb = new StringBuilder();
-		if (methodName.startsWith("set") || methodName.startsWith("get"))
+		String fieldName = "";
+		if (methodName != null)
 		{
-			sb.append(Character.toLowerCase(methodName.charAt(3)));
-			if (methodName.length() > 4)
-				sb.append(methodName.substring(4));
+			if (methodName.startsWith("set") || methodName.startsWith("get"))
+			{
+				fieldName = Introspector.decapitalize(methodName.substring(3));
+			}
+			else if (methodName.startsWith("is"))
+			{
+				fieldName = Introspector.decapitalize(methodName.substring(2));
+			}
 		}
-		else if (methodName.startsWith("is"))
-		{
-			sb.append(Character.toLowerCase(methodName.charAt(2)));
-			if (methodName.length() > 3)
-				sb.append(methodName.substring(3));
-		}
-		else
-		{
-			// No such accessor.
-		}
-		return sb.toString();
+		return fieldName;
 	}
 }
