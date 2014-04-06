@@ -166,8 +166,9 @@ public class XmlValidator extends AbstractValidator
 					|| "handler".equals(attrName) || "interceptor".equals(attrName)
 					|| "class".equals(attrName))
 				{
+					String qualifiedName = MybatipseXmlUtil.normalizeTypeName(attrValue);
 					// TODO: verify interface?
-					validateJavaType(project, file, doc, attr, attrValue, result, reporter);
+					validateJavaType(project, file, doc, attr, qualifiedName, result, reporter);
 				}
 				else if ("property".equals(attrName))
 				{
@@ -384,12 +385,7 @@ public class XmlValidator extends AbstractValidator
 		throws JavaModelException
 	{
 		if (!MybatipseXmlUtil.isDefaultTypeAlias(qualifiedName)
-			// The top level class can have '$' in its name,
-			// so replacing '$' with '.' is not correct.
-			// But, it *finds* non-existent inner class if '$' is used.
-			// TODO: inner class is referenced with preceding '$' by MyBatis,
-			// so there should be a validtion if '.' is used.
-			&& project.findType(qualifiedName.replace('$', '.')) == null
+			&& project.findType(qualifiedName) == null
 			&& TypeAliasCache.getInstance().resolveAlias(project, qualifiedName, reporter) == null)
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_TYPE,

@@ -73,7 +73,18 @@ public class BeanPropertyCache
 		Map<String, BeanPropertyInfo> beans = projectCache.get(project);
 		if (beans != null)
 		{
-			beans.remove(removeExtension(qualifiedName));
+			String topLevelClass = removeExtension(qualifiedName);
+			beans.remove(topLevelClass);
+			// Clear cache for inner classes.
+			String innerClassPrefix = topLevelClass + ".";
+			for (Iterator<Entry<String, BeanPropertyInfo>> it = beans.entrySet().iterator(); it.hasNext();)
+			{
+				Entry<String, BeanPropertyInfo> entry = it.next();
+				if (entry.getKey().startsWith(innerClassPrefix))
+				{
+					it.remove();
+				}
+			}
 		}
 	}
 
@@ -116,7 +127,7 @@ public class BeanPropertyCache
 				}
 				else
 				{
-					parseSource(project, type, readableFields, writableFields);
+					parseSource(project, type, qualifiedName, readableFields, writableFields);
 				}
 			}
 		}
@@ -195,8 +206,8 @@ public class BeanPropertyCache
 	}
 
 	protected static void parseSource(IJavaProject project, final IType type,
-		final Map<String, String> readableFields, final Map<String, String> writableFields)
-		throws JavaModelException
+		final String qualifiedName, final Map<String, String> readableFields,
+		final Map<String, String> writableFields) throws JavaModelException
 	{
 		ICompilationUnit compilationUnit = (ICompilationUnit)type.getAncestor(IJavaElement.COMPILATION_UNIT);
 		ASTParser parser = ASTParser.newParser(AST.JLS4);
@@ -205,7 +216,8 @@ public class BeanPropertyCache
 		parser.setResolveBindings(true);
 		// parser.setIgnoreMethodBodies(true);
 		CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
-		astUnit.accept(new BeanPropertyVisitor(project, readableFields, writableFields));
+		astUnit.accept(new BeanPropertyVisitor(project, qualifiedName, readableFields,
+			writableFields));
 	}
 
 	public static Map<String, String> searchFields(IJavaProject project, String qualifiedName,

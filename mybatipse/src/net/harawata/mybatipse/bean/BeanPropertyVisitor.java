@@ -17,6 +17,7 @@ import java.util.Map;
 
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -35,24 +36,50 @@ public class BeanPropertyVisitor extends ASTVisitor
 {
 	private IJavaProject project;
 
+	private final String qualifiedName;
+
 	private final Map<String, String> readableFields;
 
 	private final Map<String, String> writableFields;
 
+	private int nestLevel;
+
 	public BeanPropertyVisitor(
 		IJavaProject project,
+		String qualifiedName,
 		Map<String, String> readableFields,
 		Map<String, String> writableFields)
 	{
 		super();
 		this.project = project;
+		this.qualifiedName = qualifiedName;
 		this.readableFields = readableFields;
 		this.writableFields = writableFields;
 	}
 
 	@Override
+	public boolean visit(TypeDeclaration node)
+	{
+		ITypeBinding binding = node.resolveBinding();
+		if (qualifiedName.equals(binding.getQualifiedName()))
+			nestLevel = 1;
+		else if (nestLevel > 0)
+			nestLevel++;
+
+		return true;
+	}
+
+	@Override
+	public boolean visit(AnonymousClassDeclaration node)
+	{
+		return false;
+	}
+
+	@Override
 	public boolean visit(FieldDeclaration node)
 	{
+		if (nestLevel != 1)
+			return false;
 		int modifiers = node.getModifiers();
 		if (Modifier.isPublic(modifiers))
 		{
@@ -78,6 +105,8 @@ public class BeanPropertyVisitor extends ASTVisitor
 	@Override
 	public boolean visit(MethodDeclaration node)
 	{
+		if (nestLevel != 1)
+			return false;
 		// Resolve binding first to support Lombok generated methods.
 		// node.getModifiers() returns incorrect access modifiers for them.
 		// https://github.com/harawata/stlipse/issues/2
@@ -154,13 +183,17 @@ public class BeanPropertyVisitor extends ASTVisitor
 	@Override
 	public void endVisit(TypeDeclaration node)
 	{
-		Type superclassType = node.getSuperclassType();
-		if (superclassType != null && !node.isMemberTypeDeclaration())
+		if (nestLevel == 1)
 		{
-			ITypeBinding binding = superclassType.resolveBinding();
-			BeanPropertyCache.parseBean(project, binding.getQualifiedName(), readableFields,
-				writableFields);
+			Type superclassType = node.getSuperclassType();
+			if (superclassType != null)
+			{
+				ITypeBinding binding = superclassType.resolveBinding();
+				BeanPropertyCache.parseBean(project, binding.getQualifiedName(), readableFields,
+					writableFields);
+			}
 		}
+		nestLevel--;
 	}
 
 	public static String getFieldNameFromAccessor(String methodName)

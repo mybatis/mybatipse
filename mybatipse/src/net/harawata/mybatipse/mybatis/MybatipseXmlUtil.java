@@ -207,7 +207,12 @@ public class MybatipseXmlUtil
 				type = getAttribute(parentNode, "resultType");
 			parentNode = parentNode.getParentNode();
 		}
-		return type;
+		return normalizeTypeName(type);
+	}
+
+	public static String normalizeTypeName(String src)
+	{
+		return src == null ? null : src.replace('$', '.');
 	}
 
 	private static String getAttribute(Node node, String attributeName)
