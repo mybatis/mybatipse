@@ -44,23 +44,6 @@
       </content-type>
    </extension>
    <extension
-         point="org.eclipse.wst.xml.core.catalogContributions">
-      <catalogContribution>
-         <public
-               id="net.harawata.mybatipse.dtd.mapper"
-               publicId="-//mybatis.org//DTD Mapper 3.0//EN"
-               uri="schemas/mybatis-3-mapper.dtd"
-               webURL="http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-         </public>
-         <public
-               id="net.harawata.mybatipse.dtd.config"
-               publicId="-//mybatis.org//DTD Config 3.0//EN"
-               uri="schemas/mybatis-3-config.dtd"
-               webURL="http://mybatis.org/dtd/mybatis-3-config.dtd">
-         </public>
-      </catalogContribution>
-   </extension>
-   <extension
          point="org.eclipse.ui.workbench.texteditor.hyperlinkDetectors">
       <hyperlinkDetector
             activate="true"
