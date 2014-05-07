@@ -12,8 +12,11 @@
 package net.harawata.mybatipse.bean;
 
 import java.beans.Introspector;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -42,19 +45,23 @@ public class BeanPropertyVisitor extends ASTVisitor
 
 	private final Map<String, String> writableFields;
 
+	private final Map<String, Set<String>> subclassMap;
+
 	private int nestLevel;
 
 	public BeanPropertyVisitor(
 		IJavaProject project,
 		String qualifiedName,
 		Map<String, String> readableFields,
-		Map<String, String> writableFields)
+		Map<String, String> writableFields,
+		Map<String, Set<String>> subclassMap)
 	{
 		super();
 		this.project = project;
 		this.qualifiedName = qualifiedName;
 		this.readableFields = readableFields;
 		this.writableFields = writableFields;
+		this.subclassMap = subclassMap;
 	}
 
 	@Override
@@ -189,8 +196,16 @@ public class BeanPropertyVisitor extends ASTVisitor
 			if (superclassType != null)
 			{
 				ITypeBinding binding = superclassType.resolveBinding();
-				BeanPropertyCache.parseBean(project, binding.getQualifiedName(), readableFields,
-					writableFields);
+				String superclassFqn = binding.getQualifiedName();
+				Set<String> subclasses = subclassMap.get(superclassFqn);
+				if (subclasses == null)
+				{
+					subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+					subclassMap.put(superclassFqn, subclasses);
+				}
+				subclasses.add(qualifiedName);
+				BeanPropertyCache.parseBean(project, superclassFqn, readableFields, writableFields,
+					subclassMap);
 			}
 		}
 		nestLevel--;

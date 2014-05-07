@@ -16,12 +16,14 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.xml.crypto.Data;
@@ -51,6 +53,8 @@ public class BeanPropertyCache
 {
 	private static final Map<IProject, Map<String, BeanPropertyInfo>> projectCache = new ConcurrentHashMap<IProject, Map<String, BeanPropertyInfo>>();
 
+	private static final Map<IProject, Map<String, Set<String>>> subclassCache = new ConcurrentHashMap<IProject, Map<String, Set<String>>>();
+
 	private static final List<String> ignoredTypes = Arrays.asList(String.class.getName(),
 		Byte.class.getName(), Long.class.getName(), Short.class.getName(), Integer.class.getName(),
 		Double.class.getName(), Float.class.getName(), Boolean.class.getName(),
@@ -61,11 +65,13 @@ public class BeanPropertyCache
 	public static void clearBeanPropertyCache()
 	{
 		projectCache.clear();
+		subclassCache.clear();
 	}
 
 	public static void clearBeanPropertyCache(IProject project)
 	{
 		projectCache.remove(project);
+		subclassCache.remove(project);
 	}
 
 	public static void clearBeanPropertyCache(IProject project, String qualifiedName)
@@ -80,41 +86,71 @@ public class BeanPropertyCache
 			for (Iterator<Entry<String, BeanPropertyInfo>> it = beans.entrySet().iterator(); it.hasNext();)
 			{
 				Entry<String, BeanPropertyInfo> entry = it.next();
-				if (entry.getKey().startsWith(innerClassPrefix))
+				String key = entry.getKey();
+				if (key.startsWith(innerClassPrefix))
 				{
 					it.remove();
+					clearSubclassCache(project, key);
 				}
+			}
+			clearSubclassCache(project, topLevelClass);
+		}
+	}
+
+	private static void clearSubclassCache(IProject project, String qualifiedName)
+	{
+		Map<String, Set<String>> subclassMap = subclassMapForProject(project);
+		Set<String> subclasses = subclassMap.remove(qualifiedName);
+		if (subclasses != null)
+		{
+			for (String subclass : subclasses)
+			{
+				clearBeanPropertyCache(project, subclass);
 			}
 		}
 	}
 
-	public static BeanPropertyInfo getBeanPropertyInfo(IJavaProject project, String fqn)
+	public static BeanPropertyInfo getBeanPropertyInfo(IJavaProject javaProject, String fqn)
 	{
 		if (fqn == null || ignoredTypes.contains(fqn))
 		{
 			return null;
 		}
 		String qualifiedName = removeExtension(fqn);
-		Map<String, BeanPropertyInfo> beans = projectCache.get(project.getProject());
+		IProject project = javaProject.getProject();
+		Map<String, BeanPropertyInfo> beans = projectCache.get(project);
 		if (beans == null)
 		{
 			beans = new ConcurrentHashMap<String, BeanPropertyInfo>();
-			projectCache.put(project.getProject(), beans);
+			projectCache.put(project, beans);
 		}
+		Map<String, Set<String>> subclassMap = subclassMapForProject(project);
 		BeanPropertyInfo beanProps = beans.get(qualifiedName);
 		if (beanProps == null)
 		{
 			final Map<String, String> readableFields = new LinkedHashMap<String, String>();
 			final Map<String, String> writableFields = new LinkedHashMap<String, String>();
-			parseBean(project, qualifiedName, readableFields, writableFields);
+			parseBean(javaProject, qualifiedName, readableFields, writableFields, subclassMap);
 			beanProps = new BeanPropertyInfo(readableFields, writableFields);
 		}
 		beans.put(qualifiedName, beanProps);
 		return beanProps;
 	}
 
+	private static Map<String, Set<String>> subclassMapForProject(IProject project)
+	{
+		Map<String, Set<String>> subclassMap = subclassCache.get(project.getProject());
+		if (subclassMap == null)
+		{
+			subclassMap = new ConcurrentHashMap<String, Set<String>>();
+			subclassCache.put(project.getProject(), subclassMap);
+		}
+		return subclassMap;
+	}
+
 	protected static void parseBean(IJavaProject project, String qualifiedName,
-		final Map<String, String> readableFields, final Map<String, String> writableFields)
+		final Map<String, String> readableFields, final Map<String, String> writableFields,
+		final Map<String, Set<String>> subclassMap)
 	{
 		try
 		{
@@ -123,11 +159,11 @@ public class BeanPropertyCache
 			{
 				if (type.isBinary())
 				{
-					parseBinary(project, type, readableFields, writableFields);
+					parseBinary(project, type, readableFields, writableFields, subclassMap);
 				}
 				else
 				{
-					parseSource(project, type, qualifiedName, readableFields, writableFields);
+					parseSource(project, type, qualifiedName, readableFields, writableFields, subclassMap);
 				}
 			}
 		}
@@ -138,8 +174,8 @@ public class BeanPropertyCache
 	}
 
 	protected static void parseBinary(IJavaProject project, final IType type,
-		final Map<String, String> readableFields, final Map<String, String> writableFields)
-		throws JavaModelException
+		final Map<String, String> readableFields, final Map<String, String> writableFields,
+		final Map<String, Set<String>> subclassMap) throws JavaModelException
 	{
 		parseBinaryFields(type, readableFields, writableFields);
 
@@ -148,7 +184,14 @@ public class BeanPropertyCache
 		String superclass = Signature.toString(type.getSuperclassTypeSignature());
 		if (!Object.class.getName().equals(superclass))
 		{
-			parseBean(project, superclass, readableFields, writableFields);
+			Set<String> subclasses = subclassMap.get(superclass);
+			if (subclasses == null)
+			{
+				subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+				subclassMap.put(superclass, subclasses);
+			}
+			subclasses.add(type.getFullyQualifiedName());
+			parseBean(project, superclass, readableFields, writableFields, subclassMap);
 		}
 	}
 
@@ -208,7 +251,8 @@ public class BeanPropertyCache
 
 	protected static void parseSource(IJavaProject project, final IType type,
 		final String qualifiedName, final Map<String, String> readableFields,
-		final Map<String, String> writableFields) throws JavaModelException
+		final Map<String, String> writableFields, final Map<String, Set<String>> subclassMap)
+		throws JavaModelException
 	{
 		ICompilationUnit compilationUnit = (ICompilationUnit)type.getAncestor(IJavaElement.COMPILATION_UNIT);
 		ASTParser parser = ASTParser.newParser(AST.JLS4);
@@ -218,7 +262,7 @@ public class BeanPropertyCache
 		// parser.setIgnoreMethodBodies(true);
 		CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
 		astUnit.accept(new BeanPropertyVisitor(project, qualifiedName, readableFields,
-			writableFields));
+			writableFields, subclassMap));
 	}
 
 	public static Map<String, String> searchFields(IJavaProject project, String qualifiedName,
