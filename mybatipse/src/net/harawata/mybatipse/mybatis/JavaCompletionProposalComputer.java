@@ -132,7 +132,7 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				CompilationUnit astNode = JavaMapperUtil.getAstNode(unit);
 				Map<String, String> paramMap = JavaMapperUtil.getMethodParameters(astNode, method);
 				return ProposalComputorHelper.proposeParameters(project, offset, length, paramMap,
-					matchString);
+					true, matchString);
 			}
 			else if ("jdbcType".equals(proposalTarget))
 				return ProposalComputorHelper.proposeJdbcType(offset, length, matchString);

@@ -192,15 +192,16 @@ public class BeanPropertyCache
 		for (IField field : type.getFields())
 		{
 			int flags = field.getFlags();
+			String fieldName = field.getElementName();
+			String qualifiedType = Signature.toString(field.getTypeSignature());
+			if (!Flags.isFinal(flags))
+			{
+				// MyBatis can write non-public fields.
+				writableFields.put(fieldName, qualifiedType);
+			}
 			if (Flags.isPublic(flags))
 			{
-				String fieldName = field.getElementName();
-				String qualifiedType = Signature.toString(field.getTypeSignature());
 				readableFields.put(fieldName, qualifiedType);
-				if (!Flags.isFinal(flags))
-				{
-					writableFields.put(fieldName, qualifiedType);
-				}
 			}
 		}
 	}
@@ -221,7 +222,7 @@ public class BeanPropertyCache
 	}
 
 	public static Map<String, String> searchFields(IJavaProject project, String qualifiedName,
-		String matchStr, boolean includeReadOnly, int currentIdx, boolean isValidation)
+		String matchStr, boolean searchReadable, int currentIdx, boolean isValidation)
 	{
 		final Map<String, String> results = new LinkedHashMap<String, String>();
 		String searchStr;
@@ -238,7 +239,7 @@ public class BeanPropertyCache
 		final BeanPropertyInfo beanProperty = getBeanPropertyInfo(project, qualifiedName);
 		if (beanProperty != null)
 		{
-			final Map<String, String> fields = includeReadOnly ? beanProperty.getReadableFields()
+			final Map<String, String> fields = searchReadable ? beanProperty.getReadableFields()
 				: beanProperty.getWritableFields();
 
 			for (Entry<String, String> entry : fields.entrySet())
@@ -250,7 +251,7 @@ public class BeanPropertyCache
 				{
 					if (dotIdx > -1)
 					{
-						return searchFields(project, fieldQualifiedName, matchStr, includeReadOnly, dotIdx,
+						return searchFields(project, fieldQualifiedName, matchStr, searchReadable, dotIdx,
 							isValidation);
 					}
 					else

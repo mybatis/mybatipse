@@ -81,7 +81,8 @@ public class BeanPropertyVisitor extends ASTVisitor
 		if (nestLevel != 1)
 			return false;
 		int modifiers = node.getModifiers();
-		if (Modifier.isPublic(modifiers))
+		// Check modifers to spare binding overhead.
+		if (Modifier.isPublic(modifiers) || !Modifier.isFinal(modifiers))
 		{
 			@SuppressWarnings("unchecked")
 			List<VariableDeclarationFragment> fragments = node.fragments();
@@ -89,11 +90,10 @@ public class BeanPropertyVisitor extends ASTVisitor
 			{
 				String fieldName = fragment.getName().toString();
 				String qualifiedName = getQualifiedNameFromType(node.getType());
-				if (qualifiedName == null)
-					; // ignore
-				else
+				if (qualifiedName != null)
 				{
-					readableFields.put(fieldName, qualifiedName);
+					if (Modifier.isPublic(modifiers))
+						readableFields.put(fieldName, qualifiedName);
 					if (!Modifier.isFinal(modifiers))
 						writableFields.put(fieldName, qualifiedName);
 				}

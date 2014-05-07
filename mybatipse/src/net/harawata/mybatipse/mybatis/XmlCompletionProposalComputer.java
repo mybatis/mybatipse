@@ -86,6 +86,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		Package,
 		TypeAlias,
 		SelectId,
+		KeyProperty,
 		ParamProperty,
 		ParamPropertyPartial
 	}
@@ -184,7 +185,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					ProposalComputorHelper.proposeOptionName(offset, length, matchString));
 			else if ("property".equals(proposalTarget))
 				addProposals(contentAssistRequest,
-					proposeParameter(project, offset, length, statementNode, matchString));
+					proposeParameter(project, offset, length, statementNode, true, matchString));
 			else if ("jdbcType".equals(proposalTarget))
 				addProposals(contentAssistRequest,
 					ProposalComputorHelper.proposeJdbcType(offset, length, matchString));
@@ -198,7 +199,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 	}
 
 	private List<ICompletionProposal> proposeParameter(IJavaProject project, final int offset,
-		final int length, Node statementNode, final String matchString)
+		final int length, Node statementNode, final boolean searchReadable, final String matchString)
 	{
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		String statementId = null;
@@ -220,7 +221,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		{
 			String resolved = TypeAliasCache.getInstance().resolveAlias(project, paramType, null);
 			proposals = ProposalComputorHelper.proposePropertyFor(project, offset, length,
-				resolved != null ? resolved : paramType, true, -1, matchString);
+				resolved != null ? resolved : paramType, searchReadable, -1, matchString);
 		}
 		else
 		{
@@ -230,7 +231,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				final Map<String, String> paramMap = getParamsFromMapperMethod(project, mapperFqn,
 					statementId);
 				proposals = ProposalComputorHelper.proposeParameters(project, offset, length, paramMap,
-					matchString);
+					searchReadable, matchString);
 			}
 			catch (XPathExpressionException e)
 			{
@@ -425,11 +426,18 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
 						node.getOwnerDocument(), matchString, start, length, "select"));
 					break;
+				case KeyProperty:
+					String nodeName = node.getNodeName();
+					Node statementNode = "update".equals(nodeName) || "insert".equals(nodeName) ? node
+						: findEnclosingStatementNode(node.getParentNode());
+					addProposals(contentAssistRequest,
+						proposeParameter(project, start, length, statementNode, false, matchString));
+					break;
 				case ParamProperty:
 					addProposals(
 						contentAssistRequest,
-						proposeParameter(project, start, length,
-							findEnclosingStatementNode(node.getParentNode()), matchString));
+						proposeParameter(project, start, length, findEnclosingStatementNode(node), true,
+							matchString));
 					break;
 				case ParamPropertyPartial:
 					AttrTextParser parser = new AttrTextParser(currentValue, matchString.length());
@@ -437,7 +445,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 						contentAssistRequest,
 						proposeParameter(project, start + parser.getMatchStringStart(),
 							parser.getReplacementLength(), findEnclosingStatementNode(node.getParentNode()),
-							parser.getMatchString()));
+							true, parser.getMatchString()));
 					break;
 				default:
 					break;
@@ -596,7 +604,9 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			return ProposalType.Include;
 		else if ("select".equals(attr))
 			return ProposalType.SelectId;
-		else if ("collection".equals(attr) || "keyProperty".equals(attr))
+		else if ("keyProperty".equals(attr))
+			return ProposalType.KeyProperty;
+		else if ("collection".equals(attr))
 			return ProposalType.ParamProperty;
 		else if ("test".equals(attr) || ("bind".equals(tag) && "value".equals(attr)))
 			return ProposalType.ParamPropertyPartial;

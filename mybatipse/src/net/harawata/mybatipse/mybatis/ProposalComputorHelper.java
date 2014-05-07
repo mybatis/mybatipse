@@ -230,7 +230,7 @@ public class ProposalComputorHelper
 
 	public static List<ICompletionProposal> proposeParameters(IJavaProject project,
 		final int offset, final int length, final Map<String, String> paramMap,
-		final String matchString)
+		final boolean searchReadable, final String matchString)
 	{
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		if (paramMap.size() == 1)
@@ -238,7 +238,8 @@ public class ProposalComputorHelper
 			// If there is only one parameter with no @Param,
 			// properties should be directly referenced.
 			String paramType = paramMap.values().iterator().next();
-			proposals = proposePropertyFor(project, offset, length, paramType, true, -1, matchString);
+			proposals = proposePropertyFor(project, offset, length, paramType, searchReadable, -1,
+				matchString);
 		}
 		else if (paramMap.size() > 1)
 		{
@@ -263,8 +264,8 @@ public class ProposalComputorHelper
 				String qualifiedName = paramMap.get(paramName);
 				if (qualifiedName != null)
 				{
-					proposals = proposePropertyFor(project, offset, length, qualifiedName, true, dotPos,
-						matchString);
+					proposals = proposePropertyFor(project, offset, length, qualifiedName,
+						searchReadable, dotPos, matchString);
 				}
 			}
 		}
@@ -383,13 +384,12 @@ public class ProposalComputorHelper
 	}
 
 	public static List<ICompletionProposal> proposePropertyFor(IJavaProject project, int offset,
-		int length, String qualifiedName, boolean includeReadonly, int currentIdx,
-		String matchString)
+		int length, String qualifiedName, boolean searchReadable, int currentIdx, String matchString)
 	{
 		if (MybatipseXmlUtil.isDefaultTypeAlias(qualifiedName))
 			return Collections.emptyList();
 		Map<String, String> fields = BeanPropertyCache.searchFields(project, qualifiedName,
-			matchString, includeReadonly, currentIdx, false);
+			matchString, searchReadable, currentIdx, false);
 		return BeanPropertyCache.buildFieldNameProposal(fields, matchString, offset, length);
 	}
 

@@ -358,7 +358,7 @@ public class XmlValidator extends AbstractValidator
 			return;
 		}
 		Map<String, String> fields = BeanPropertyCache.searchFields(project, qualifiedName,
-			attrValue, true, -1, true);
+			attrValue, false, -1, true);
 		if (fields.size() == 0)
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_TYPE,
