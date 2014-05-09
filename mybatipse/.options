@@ -1,0 +1,5 @@
+# Enable verbose logging.
+net.harawata.mybatipse/debug=true
+
+# Bean property cache activities.
+net.harawata.mybatipse/debug/beanPropertyCache=false

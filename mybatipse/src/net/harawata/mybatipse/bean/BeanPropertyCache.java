@@ -29,8 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.xml.crypto.Data;
 
 import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.MybatipseConstants;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -51,6 +54,9 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
  */
 public class BeanPropertyCache
 {
+	private static boolean DEBUG = Activator.getDefault().isDebugging()
+		&& Boolean.parseBoolean(Platform.getDebugOption(MybatipseConstants.DEBUG_BEAN_PROPERTY_CACHE));
+
 	private static final Map<IProject, Map<String, BeanPropertyInfo>> projectCache = new ConcurrentHashMap<IProject, Map<String, BeanPropertyInfo>>();
 
 	private static final Map<IProject, Map<String, Set<String>>> subclassCache = new ConcurrentHashMap<IProject, Map<String, Set<String>>>();
@@ -64,12 +70,16 @@ public class BeanPropertyCache
 
 	public static void clearBeanPropertyCache()
 	{
+		if (DEBUG)
+			Activator.log(IStatus.INFO, "Remove bean property caches.");
 		projectCache.clear();
 		subclassCache.clear();
 	}
 
 	public static void clearBeanPropertyCache(IProject project)
 	{
+		if (DEBUG)
+			Activator.log(IStatus.INFO, "Remove bean property cache for project " + project.getName());
 		projectCache.remove(project);
 		subclassCache.remove(project);
 	}
@@ -81,16 +91,20 @@ public class BeanPropertyCache
 		{
 			String topLevelClass = removeExtension(qualifiedName);
 			beans.remove(topLevelClass);
+			if (DEBUG)
+				Activator.log(IStatus.INFO, "Remove bean property cache for class " + qualifiedName);
 			// Clear cache for inner classes.
 			String innerClassPrefix = topLevelClass + ".";
 			for (Iterator<Entry<String, BeanPropertyInfo>> it = beans.entrySet().iterator(); it.hasNext();)
 			{
 				Entry<String, BeanPropertyInfo> entry = it.next();
-				String key = entry.getKey();
-				if (key.startsWith(innerClassPrefix))
+				String fqn = entry.getKey();
+				if (fqn.startsWith(innerClassPrefix))
 				{
+					if (DEBUG)
+						Activator.log(IStatus.INFO, "Remove bean property cache for inner class " + fqn);
 					it.remove();
-					clearSubclassCache(project, key);
+					clearSubclassCache(project, fqn);
 				}
 			}
 			clearSubclassCache(project, topLevelClass);
@@ -159,10 +173,14 @@ public class BeanPropertyCache
 			{
 				if (type.isBinary())
 				{
+					if (DEBUG)
+						Activator.log(IStatus.INFO, "Parsing properties of a binary class " + qualifiedName);
 					parseBinary(project, type, readableFields, writableFields, subclassMap);
 				}
 				else
 				{
+					if (DEBUG)
+						Activator.log(IStatus.INFO, "Parsing properties of a source class " + qualifiedName);
 					parseSource(project, type, qualifiedName, readableFields, writableFields, subclassMap);
 				}
 			}

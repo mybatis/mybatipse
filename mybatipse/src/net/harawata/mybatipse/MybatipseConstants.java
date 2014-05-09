@@ -30,6 +30,8 @@ public class MybatipseConstants
 
 	public static final String PREF_CUSTOM_TYPE_ALIASES = "prefCustomTypeAliases"; //$NON-NLS-1$
 
+	public static final String DEBUG_BEAN_PROPERTY_CACHE = PLUGIN_ID + "/debug/beanPropertyCache";
+
 	public static final IContentType mapperContentType;
 
 	public static final IContentType configContentType;
