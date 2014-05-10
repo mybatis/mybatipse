@@ -202,6 +202,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		final int length, Node statementNode, final boolean searchReadable, final String matchString)
 	{
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+		if (statementNode == null)
+			return proposals;
 		String statementId = null;
 		String paramType = null;
 		NamedNodeMap statementAttrs = statementNode.getAttributes();
