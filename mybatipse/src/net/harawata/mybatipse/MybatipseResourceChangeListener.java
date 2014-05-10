@@ -84,6 +84,8 @@ public class MybatipseResourceChangeListener implements IResourceChangeListener
 
 					IProject project = resource.getProject();
 					IFile file = (IFile)resource;
+					if (!file.exists())
+						return false;
 					if ("xml".equals(file.getFileExtension()))
 					{
 						onXmlChange(delta, resource, project, file);
