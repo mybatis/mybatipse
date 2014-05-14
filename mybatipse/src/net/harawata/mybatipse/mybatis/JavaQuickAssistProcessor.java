@@ -11,20 +11,23 @@
 
 package net.harawata.mybatipse.mybatis;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import net.harawata.mybatipse.Activator;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
@@ -35,8 +38,12 @@ import org.eclipse.jdt.ui.text.java.IQuickAssistProcessor;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.contentassist.IContextInformation;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
@@ -61,6 +68,10 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		IProblemLocation[] locations) throws CoreException
 	{
 		ICompilationUnit compilationUnit = context.getCompilationUnit();
+		IType primaryType = compilationUnit.findPrimaryType();
+		if (primaryType == null || !primaryType.isInterface())
+			; // return null;
+
 		IJavaElement[] elements = compilationUnit.codeSelect(context.getSelectionOffset(),
 			context.getSelectionLength());
 		for (IJavaElement element : elements)
@@ -68,22 +79,28 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			if (element.getElementType() == IJavaElement.METHOD)
 			{
 				IMethod method = (IMethod)element;
-				if (!method.getDeclaringType().isInterface() || method.getParameters().length == 0)
+				if (!method.getDeclaringType().isInterface())
+					return null;
+
+				final String statementAnnotation = getStatementAnnotation(method);
+				if (method.getParameters().length == 0 && statementAnnotation == null)
 					return null;
 
 				CompilationUnit astNode = JavaMapperUtil.getAstNode(compilationUnit);
 				astNode.recordModifications();
-				MethodDeclaration methodDeclaration = JavaMapperUtil.getMethodDeclaration(astNode,
-					method);
-				if (methodDeclaration == null)
+				final MapperMethod mapperMethod = JavaMapperUtil.getMapperMethod(astNode, method);
+				if (mapperMethod == null)
 					return null;
 
-				return new IJavaCompletionProposal[]{
-					new IJavaCompletionProposal()
+				List<IJavaCompletionProposal> proposals = new ArrayList<IJavaCompletionProposal>();
+
+				if (method.getParameters().length > 0)
+				{
+					proposals.add(new QuickAssistCompletionProposal("Add @Param to parameters")
 					{
 						private CompilationUnit astNode;
 
-						private MethodDeclaration method;
+						private MapperMethod method;
 
 						@SuppressWarnings("unchecked")
 						@Override
@@ -137,53 +154,97 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 							return false;
 						}
 
-						@Override
-						public Point getSelection(IDocument document)
-						{
-							return null;
-						}
-
-						@Override
-						public String getAdditionalProposalInfo()
-						{
-							return null;
-						}
-
-						@Override
-						public String getDisplayString()
-						{
-							return "Add @Param to parameters";
-						}
-
-						@Override
-						public Image getImage()
-						{
-							return Activator.getIcon();
-						}
-
-						@Override
-						public IContextInformation getContextInformation()
-						{
-							return null;
-						}
-
-						@Override
-						public int getRelevance()
-						{
-							return 500;
-						}
-
-						private IJavaCompletionProposal init(CompilationUnit astNode,
-							MethodDeclaration method)
+						private QuickAssistCompletionProposal init(CompilationUnit astNode,
+							MapperMethod method)
 						{
 							this.astNode = astNode;
 							this.method = method;
 							return this;
 						}
-					}.init(astNode, methodDeclaration)
-				};
+					}.init(astNode, mapperMethod));
+				}
+
+				if (mapperMethod.getStatement() != null)
+				{
+					proposals.add(new QuickAssistCompletionProposal("Copy @" + statementAnnotation
+						+ " statement to clipboard")
+					{
+						@Override
+						public void apply(IDocument document)
+						{
+							Clipboard clipboard = new Clipboard(Display.getCurrent());
+							clipboard.setContents(new Object[]{
+								mapperMethod.getStatement()
+							}, new Transfer[]{
+								TextTransfer.getInstance()
+							});
+						}
+					});
+				}
+
+				return proposals.toArray(new IJavaCompletionProposal[proposals.size()]);
 			}
 		}
 		return null;
+	}
+
+	private String getStatementAnnotation(IMethod method) throws JavaModelException
+	{
+		IAnnotation[] annotations = method.getAnnotations();
+		for (IAnnotation annotation : annotations)
+		{
+			String name = annotation.getElementName();
+			if ("Select".equals(name) || "Insert".equals(name) || "Update".equals(name)
+				|| "Delete".equals(name))
+				return name;
+		}
+		return null;
+	}
+
+	static abstract class QuickAssistCompletionProposal implements IJavaCompletionProposal
+	{
+		private String displayString;
+
+		private QuickAssistCompletionProposal(String displayString)
+		{
+			super();
+			this.displayString = displayString;
+		}
+
+		@Override
+		public Point getSelection(IDocument document)
+		{
+			return null;
+		}
+
+		@Override
+		public String getAdditionalProposalInfo()
+		{
+			return null;
+		}
+
+		@Override
+		public String getDisplayString()
+		{
+			return displayString;
+		}
+
+		@Override
+		public Image getImage()
+		{
+			return Activator.getIcon();
+		}
+
+		@Override
+		public IContextInformation getContextInformation()
+		{
+			return null;
+		}
+
+		@Override
+		public int getRelevance()
+		{
+			return 500;
+		}
 	}
 }
