@@ -68,6 +68,9 @@ public class BeanPropertyVisitor extends ASTVisitor
 	public boolean visit(TypeDeclaration node)
 	{
 		ITypeBinding binding = node.resolveBinding();
+		if (binding == null)
+			return false;
+
 		if (qualifiedName.equals(binding.getQualifiedName()))
 			nestLevel = 1;
 		else if (nestLevel > 0)
@@ -118,7 +121,7 @@ public class BeanPropertyVisitor extends ASTVisitor
 		// node.getModifiers() returns incorrect access modifiers for them.
 		// https://github.com/harawata/stlipse/issues/2
 		IMethodBinding method = node.resolveBinding();
-		if (Modifier.isPublic(method.getModifiers()))
+		if (method != null && Modifier.isPublic(method.getModifiers()))
 		{
 			final String methodName = node.getName().toString();
 			final int parameterCount = node.parameters().size();
@@ -196,16 +199,19 @@ public class BeanPropertyVisitor extends ASTVisitor
 			if (superclassType != null)
 			{
 				ITypeBinding binding = superclassType.resolveBinding();
-				String superclassFqn = binding.getQualifiedName();
-				Set<String> subclasses = subclassMap.get(superclassFqn);
-				if (subclasses == null)
+				if (binding != null)
 				{
-					subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-					subclassMap.put(superclassFqn, subclasses);
+					String superclassFqn = binding.getQualifiedName();
+					Set<String> subclasses = subclassMap.get(superclassFqn);
+					if (subclasses == null)
+					{
+						subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+						subclassMap.put(superclassFqn, subclasses);
+					}
+					subclasses.add(qualifiedName);
+					BeanPropertyCache.parseBean(project, superclassFqn, readableFields, writableFields,
+						subclassMap);
 				}
-				subclasses.add(qualifiedName);
-				BeanPropertyCache.parseBean(project, superclassFqn, readableFields, writableFields,
-					subclassMap);
 			}
 		}
 		nestLevel--;
