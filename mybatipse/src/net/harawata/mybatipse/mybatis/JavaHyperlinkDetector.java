@@ -48,6 +48,8 @@ public class JavaHyperlinkDetector extends AbstractHyperlinkDetector
 		ITextEditor editor = (ITextEditor)getAdapter(ITextEditor.class);
 		IEditorInput input = editor.getEditorInput();
 		IJavaElement element = (IJavaElement)input.getAdapter(IJavaElement.class);
+		if (element == null)
+			return links;
 		ITypeRoot typeRoot = (ITypeRoot)element.getAdapter(ITypeRoot.class);
 		try
 		{
