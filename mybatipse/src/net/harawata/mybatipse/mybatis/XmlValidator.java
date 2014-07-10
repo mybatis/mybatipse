@@ -229,6 +229,7 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateResultMapId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
+		throws JavaModelException
 	{
 		if (attrValue.indexOf(',') == -1)
 		{
@@ -250,19 +251,21 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateSelectId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
+		throws JavaModelException
 	{
 		validateReference(project, file, doc, result, attr, attrValue, "select", reporter);
 	}
 
 	private void validateSqlId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
+		throws JavaModelException
 	{
 		validateReference(project, file, doc, result, attr, attrValue, "sql", reporter);
 	}
 
 	private void validateReference(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, String targetElement,
-		IReporter reporter)
+		IReporter reporter) throws JavaModelException
 	{
 		try
 		{
@@ -272,6 +275,14 @@ public class XmlValidator extends AbstractValidator
 			if (attrValue.indexOf('.') == -1)
 			{
 				// Internal reference
+				if ("select".equals(targetElement))
+				{
+					String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
+					if (mapperMethodExists(project, qualifiedName, attrValue))
+					{
+						return;
+					}
+				}
 				String xpath = "count(//" + targetElement + "[@id='" + attrValue + "']) > 0";
 				if (!XpathUtil.xpathBool(doc, xpath))
 				{
@@ -285,6 +296,12 @@ public class XmlValidator extends AbstractValidator
 				// External reference
 				int lastDot = attrValue.lastIndexOf('.');
 				String namespace = attrValue.substring(0, lastDot);
+				String statementId = attrValue.substring(lastDot + 1);
+				if ("select".equals(targetElement)
+					&& mapperMethodExists(project, namespace, statementId))
+				{
+					return;
+				}
 				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, reporter);
 				if (mapperFile == null)
 				{
@@ -294,8 +311,7 @@ public class XmlValidator extends AbstractValidator
 				}
 				else
 				{
-					String xpath = "count(//" + targetElement + "[@id='"
-						+ attrValue.substring(lastDot + 1) + "']) > 0";
+					String xpath = "count(//" + targetElement + "[@id='" + statementId + "']) > 0";
 					if (!isElementExists(mapperFile, xpath))
 					{
 						addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_SQL,
@@ -321,18 +337,27 @@ public class XmlValidator extends AbstractValidator
 		}
 
 		String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
+		if (!mapperMethodExists(project, qualifiedName, attrValue))
+		{
+			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_STATEMENT_METHOD,
+				IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH, "Method '" + attrValue
+					+ "' not found in mapper interface " + qualifiedName);
+		}
+	}
+
+	private boolean mapperMethodExists(IJavaProject project, String qualifiedName,
+		String methodName) throws JavaModelException
+	{
 		IType javaMapperType = project.findType(qualifiedName);
 		if (javaMapperType == null)
-			return;
+			return false;
 
 		for (IMethod method : javaMapperType.getMethods())
 		{
-			if (attrValue.equals(method.getElementName()))
-				return;
+			if (methodName.equals(method.getElementName()))
+				return true;
 		}
-		addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_STATEMENT_METHOD,
-			IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH, "Method '" + attrValue
-				+ "' not found in mapper interface " + qualifiedName);
+		return false;
 	}
 
 	private void validateProperty(IDOMElement element, IFile file, IDOMDocument doc,
