@@ -13,6 +13,7 @@ package net.harawata.mybatipse.mybatis;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -30,6 +31,7 @@ import net.harawata.mybatipse.util.XpathUtil;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
@@ -90,6 +92,9 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		ParamProperty,
 		ParamPropertyPartial
 	}
+
+	private static final List<String> statementAnnotations = Arrays.asList("Select", "Insert",
+		"Update", "Delete", "SelectProvider", "InsertProvider", "UpdateProvider", "DeleteProvider");
 
 	@Override
 	protected ContentAssistRequest computeCompletionProposals(String matchString,
@@ -493,6 +498,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		IType type = project.findType(qualifiedName);
 		for (IMethod method : type.getMethods())
 		{
+			if (hasStatementAnnotation(method))
+				continue;
 			String statementId = method.getElementName();
 			if (matchString.length() == 0
 				|| CharOperation.camelCaseMatch(matchString.toCharArray(), statementId.toCharArray()))
@@ -502,6 +509,17 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			}
 		}
 		addProposals(contentAssistRequest, results);
+	}
+
+	private boolean hasStatementAnnotation(IMethod method) throws JavaModelException
+	{
+		IAnnotation[] annotations = method.getAnnotations();
+		for (IAnnotation annotation : annotations)
+		{
+			if (statementAnnotations.contains(annotation.getElementName()))
+				return true;
+		}
+		return false;
 	}
 
 	private void proposeProperty(ContentAssistRequest contentAssistRequest, String matchString,
