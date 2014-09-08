@@ -104,7 +104,8 @@ public class TypeAliasCache
 	{
 		Map<String, TypeAliasInfo> aliasMap = getTypeAliasMap(javaProject, reporter);
 		TypeAliasInfo typeAliasInfo = aliasMap.get(alias.toLowerCase(Locale.ENGLISH));
-		return typeAliasInfo == null ? null : typeAliasInfo.getQualifiedName();
+		return typeAliasInfo == null ? null
+			: MybatipseXmlUtil.normalizeTypeName(typeAliasInfo.getQualifiedName());
 	}
 
 	public void removeType(String projectName, String qualifiedName)
@@ -190,7 +191,7 @@ public class TypeAliasCache
 		return results;
 	}
 
-	public TypeAliasMap getTypeAliasMap(IJavaProject javaProject, IReporter reporter)
+	private TypeAliasMap getTypeAliasMap(IJavaProject javaProject, IReporter reporter)
 	{
 		String projectName = javaProject.getElementName();
 		TypeAliasMap aliasMap = projectCache.get(projectName);
