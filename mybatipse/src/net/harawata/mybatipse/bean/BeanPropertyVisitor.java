@@ -202,6 +202,12 @@ public class BeanPropertyVisitor extends ASTVisitor
 				if (binding != null)
 				{
 					String superclassFqn = binding.getQualifiedName();
+					if (binding.isParameterizedType())
+					{
+						// strip parameter part
+						int paramIdx = superclassFqn.indexOf('<');
+						superclassFqn = superclassFqn.substring(0, paramIdx);
+					}
 					Set<String> subclasses = subclassMap.get(superclassFqn);
 					if (subclasses == null)
 					{
