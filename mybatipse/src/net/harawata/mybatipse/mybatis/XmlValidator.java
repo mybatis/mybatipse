@@ -11,6 +11,7 @@
 
 package net.harawata.mybatipse.mybatis;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import javax.xml.xpath.XPathExpressionException;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 import net.harawata.mybatipse.util.XpathUtil;
 
 import org.eclipse.core.resources.IFile;
@@ -30,7 +32,6 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
@@ -341,23 +342,17 @@ public class XmlValidator extends AbstractValidator
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_STATEMENT_METHOD,
 				IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH, "Method '" + attrValue
-					+ "' not found in mapper interface " + qualifiedName);
+					+ "' not found or there is an overload method"
+					+ " (same name with different parameters) in mapper interface " + qualifiedName);
 		}
 	}
 
 	private boolean mapperMethodExists(IJavaProject project, String qualifiedName,
 		String methodName) throws JavaModelException
 	{
-		IType javaMapperType = project.findType(qualifiedName);
-		if (javaMapperType == null)
-			return false;
-
-		for (IMethod method : javaMapperType.getMethods())
-		{
-			if (methodName.equals(method.getElementName()))
-				return true;
-		}
-		return false;
+		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
+		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodName, true);
+		return methodInfos.size() == 1;
 	}
 
 	private void validateProperty(IDOMElement element, IFile file, IDOMDocument doc,
