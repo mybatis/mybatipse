@@ -13,45 +13,26 @@ package net.harawata.mybatipse.mybatis;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 
 import javax.xml.xpath.XPathExpressionException;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.BeanPropertyInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 import net.harawata.mybatipse.util.XpathUtil;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.jdt.core.IAnnotation;
-import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
-import org.eclipse.jdt.core.compiler.CharOperation;
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.IAnnotationBinding;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.Type;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -104,9 +85,6 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		ParamProperty,
 		ParamPropertyPartial
 	}
-
-	private static final List<String> statementAnnotations = Arrays.asList("Select", "Insert",
-		"Update", "Delete", "SelectProvider", "InsertProvider", "UpdateProvider", "DeleteProvider");
 
 	@Override
 	protected ContentAssistRequest computeCompletionProposals(String matchString,
@@ -246,11 +224,14 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		{
 			try
 			{
+				final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 				String mapperFqn = MybatipseXmlUtil.getNamespace(statementNode.getOwnerDocument());
-				final Map<String, String> paramMap = getParamsFromMapperMethod(project, mapperFqn,
-					statementId);
-				proposals = ProposalComputorHelper.proposeParameters(project, offset, length, paramMap,
-					searchReadable, matchString);
+				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn, statementId, true);
+				if (methodInfos.size() > 0)
+				{
+					proposals = ProposalComputorHelper.proposeParameters(project, offset, length,
+						methodInfos.get(0).getParams(), searchReadable, matchString);
+				}
 			}
 			catch (XPathExpressionException e)
 			{
@@ -258,39 +239,6 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			}
 		}
 		return proposals;
-	}
-
-	private Map<String, String> getParamsFromMapperMethod(final IJavaProject project,
-		String mapperFqn, final String methodName)
-	{
-		try
-		{
-			IType type = project.findType(mapperFqn);
-			if (type != null)
-			{
-				ASTParser parser = ASTParser.newParser(AST.JLS4);
-				parser.setSource(type.getTypeRoot());
-				parser.setResolveBindings(true);
-				CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
-				IMethod mapperMethod = findMethodByName(type, methodName);
-				return JavaMapperUtil.getMethodParameters(astUnit, mapperMethod);
-			}
-		}
-		catch (JavaModelException e)
-		{
-			Activator.log(Status.ERROR, e.getMessage(), e);
-		}
-		return Collections.emptyMap();
-	}
-
-	private IMethod findMethodByName(IType type, String methodName) throws JavaModelException
-	{
-		for (IMethod method : type.getMethods())
-		{
-			if (methodName.equals(method.getElementName()))
-				return method;
-		}
-		return null;
 	}
 
 	private void generateResults(ContentAssistRequest contentAssistRequest, int offset,
@@ -505,181 +453,16 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		throws JavaModelException, XPathExpressionException
 	{
 		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
-		final Set<String> methodNames = new TreeSet<String>();
-
+		final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 		String qualifiedName = MybatipseXmlUtil.getNamespace(node.getOwnerDocument());
-		findMapperMethod(project, qualifiedName, matchString, methodNames);
-		for (String methodName : methodNames)
+		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, matchString, false);
+		for (MapperMethodInfo methodInfo : methodInfos)
 		{
+			String methodName = methodInfo.getMethodName();
 			results.add(new CompletionProposal(methodName, start, length, methodName.length(),
 				Activator.getIcon(), methodName, null, null));
 		}
 		addProposals(contentAssistRequest, results);
-	}
-
-	private void findMapperMethod(IJavaProject project, String mapperFqn, String matchString,
-		Set<String> methodNames)
-	{
-		try
-		{
-			IType mapperType = project.findType(mapperFqn);
-			if (mapperType == null || !mapperType.isInterface())
-				return;
-			if (mapperType.isBinary())
-			{
-				findMapperMethodBinary(project, matchString, methodNames, mapperType);
-			}
-			else
-			{
-				findMapperMethodSource(project, mapperFqn, matchString, methodNames, mapperType);
-			}
-		}
-		catch (JavaModelException e)
-		{
-			Activator.log(Status.ERROR, "Failed to find type " + mapperFqn, e);
-		}
-	}
-
-	private void findMapperMethodSource(IJavaProject project, String mapperFqn,
-		String matchString, Set<String> methodNames, IType mapperType)
-	{
-		ICompilationUnit compilationUnit = (ICompilationUnit)mapperType.getAncestor(IJavaElement.COMPILATION_UNIT);
-		ASTParser parser = ASTParser.newParser(AST.JLS4);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setSource(compilationUnit);
-		parser.setResolveBindings(true);
-		// parser.setIgnoreMethodBodies(true);
-		CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
-		astUnit.accept(new ASTVisitor()
-		{
-			private IJavaProject project;
-
-			private String targetFqn;
-
-			private String matchString;
-
-			private Set<String> methodNames;
-
-			private int nestLevel;
-
-			@Override
-			public boolean visit(TypeDeclaration node)
-			{
-				ITypeBinding binding = node.resolveBinding();
-				if (binding == null)
-					return false;
-
-				if (targetFqn.equals(binding.getQualifiedName()))
-					nestLevel = 1;
-				else if (nestLevel > 0)
-					nestLevel++;
-
-				return true;
-			}
-
-			@Override
-			public boolean visit(AnonymousClassDeclaration node)
-			{
-				return false;
-			}
-
-			@Override
-			public boolean visit(MethodDeclaration node)
-			{
-				if (nestLevel != 1)
-					return false;
-				// Resolve binding first to support Lombok generated methods.
-				// node.getModifiers() returns incorrect access modifiers for them.
-				// https://github.com/harawata/stlipse/issues/2
-				IMethodBinding method = node.resolveBinding();
-				if (method != null)
-				{
-					IAnnotationBinding[] annotations = method.getAnnotations();
-					for (IAnnotationBinding annotation : annotations)
-					{
-						if (statementAnnotations.contains(annotation.getName()))
-							return false;
-					}
-					String methodName = node.getName().toString();
-					if (matchString.length() == 0
-						|| CharOperation.camelCaseMatch(matchString.toCharArray(), methodName.toCharArray()))
-					{
-						methodNames.add(node.getName().toString());
-					}
-				}
-				return false;
-			}
-
-			public void endVisit(TypeDeclaration node)
-			{
-				if (nestLevel == 1)
-				{
-					@SuppressWarnings("unchecked")
-					List<Type> superInterfaceTypes = node.superInterfaceTypes();
-					if (superInterfaceTypes != null && !superInterfaceTypes.isEmpty())
-					{
-						for (Type superInterfaceType : superInterfaceTypes)
-						{
-							ITypeBinding binding = superInterfaceType.resolveBinding();
-							if (binding != null)
-							{
-								String superInterfaceFqn = binding.getQualifiedName();
-								if (binding.isParameterizedType())
-								{
-									// strip parameter part
-									int paramIdx = superInterfaceFqn.indexOf('<');
-									superInterfaceFqn = superInterfaceFqn.substring(0, paramIdx);
-								}
-								findMapperMethod(project, superInterfaceFqn, matchString, methodNames);
-							}
-						}
-					}
-				}
-				nestLevel--;
-			}
-
-			private ASTVisitor init(IJavaProject project, String targetType, String matchString,
-				Set<String> methodNames)
-			{
-				this.project = project;
-				this.targetFqn = targetType;
-				this.matchString = matchString;
-				this.methodNames = methodNames;
-				return this;
-			}
-		}.init(project, mapperFqn, matchString, methodNames));
-	}
-
-	private void findMapperMethodBinary(IJavaProject project, String matchString,
-		Set<String> methodNames, IType mapperType) throws JavaModelException
-	{
-		for (IMethod method : mapperType.getMethods())
-		{
-			if (hasStatementAnnotation(method))
-				continue;
-			String methodName = method.getElementName();
-			if (matchString.length() == 0
-				|| CharOperation.camelCaseMatch(matchString.toCharArray(), methodName.toCharArray()))
-			{
-				methodNames.add(methodName);
-			}
-		}
-		String superclass = Signature.toString(mapperType.getSuperclassTypeSignature());
-		if (!Object.class.getName().equals(superclass))
-		{
-			findMapperMethod(project, superclass, matchString, methodNames);
-		}
-	}
-
-	private boolean hasStatementAnnotation(IMethod method) throws JavaModelException
-	{
-		IAnnotation[] annotations = method.getAnnotations();
-		for (IAnnotation annotation : annotations)
-		{
-			if (statementAnnotations.contains(annotation.getElementName()))
-				return true;
-		}
-		return false;
 	}
 
 	private void proposeProperty(ContentAssistRequest contentAssistRequest, String matchString,

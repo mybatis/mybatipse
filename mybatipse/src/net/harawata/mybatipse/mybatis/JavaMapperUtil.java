@@ -11,29 +11,37 @@
 
 package net.harawata.mybatipse.mybatis;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.core.runtime.NullProgressMonitor;
+import net.harawata.mybatipse.Activator;
+
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
-import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 /**
@@ -43,74 +51,141 @@ public class JavaMapperUtil
 {
 	public static final String TYPE_ROW_BOUNDS = "org.apache.ibatis.session.RowBounds";
 
-	private static final String ANNOTATION_PARAM = "org.apache.ibatis.annotations.Param";
+	public static final String ANNOTATION_PARAM = "org.apache.ibatis.annotations.Param";
 
-	public static Map<String, String> getMethodParameters(ASTNode node, IMethod method)
+	private static final List<String> statementAnnotations = Arrays.asList("Select", "Insert",
+		"Update", "Delete", "SelectProvider", "InsertProvider", "UpdateProvider", "DeleteProvider");
+
+	public static void findMapperMethod(List<MapperMethodInfo> methodInfos, IJavaProject project,
+		String mapperFqn, String matchString, boolean exactMatch)
 	{
-		Map<String, String> results = new HashMap<String, String>();
-
-		MapperMethod mapperMethod = getMapperMethod(node, method);
-		if (mapperMethod == null)
-			return results;
-
-		@SuppressWarnings("unchecked")
-		List<SingleVariableDeclaration> params = mapperMethod.parameters();
-		for (int i = 0; i < params.size(); i++)
+		try
 		{
-			IVariableBinding paramBinding = params.get(i).resolveBinding();
-			String paramFqn = paramBinding.getType().getQualifiedName();
-			if (TYPE_ROW_BOUNDS.equals(paramFqn))
-				continue;
-			IAnnotationBinding[] annotations = paramBinding.getAnnotations();
-			for (IAnnotationBinding annotation : annotations)
+			IType mapperType = project.findType(mapperFqn);
+			if (mapperType == null || !mapperType.isInterface())
+				return;
+			if (mapperType.isBinary())
 			{
-				if (ANNOTATION_PARAM.equals(annotation.getAnnotationType().getQualifiedName()))
+				findMapperMethodBinary(methodInfos, project, matchString, exactMatch, mapperType);
+			}
+			else
+			{
+				findMapperMethodSource(methodInfos, project, mapperFqn, matchString, exactMatch,
+					mapperType);
+			}
+		}
+		catch (JavaModelException e)
+		{
+			Activator.log(Status.ERROR, "Failed to find type " + mapperFqn, e);
+		}
+	}
+
+	private static void findMapperMethodSource(List<MapperMethodInfo> methodInfos,
+		IJavaProject project, String mapperFqn, String matchString, boolean exactMatch,
+		IType mapperType)
+	{
+		ICompilationUnit compilationUnit = (ICompilationUnit)mapperType.getAncestor(IJavaElement.COMPILATION_UNIT);
+		ASTParser parser = ASTParser.newParser(AST.JLS4);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(compilationUnit);
+		parser.setResolveBindings(true);
+		// parser.setIgnoreMethodBodies(true);
+		CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
+		astUnit.accept(new JavaMapperVisitor(methodInfos, project, mapperFqn, matchString,
+			exactMatch));
+	}
+
+	private static void findMapperMethodBinary(List<MapperMethodInfo> methodInfos,
+		IJavaProject project, String matchString, boolean exactMatch, IType mapperType)
+		throws JavaModelException
+	{
+		for (IMethod method : mapperType.getMethods())
+		{
+			if (hasStatementAnnotation(method))
+				continue;
+			String methodName = method.getElementName();
+			if (matches(methodName, matchString, exactMatch))
+			{
+				Map<String, String> paramMap = new HashMap<String, String>();
+				MapperMethodInfo methodInfo = new MapperMethodInfo(methodName, paramMap);
+				methodInfos.add(methodInfo);
+
+				if (matchString.length() == 0
+					|| CharOperation.camelCaseMatch(matchString.toCharArray(), methodName.toCharArray()))
 				{
-					IMemberValuePairBinding[] valuePairs = annotation.getAllMemberValuePairs();
-					if (valuePairs.length == 1)
+					ILocalVariable[] parameters = method.getParameters();
+					for (int i = 0; i < parameters.length; i++)
 					{
-						IMemberValuePairBinding valuePairBinding = valuePairs[0];
-						String paramValue = (String)valuePairBinding.getValue();
-						results.put(paramValue, paramFqn);
+						String paramFqn = parameters[i].getElementName();
+						for (IAnnotation annotation : parameters[i].getAnnotations())
+						{
+							if (ANNOTATION_PARAM.equals(annotation.getElementName()))
+							{
+								IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
+								if (valuePairs.length == 1)
+								{
+									IMemberValuePair valuePair = valuePairs[0];
+									String paramValue = (String)valuePair.getValue();
+									paramMap.put(paramValue, paramFqn);
+								}
+							}
+						}
+						paramMap.put("param" + (i + 1), paramFqn); //$NON-NLS-1$
 					}
 				}
 			}
-			results.put("param" + (i + 1), paramFqn); //$NON-NLS-1$
 		}
-		return results;
+		String[] superInterfaces = mapperType.getSuperInterfaceNames();
+		for (String superInterface : superInterfaces)
+		{
+			if (!Object.class.getName().equals(superInterface))
+			{
+				findMapperMethod(methodInfos, project, superInterface, matchString, exactMatch);
+			}
+		}
 	}
 
-	public static MapperMethod getMapperMethod(ASTNode node, IMethod method)
+	private static boolean matches(String methodName, String matchString, boolean exactMatch)
 	{
-		if (method == null)
-			return null;
-
-		StatementVisitor visitor = new StatementVisitor(method);
-		node.accept(visitor);
-		return visitor.getMapperMethod();
+		return exactMatch
+			&& methodName.equals(matchString)
+			|| (!exactMatch && (matchString.length() == 0 || CharOperation.camelCaseMatch(
+				matchString.toCharArray(), methodName.toCharArray())));
 	}
 
-	private static class StatementVisitor extends ASTVisitor
+	private static boolean hasStatementAnnotation(IMethod method) throws JavaModelException
 	{
-		private IMethod targetMethod;
+		IAnnotation[] annotations = method.getAnnotations();
+		for (IAnnotation annotation : annotations)
+		{
+			if (statementAnnotations.contains(annotation.getElementName()))
+				return true;
+		}
+		return false;
+	}
 
-		private MapperMethod mapperMethod;
+	public static class JavaMapperVisitor extends ASTVisitor
+	{
+		private List<MapperMethodInfo> methodInfos;
+
+		private IJavaProject project;
+
+		private String mapeprFqn;
+
+		private String matchString;
+
+		private boolean exactMatch;
 
 		private int nestLevel;
-
-		public StatementVisitor(IMethod targetMethod)
-		{
-			this.targetMethod = targetMethod;
-		}
 
 		@Override
 		public boolean visit(TypeDeclaration node)
 		{
-			String targetType = targetMethod.getDeclaringType()
-				.getFullyQualifiedName()
-				.replace('$', '.');
-			String currentType = node.resolveBinding().getQualifiedName();
-			if (targetType.equals(currentType))
+			ITypeBinding binding = node.resolveBinding();
+			if (binding == null)
+				return false;
+
+			if (mapeprFqn.equals(binding.getQualifiedName()))
 				nestLevel = 1;
 			else if (nestLevel > 0)
 				nestLevel++;
@@ -129,89 +204,121 @@ public class JavaMapperUtil
 		{
 			if (nestLevel != 1)
 				return false;
-			if (targetMethod.getElementName().equals(node.getName().getFullyQualifiedName()))
+			// Resolve binding first to support Lombok generated methods.
+			// node.getModifiers() returns incorrect access modifiers for them.
+			// https://github.com/harawata/stlipse/issues/2
+			IMethodBinding method = node.resolveBinding();
+			if (method != null)
 			{
-				IMethod method = (IMethod)node.resolveBinding().getJavaElement();
-				if (targetMethod.isSimilar(method))
+				IAnnotationBinding[] methodAnnotations = method.getAnnotations();
+				for (IAnnotationBinding annotation : methodAnnotations)
 				{
-					mapperMethod = new MapperMethod();
-					mapperMethod.setMethodDeclaration(node);
-					return true;
+					if (statementAnnotations.contains(annotation.getName()))
+						return false;
+				}
+				String methodName = node.getName().toString();
+				if (matches(methodName, matchString, exactMatch))
+				{
+					Map<String, String> paramMap = new HashMap<String, String>();
+					MapperMethodInfo methodInfo = new MapperMethodInfo(methodName, paramMap);
+					methodInfos.add(methodInfo);
+					collectMethodParams(node, paramMap);
 				}
 			}
 			return false;
 		}
 
-		@Override
-		public boolean visit(SingleMemberAnnotation node)
+		private void collectMethodParams(MethodDeclaration node, Map<String, String> paramMap)
 		{
-			if (nestLevel != 1)
-				return false;
-			String typeFqn = node.resolveTypeBinding().getQualifiedName();
-			if ("org.apache.ibatis.annotations.Select".equals(typeFqn)
-				|| "org.apache.ibatis.annotations.Update".equals(typeFqn)
-				|| "org.apache.ibatis.annotations.Insert".equals(typeFqn)
-				|| "org.apache.ibatis.annotations.Delete".equals(typeFqn))
+			@SuppressWarnings("unchecked")
+			List<SingleVariableDeclaration> paramDecls = node.parameters();
+			for (int i = 0; i < paramDecls.size(); i++)
 			{
-				Expression value = node.getValue();
-				int valueType = value.getNodeType();
-				if (valueType == ASTNode.STRING_LITERAL)
+				IVariableBinding paramBinding = paramDecls.get(i).resolveBinding();
+				String paramFqn = paramBinding.getType().getQualifiedName();
+				if (TYPE_ROW_BOUNDS.equals(paramFqn))
+					continue;
+				IAnnotationBinding[] paramAnnotations = paramBinding.getAnnotations();
+				for (IAnnotationBinding annotation : paramAnnotations)
 				{
-					mapperMethod.setStatement(((StringLiteral)value).getLiteralValue());
-				}
-				else if (valueType == ASTNode.ARRAY_INITIALIZER)
-				{
-					StringBuilder buffer = new StringBuilder();
-					@SuppressWarnings("unchecked")
-					List<Expression> expressions = (List<Expression>)((ArrayInitializer)value).expressions();
-					for (Expression expression : expressions)
+					if (ANNOTATION_PARAM.equals(annotation.getAnnotationType().getQualifiedName()))
 					{
-						int expressionType = expression.getNodeType();
-						if (expressionType == ASTNode.STRING_LITERAL)
+						IMemberValuePairBinding[] valuePairs = annotation.getAllMemberValuePairs();
+						if (valuePairs.length == 1)
 						{
-							if (buffer.length() > 0)
-								buffer.append(' ');
-							buffer.append(((StringLiteral)expression).getLiteralValue());
-						}
-						else if (expressionType == ASTNode.INFIX_EXPRESSION)
-						{
-							buffer.append(parseInfixExpression((InfixExpression)expression));
+							IMemberValuePairBinding valuePairBinding = valuePairs[0];
+							String paramValue = (String)valuePairBinding.getValue();
+							paramMap.put(paramValue, paramFqn);
 						}
 					}
-					mapperMethod.setStatement(buffer.toString());
 				}
-				else if (valueType == ASTNode.INFIX_EXPRESSION)
-				{
-					mapperMethod.setStatement(parseInfixExpression((InfixExpression)value));
-				}
+				paramMap.put("param" + (i + 1), paramFqn); //$NON-NLS-1$
 			}
-			return false;
 		}
 
-		private String parseInfixExpression(InfixExpression expression)
-		{
-			// will implement if someone really wants it...
-			return expression.toString();
-		}
-
-		@Override
 		public void endVisit(TypeDeclaration node)
 		{
+			if (nestLevel == 1 && (!exactMatch || methodInfos.isEmpty()))
+			{
+				@SuppressWarnings("unchecked")
+				List<Type> superInterfaceTypes = node.superInterfaceTypes();
+				if (superInterfaceTypes != null && !superInterfaceTypes.isEmpty())
+				{
+					for (Type superInterfaceType : superInterfaceTypes)
+					{
+						ITypeBinding binding = superInterfaceType.resolveBinding();
+						if (binding != null)
+						{
+							String superInterfaceFqn = binding.getQualifiedName();
+							if (binding.isParameterizedType())
+							{
+								// strip parameter part
+								int paramIdx = superInterfaceFqn.indexOf('<');
+								superInterfaceFqn = superInterfaceFqn.substring(0, paramIdx);
+							}
+							findMapperMethod(methodInfos, project, superInterfaceFqn, matchString, exactMatch);
+						}
+					}
+				}
+			}
 			nestLevel--;
 		}
 
-		public MapperMethod getMapperMethod()
+		private JavaMapperVisitor(
+			List<MapperMethodInfo> methodInfos,
+			IJavaProject project,
+			String mapperFqn,
+			String matchString,
+			boolean exactMatch)
 		{
-			return mapperMethod;
+			this.methodInfos = methodInfos;
+			this.project = project;
+			this.mapeprFqn = mapperFqn;
+			this.matchString = matchString;
+			this.exactMatch = exactMatch;
 		}
 	}
 
-	public static CompilationUnit getAstNode(ICompilationUnit compilationUnit)
+	public static class MapperMethodInfo
 	{
-		ASTParser parser = ASTParser.newParser(AST.JLS4);
-		parser.setSource(compilationUnit);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setResolveBindings(true);
-		return (CompilationUnit)parser.createAST(new NullProgressMonitor());
+		private String methodName;
+
+		private Map<String, String> params;
+
+		public MapperMethodInfo(String methodName, Map<String, String> params)
+		{
+			this.methodName = methodName;
+			this.params = params;
+		}
+
+		public String getMethodName()
+		{
+			return methodName;
+		}
+
+		public Map<String, String> getParams()
+		{
+			return params;
+		}
 	}
 }

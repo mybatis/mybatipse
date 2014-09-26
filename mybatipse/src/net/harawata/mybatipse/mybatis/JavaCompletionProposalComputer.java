@@ -11,12 +11,13 @@
 
 package net.harawata.mybatipse.mybatis;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -30,7 +31,6 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.ui.text.java.ContentAssistInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposalComputer;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
@@ -129,10 +129,21 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				return ProposalComputorHelper.proposeOptionName(offset, length, matchString);
 			else if ("property".equals(proposalTarget))
 			{
-				CompilationUnit astNode = JavaMapperUtil.getAstNode(unit);
-				Map<String, String> paramMap = JavaMapperUtil.getMethodParameters(astNode, method);
-				return ProposalComputorHelper.proposeParameters(project, offset, length, paramMap,
-					true, matchString);
+				if (unit == null || !unit.isStructureKnown())
+					return Collections.emptyList();
+				IType primaryType = unit.findPrimaryType();
+				if (primaryType == null || !primaryType.isInterface())
+					return Collections.emptyList();
+
+				final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
+				String mapperFqn = primaryType.getFullyQualifiedName();
+				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn,
+					method.getElementName(), true);
+				if (methodInfos.size() > 0)
+				{
+					return ProposalComputorHelper.proposeParameters(project, offset, length,
+						methodInfos.get(0).getParams(), true, matchString);
+				}
 			}
 			else if ("jdbcType".equals(proposalTarget))
 				return ProposalComputorHelper.proposeJdbcType(offset, length, matchString);
