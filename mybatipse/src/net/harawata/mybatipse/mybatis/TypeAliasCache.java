@@ -451,10 +451,6 @@ public class TypeAliasCache
 				if (pkg != null && pkg.length() > 0)
 					packages.add(pkg.trim());
 			}
-			// Only the first bean is parsed because
-			// the plugin cannot support inconsistent
-			// type aliases settings anyway.
-			break;
 		}
 	}
 
@@ -472,10 +468,6 @@ public class TypeAliasCache
 		{
 			String value = nodes.item(i).getNodeValue();
 			superTypes.add(value.trim());
-			// Only the first bean is parsed because
-			// the plugin cannot support inconsistent
-			// type aliases settings anyway.
-			break;
 		}
 	}
 
