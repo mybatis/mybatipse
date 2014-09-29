@@ -165,10 +165,9 @@ public class XmlValidator extends AbstractValidator
 					|| "resultType".equals(attrName) || "parameterType".equals(attrName)
 					|| "ofType".equals(attrName) || "typeHandler".equals(attrName)
 					|| "handler".equals(attrName) || "interceptor".equals(attrName)
-					|| "class".equals(attrName))
+					|| "class".equals(attrName) || "javaType".equals(attrName))
 				{
 					String qualifiedName = MybatipseXmlUtil.normalizeTypeName(attrValue);
-					// TODO: verify interface?
 					validateJavaType(project, file, doc, attr, qualifiedName, result, reporter);
 				}
 				else if ("property".equals(attrName))
