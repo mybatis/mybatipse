@@ -442,7 +442,7 @@ public class TypeAliasCache
 		// NodeList nodes = XpathUtil.xpathNodes(domDoc,
 		// "//*[namespace-uri() = 'http://www.springframework.org/schema/beans']"
 		// + "[local-name() = 'property'][@name='typeAliasesPackage']/@value");
-		for (int i = 0; i < nodes.getLength();)
+		for (int i = 0; i < nodes.getLength(); i++)
 		{
 			String value = nodes.item(i).getNodeValue();
 			String[] arr = value.split(",; \t\n");
@@ -464,7 +464,7 @@ public class TypeAliasCache
 		// NodeList nodes = XpathUtil.xpathNodes(domDoc,
 		// "//*[namespace-uri() = 'http://www.springframework.org/schema/beans']"
 		// + "[local-name() = 'property'][@name='typeAliasesSuperType']/@value");
-		for (int i = 0; i < nodes.getLength();)
+		for (int i = 0; i < nodes.getLength(); i++)
 		{
 			String value = nodes.item(i).getNodeValue();
 			superTypes.add(value.trim());
