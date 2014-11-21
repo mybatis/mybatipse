@@ -54,10 +54,21 @@ import org.w3c.dom.Node;
 @SuppressWarnings("restriction")
 public class MybatipseXmlUtil
 {
-	private static final List<String> defaultTypeAliases = Arrays.asList("_byte", "_long",
-		"_short", "_int", "_integer", "_double", "_float", "_boolean", "string", "byte", "long",
-		"short", "int", "integer", "double", "float", "boolean", "date", "decimal", "bigdecimal",
-		"object", "map", "hashmap", "list", "arraylist", "collection", "iterator",
+	private static final List<String> defaultTypeAliases = Arrays.asList("string", "map",
+		"hashmap", "list", "arraylist", "collection", "iterator", "resultset",
+
+		"_byte", "_long", "_short", "_int", "_integer", "_double", "_float", "_boolean",
+
+		"_byte[]", "_long[]", "_short[]", "_int[]", "_integer[]", "_double[]", "_float[]",
+		"_boolean[]",
+
+		"byte", "long", "short", "int", "integer", "double", "float", "boolean",
+
+		"byte[]", "long[]", "short[]", "int[]", "integer[]", "double[]", "float[]", "boolean[]",
+
+		"date", "decimal", "bigdecimal", "biginteger", "object",
+
+		"date[]", "decimal[]", "bigdecimal[]", "biginteger[]", "object[]",
 
 		"jdbc", "managed",
 
