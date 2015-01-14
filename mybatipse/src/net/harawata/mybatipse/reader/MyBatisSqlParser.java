@@ -1,5 +1,7 @@
 
-package org.eclipselabs.mybatiseditor.ui.reader;
+package net.harawata.mybatipse.reader;
+
+import net.harawata.mybatipse.util.XmlUtil;
 
 import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocument;

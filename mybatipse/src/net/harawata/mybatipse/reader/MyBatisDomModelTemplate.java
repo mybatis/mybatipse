@@ -1,5 +1,5 @@
 
-package org.eclipselabs.mybatiseditor.ui.reader;
+package net.harawata.mybatipse.reader;
 
 import org.eclipse.wst.sse.core.internal.provisional.IStructuredModel;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;

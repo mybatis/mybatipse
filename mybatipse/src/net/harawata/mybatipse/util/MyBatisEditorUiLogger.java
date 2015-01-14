@@ -1,5 +1,5 @@
 
-package org.eclipselabs.mybatiseditor.ui;
+package net.harawata.mybatipse.util;
 
 import net.harawata.mybatipse.Activator;
 

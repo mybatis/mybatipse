@@ -335,30 +335,30 @@
          point="org.eclipse.ui.views">
       <view
             allowMultiple="false"
-            category="org.eclipselabs.mybatiseditor.ui.viewcategory"
-            class="org.eclipselabs.mybatiseditor.ui.view.MyBatisSqlView"
+            category="net.harawata.mybatipse.ui.viewcategory"
+            class="net.harawata.mybatipse.view.MyBatisSqlView"
             icon="icons/mybatislogo.png"
-            id="org.eclipselabs.mybatiseditor.ui.mybatissqlview"
+            id="net.harawata.mybatipse.ui.mybatissqlview"
             name="MyBatis Declaration"
             restorable="true">
       </view>
       <category
-            id="org.eclipselabs.mybatiseditor.ui.viewcategory"
+            id="net.harawata.mybatipse.ui.viewcategory"
             name="MyBatis">
       </category>
    </extension>
    <extension
          point="org.eclipse.ui.themes">
       <themeElementCategory
-            id="org.eclipselabs.mybatiseditor.ui.themeElementCategory"
-            label="MyBatis Editor">
+            id="net.harawata.mybatipse.ui.themeElementCategory"
+            label="mybatipse">
          <description>
-            Colors and fonts for MyBatis Editor.
+            Colors and fonts for mybatipse plugin.
          </description>
       </themeElementCategory>
       <colorDefinition
-            categoryId="org.eclipselabs.mybatiseditor.ui.themeElementCategory"
-            id="org.eclipselabs.mybatiseditor.ui.mybatissqlviewBackground"
+            categoryId="net.harawata.mybatipse.ui.themeElementCategory"
+            id="net.harawata.mybatipse.ui.mybatissqlviewBackground"
             isEditable="true"
             label="MyBatis Declaration view background"
             value="COLOR_INFO_BACKGROUND">
@@ -367,9 +367,9 @@
          </description>
       </colorDefinition>
       <fontDefinition
-            categoryId="org.eclipselabs.mybatiseditor.ui.themeElementCategory"
+            categoryId="net.harawata.mybatipse.ui.themeElementCategory"
             defaultsTo="org.eclipse.jface.dialogfont"
-            id="org.eclipselabs.mybatiseditor.ui.mybatissqlviewFont"
+            id="net.harawata.mybatipse.ui.mybatissqlviewFont"
             isEditable="true"
             label="MyBatis Declaration view font">
          <description>
@@ -377,8 +377,8 @@
          </description>
       </fontDefinition>
       <colorDefinition
-            categoryId="org.eclipselabs.mybatiseditor.ui.themeElementCategory"
-            id="org.eclipselabs.mybatiseditor.ui.mybatissqlviewTextColor"
+            categoryId="net.harawata.mybatipse.ui.themeElementCategory"
+            id="net.harawata.mybatipse.ui.mybatissqlviewTextColor"
             isEditable="true"
             label="MyBatis Declaration view text color"
             value="COLOR_INFO_FOREGROUND">

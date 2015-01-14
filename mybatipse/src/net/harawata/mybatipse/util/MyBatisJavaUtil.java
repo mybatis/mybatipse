@@ -1,5 +1,5 @@
 
-package org.eclipselabs.mybatiseditor.ui.reader;
+package net.harawata.mybatipse.util;
 
 import java.util.ArrayList;
 import java.util.Collections;

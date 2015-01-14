@@ -1,5 +1,8 @@
 
-package org.eclipselabs.mybatiseditor.ui.view;
+package net.harawata.mybatipse.view;
+
+import net.harawata.mybatipse.reader.MyBatisDomReader;
+import net.harawata.mybatipse.reader.MyBatisSqlParser;
 
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.util.IPropertyChangeListener;
@@ -22,8 +25,6 @@ import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.themes.ITheme;
 import org.eclipse.wst.xml.core.internal.document.AttrImpl;
 import org.eclipse.wst.xml.core.internal.document.ElementImpl;
-import org.eclipselabs.mybatiseditor.ui.reader.MyBatisDomReader;
-import org.eclipselabs.mybatiseditor.ui.reader.MyBatisSqlParser;
 import org.w3c.dom.Element;
 
 /**
@@ -33,11 +34,11 @@ import org.w3c.dom.Element;
 public class MyBatisSqlView extends ViewPart
 {
 
-	private static final String BACKGROUND_PREF_ID = "org.eclipselabs.mybatiseditor.ui.mybatissqlviewBackground";
+	private static final String BACKGROUND_PREF_ID = "net.harawata.mybatipse.ui.mybatissqlviewBackground";
 
-	private static final String TEXTCOLOR_PREF_ID = "org.eclipselabs.mybatiseditor.ui.mybatissqlviewTextColor";
+	private static final String TEXTCOLOR_PREF_ID = "net.harawata.mybatipse.ui.mybatissqlviewTextColor";
 
-	private static final String FONT_PREF_ID = "org.eclipselabs.mybatiseditor.ui.mybatissqlviewFont";
+	private static final String FONT_PREF_ID = "net.harawata.mybatipse.ui.mybatissqlviewFont";
 
 	private final class MyBatisSqlViewSelectionListener implements ISelectionListener
 	{

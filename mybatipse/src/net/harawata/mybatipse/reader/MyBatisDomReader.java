@@ -1,9 +1,13 @@
 
-package org.eclipselabs.mybatiseditor.ui.reader;
+package net.harawata.mybatipse.reader;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import net.harawata.mybatipse.util.MyBatisEditorUiLogger;
+import net.harawata.mybatipse.util.MyBatisJavaUtil;
+import net.harawata.mybatipse.util.XmlUtil;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
@@ -22,7 +26,6 @@ import org.eclipse.wst.xml.core.internal.provisional.document.IDOMAttr;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
-import org.eclipselabs.mybatiseditor.ui.MyBatisEditorUiLogger;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -34,9 +37,9 @@ import org.w3c.dom.NodeList;
 public class MyBatisDomReader
 {
 
-	private static final String IBATIS2_CONTENTTYPE_ID = "org.eclipselabs.mybatiseditor.ui.ibatis2.sqlmapper";
+	private static final String IBATIS2_CONTENTTYPE_ID = "net.harawata.mybatipse.ui.ibatis2.sqlmapper";
 
-	private static final String MYBATIS3_CONTENTTYPE_ID = "org.eclipselabs.mybatiseditor.ui.mybatis3.sqlmapper";
+	private static final String MYBATIS3_CONTENTTYPE_ID = "net.harawata.mybatipse.ui.mybatis3.sqlmapper";
 
 	public IDOMAttr findRelatedAttributeNode(IDOMAttr node)
 	{

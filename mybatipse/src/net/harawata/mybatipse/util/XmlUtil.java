@@ -1,5 +1,5 @@
 
-package org.eclipselabs.mybatiseditor.ui.reader;
+package net.harawata.mybatipse.util;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
