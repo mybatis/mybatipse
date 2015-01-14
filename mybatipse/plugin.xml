@@ -387,4 +387,11 @@
          </description>
       </colorDefinition>
    </extension>
+   <extension point="org.eclipse.wst.sse.ui.editorConfiguration">
+      <!-- Explicitly declare configuration as XML for MyBatis, some other plug-ins like to override 
+      base XML config and mess things up with content assist and other default behavior -->
+      <sourceViewerConfiguration
+			class="org.eclipse.wst.xml.ui.StructuredTextViewerConfigurationXML"
+			target="net.harawata.mybatipse.ui.mybatis3.sqlmapper,net.harawata.mybatipse.ui.ibatis2.sqlmapper" />   	  
+   </extension>
 </plugin>
