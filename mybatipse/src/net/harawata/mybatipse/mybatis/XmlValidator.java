@@ -337,7 +337,8 @@ public class XmlValidator extends AbstractValidator
 		}
 
 		String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
-		if (!mapperMethodExists(project, qualifiedName, attrValue))
+		IType mapperType = project.findType(qualifiedName);
+		if (mapperType != null && !mapperMethodExists(project, qualifiedName, attrValue))
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_STATEMENT_METHOD,
 				IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH, "Method '" + attrValue
