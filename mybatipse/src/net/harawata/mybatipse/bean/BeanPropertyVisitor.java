@@ -12,11 +12,14 @@
 package net.harawata.mybatipse.bean;
 
 import java.beans.Introspector;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import net.harawata.mybatipse.util.NameUtil;
 
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -41,17 +44,22 @@ public class BeanPropertyVisitor extends ASTVisitor
 
 	private final String qualifiedName;
 
+	private final List<String> actualTypeParams;
+
 	private final Map<String, String> readableFields;
 
 	private final Map<String, String> writableFields;
 
 	private final Map<String, Set<String>> subclassMap;
 
+	private List<String> typeParams = new ArrayList<String>();
+
 	private int nestLevel;
 
 	public BeanPropertyVisitor(
 		IJavaProject project,
 		String qualifiedName,
+		List<String> actualTypeParams,
 		Map<String, String> readableFields,
 		Map<String, String> writableFields,
 		Map<String, Set<String>> subclassMap)
@@ -59,6 +67,7 @@ public class BeanPropertyVisitor extends ASTVisitor
 		super();
 		this.project = project;
 		this.qualifiedName = qualifiedName;
+		this.actualTypeParams = actualTypeParams;
 		this.readableFields = readableFields;
 		this.writableFields = writableFields;
 		this.subclassMap = subclassMap;
@@ -70,6 +79,12 @@ public class BeanPropertyVisitor extends ASTVisitor
 		ITypeBinding binding = node.resolveBinding();
 		if (binding == null)
 			return false;
+
+		ITypeBinding[] args = binding.getTypeParameters();
+		for (ITypeBinding arg : args)
+		{
+			typeParams.add(arg.getQualifiedName());
+		}
 
 		if (qualifiedName.equals(binding.getQualifiedName()))
 			nestLevel = 1;
@@ -103,9 +118,9 @@ public class BeanPropertyVisitor extends ASTVisitor
 				if (qualifiedName != null)
 				{
 					if (Modifier.isPublic(modifiers))
-						readableFields.put(fieldName, qualifiedName);
+						readableFields.put(fieldName, resolveTypeParam(qualifiedName));
 					if (!Modifier.isFinal(modifiers))
-						writableFields.put(fieldName, qualifiedName);
+						writableFields.put(fieldName, resolveTypeParam(qualifiedName));
 				}
 			}
 		}
@@ -137,7 +152,7 @@ public class BeanPropertyVisitor extends ASTVisitor
 					SingleVariableDeclaration param = (SingleVariableDeclaration)node.parameters().get(0);
 					String qualifiedName = getQualifiedNameFromType(param.getType());
 					String fieldName = getFieldNameFromAccessor(methodName);
-					writableFields.put(fieldName, qualifiedName);
+					writableFields.put(fieldName, resolveTypeParam(qualifiedName));
 				}
 			}
 			else
@@ -146,7 +161,7 @@ public class BeanPropertyVisitor extends ASTVisitor
 				{
 					String fieldName = getFieldNameFromAccessor(methodName);
 					String qualifiedName = getQualifiedNameFromType(returnType);
-					readableFields.put(fieldName, qualifiedName);
+					readableFields.put(fieldName, resolveTypeParam(qualifiedName));
 				}
 			}
 		}
@@ -171,6 +186,12 @@ public class BeanPropertyVisitor extends ASTVisitor
 			}
 		}
 		return qualifiedName;
+	}
+
+	private String resolveTypeParam(String qualifiedName)
+	{
+		int typeParamIdx = typeParams.indexOf(qualifiedName);
+		return typeParamIdx == -1 ? qualifiedName : actualTypeParams.get(typeParamIdx);
 	}
 
 	public static boolean isGetter(String methodName, int parameterCount)
@@ -202,17 +223,16 @@ public class BeanPropertyVisitor extends ASTVisitor
 				if (binding != null)
 				{
 					String superclassFqn = binding.getQualifiedName();
+					String superclassGenericFqn = superclassFqn;
 					if (binding.isParameterizedType())
 					{
-						// strip parameter part
-						int paramIdx = superclassFqn.indexOf('<');
-						superclassFqn = superclassFqn.substring(0, paramIdx);
+						superclassGenericFqn = NameUtil.stripTypeArguments(superclassFqn);
 					}
-					Set<String> subclasses = subclassMap.get(superclassFqn);
+					Set<String> subclasses = subclassMap.get(superclassGenericFqn);
 					if (subclasses == null)
 					{
 						subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-						subclassMap.put(superclassFqn, subclasses);
+						subclassMap.put(superclassGenericFqn, subclasses);
 					}
 					subclasses.add(qualifiedName);
 					BeanPropertyCache.parseBean(project, superclassFqn, readableFields, writableFields,

@@ -30,6 +30,7 @@ import javax.xml.crypto.Data;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.util.NameUtil;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IStatus;
@@ -162,12 +163,13 @@ public class BeanPropertyCache
 		return subclassMap;
 	}
 
-	protected static void parseBean(IJavaProject project, String qualifiedName,
+	protected static void parseBean(IJavaProject project, String qualifiedNameWithArgs,
 		final Map<String, String> readableFields, final Map<String, String> writableFields,
 		final Map<String, Set<String>> subclassMap)
 	{
 		try
 		{
+			final String qualifiedName = NameUtil.stripTypeArguments(qualifiedNameWithArgs);
 			final IType type = project.findType(qualifiedName);
 			if (type != null)
 			{
@@ -181,13 +183,15 @@ public class BeanPropertyCache
 				{
 					if (DEBUG)
 						Activator.log(IStatus.INFO, "Parsing properties of a source class " + qualifiedName);
-					parseSource(project, type, qualifiedName, readableFields, writableFields, subclassMap);
+					parseSource(project, type, qualifiedName,
+						NameUtil.extractTypeParams(qualifiedNameWithArgs), readableFields, writableFields,
+						subclassMap);
 				}
 			}
 		}
 		catch (JavaModelException e)
 		{
-			Activator.log(Status.ERROR, "Failed to find type " + qualifiedName, e);
+			Activator.log(Status.ERROR, "Failed to find type " + qualifiedNameWithArgs, e);
 		}
 	}
 
@@ -268,9 +272,9 @@ public class BeanPropertyCache
 	}
 
 	protected static void parseSource(IJavaProject project, final IType type,
-		final String qualifiedName, final Map<String, String> readableFields,
-		final Map<String, String> writableFields, final Map<String, Set<String>> subclassMap)
-		throws JavaModelException
+		final String qualifiedName, List<String> typeParams,
+		final Map<String, String> readableFields, final Map<String, String> writableFields,
+		final Map<String, Set<String>> subclassMap) throws JavaModelException
 	{
 		ICompilationUnit compilationUnit = (ICompilationUnit)type.getAncestor(IJavaElement.COMPILATION_UNIT);
 		ASTParser parser = ASTParser.newParser(AST.JLS4);
@@ -279,7 +283,7 @@ public class BeanPropertyCache
 		parser.setResolveBindings(true);
 		// parser.setIgnoreMethodBodies(true);
 		CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
-		astUnit.accept(new BeanPropertyVisitor(project, qualifiedName, readableFields,
+		astUnit.accept(new BeanPropertyVisitor(project, qualifiedName, typeParams, readableFields,
 			writableFields, subclassMap));
 	}
 
