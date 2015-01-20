@@ -351,7 +351,7 @@ public class XmlValidator extends AbstractValidator
 		String methodName) throws JavaModelException
 	{
 		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
-		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodName, true);
+		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodName, true, true);
 		return methodInfos.size() == 1;
 	}
 

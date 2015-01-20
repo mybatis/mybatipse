@@ -57,7 +57,7 @@ public class JavaMapperUtil
 		"Update", "Delete", "SelectProvider", "InsertProvider", "UpdateProvider", "DeleteProvider");
 
 	public static void findMapperMethod(List<MapperMethodInfo> methodInfos, IJavaProject project,
-		String mapperFqn, String matchString, boolean exactMatch)
+		String mapperFqn, String matchString, boolean exactMatch, boolean excludeAnnotated)
 	{
 		try
 		{
@@ -66,12 +66,13 @@ public class JavaMapperUtil
 				return;
 			if (mapperType.isBinary())
 			{
-				findMapperMethodBinary(methodInfos, project, matchString, exactMatch, mapperType);
+				findMapperMethodBinary(methodInfos, project, matchString, exactMatch, excludeAnnotated,
+					mapperType);
 			}
 			else
 			{
 				findMapperMethodSource(methodInfos, project, mapperFqn, matchString, exactMatch,
-					mapperType);
+					excludeAnnotated, mapperType);
 			}
 		}
 		catch (JavaModelException e)
@@ -82,7 +83,7 @@ public class JavaMapperUtil
 
 	private static void findMapperMethodSource(List<MapperMethodInfo> methodInfos,
 		IJavaProject project, String mapperFqn, String matchString, boolean exactMatch,
-		IType mapperType)
+		boolean excludeAnnotated, IType mapperType)
 	{
 		ICompilationUnit compilationUnit = (ICompilationUnit)mapperType.getAncestor(IJavaElement.COMPILATION_UNIT);
 		ASTParser parser = ASTParser.newParser(AST.JLS4);
@@ -92,12 +93,12 @@ public class JavaMapperUtil
 		// parser.setIgnoreMethodBodies(true);
 		CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
 		astUnit.accept(new JavaMapperVisitor(methodInfos, project, mapperFqn, matchString,
-			exactMatch));
+			exactMatch, excludeAnnotated));
 	}
 
 	private static void findMapperMethodBinary(List<MapperMethodInfo> methodInfos,
-		IJavaProject project, String matchString, boolean exactMatch, IType mapperType)
-		throws JavaModelException
+		IJavaProject project, String matchString, boolean exactMatch, boolean excludeAnnotated,
+		IType mapperType) throws JavaModelException
 	{
 		for (IMethod method : mapperType.getMethods())
 		{
@@ -140,7 +141,8 @@ public class JavaMapperUtil
 		{
 			if (!Object.class.getName().equals(superInterface))
 			{
-				findMapperMethod(methodInfos, project, superInterface, matchString, exactMatch);
+				findMapperMethod(methodInfos, project, superInterface, matchString, exactMatch,
+					excludeAnnotated);
 			}
 		}
 	}
@@ -176,6 +178,8 @@ public class JavaMapperUtil
 
 		private boolean exactMatch;
 
+		private boolean excludeAnnotated;
+
 		private int nestLevel;
 
 		@Override
@@ -210,11 +214,14 @@ public class JavaMapperUtil
 			IMethodBinding method = node.resolveBinding();
 			if (method != null)
 			{
-				IAnnotationBinding[] methodAnnotations = method.getAnnotations();
-				for (IAnnotationBinding annotation : methodAnnotations)
+				if (excludeAnnotated)
 				{
-					if (statementAnnotations.contains(annotation.getName()))
-						return false;
+					IAnnotationBinding[] methodAnnotations = method.getAnnotations();
+					for (IAnnotationBinding annotation : methodAnnotations)
+					{
+						if (statementAnnotations.contains(annotation.getName()))
+							return false;
+					}
 				}
 				String methodName = node.getName().toString();
 				if (matches(methodName, matchString, exactMatch))
@@ -276,7 +283,8 @@ public class JavaMapperUtil
 								int paramIdx = superInterfaceFqn.indexOf('<');
 								superInterfaceFqn = superInterfaceFqn.substring(0, paramIdx);
 							}
-							findMapperMethod(methodInfos, project, superInterfaceFqn, matchString, exactMatch);
+							findMapperMethod(methodInfos, project, superInterfaceFqn, matchString,
+								exactMatch, excludeAnnotated);
 						}
 					}
 				}
@@ -289,13 +297,15 @@ public class JavaMapperUtil
 			IJavaProject project,
 			String mapperFqn,
 			String matchString,
-			boolean exactMatch)
+			boolean exactMatch,
+			boolean excludeAnnotated)
 		{
 			this.methodInfos = methodInfos;
 			this.project = project;
 			this.mapeprFqn = mapperFqn;
 			this.matchString = matchString;
 			this.exactMatch = exactMatch;
+			this.excludeAnnotated = excludeAnnotated;
 		}
 	}
 

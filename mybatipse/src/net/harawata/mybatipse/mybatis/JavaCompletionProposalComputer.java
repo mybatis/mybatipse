@@ -138,7 +138,7 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 				String mapperFqn = primaryType.getFullyQualifiedName();
 				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn,
-					method.getElementName(), true);
+					method.getElementName(), true, false);
 				if (methodInfos.size() > 0)
 				{
 					return ProposalComputorHelper.proposeParameters(project, offset, length,
