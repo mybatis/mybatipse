@@ -201,6 +201,21 @@ public class MybatipseXmlUtil
 		return null;
 	}
 
+	public static Node findEnclosingStatementNode(Node parentNode)
+	{
+		try
+		{
+			return XpathUtil.xpathNode(parentNode,
+				"ancestor-or-self::select|ancestor-or-self::update"
+					+ "|ancestor-or-self::insert|ancestor-or-self::delete");
+		}
+		catch (XPathExpressionException e)
+		{
+			Activator.log(Status.ERROR, e.getMessage(), e);
+		}
+		return null;
+	}
+
 	public static String findEnclosingType(Node node)
 	{
 		String type = null;

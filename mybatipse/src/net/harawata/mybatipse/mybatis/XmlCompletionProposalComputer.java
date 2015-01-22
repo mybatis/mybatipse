@@ -100,7 +100,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		if (DOMRegionContext.XML_CDATA_TEXT.equals(regionType))
 		{
 			Node parentNode = xmlnode.getParentNode();
-			Node statementNode = findEnclosingStatementNode(parentNode);
+			Node statementNode = MybatipseXmlUtil.findEnclosingStatementNode(parentNode);
 			if (statementNode == null)
 				return null;
 
@@ -112,21 +112,6 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			proposeStatementText(contentAssistRequest, statementNode);
 		}
 		return contentAssistRequest;
-	}
-
-	private Node findEnclosingStatementNode(Node parentNode)
-	{
-		try
-		{
-			return XpathUtil.xpathNode(parentNode,
-				"ancestor-or-self::select|ancestor-or-self::update"
-					+ "|ancestor-or-self::insert|ancestor-or-self::delete");
-		}
-		catch (XPathExpressionException e)
-		{
-			Activator.log(Status.ERROR, e.getMessage(), e);
-		}
-		return null;
 	}
 
 	@Override
@@ -154,7 +139,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			generateResults(contentAssistRequest, offset, length, parentNode,
 				tagAttrs.getNamedItem("javaType"));
 
-		Node statementNode = findEnclosingStatementNode(parentNode);
+		Node statementNode = MybatipseXmlUtil.findEnclosingStatementNode(parentNode);
 		if (statementNode == null)
 			return;
 		proposeStatementText(contentAssistRequest, statementNode);
@@ -397,23 +382,24 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				case KeyProperty:
 					String nodeName = node.getNodeName();
 					Node statementNode = "update".equals(nodeName) || "insert".equals(nodeName) ? node
-						: findEnclosingStatementNode(node.getParentNode());
+						: MybatipseXmlUtil.findEnclosingStatementNode(node.getParentNode());
 					addProposals(contentAssistRequest,
 						proposeParameter(project, start, length, statementNode, false, matchString));
 					break;
 				case ParamProperty:
 					addProposals(
 						contentAssistRequest,
-						proposeParameter(project, start, length, findEnclosingStatementNode(node), true,
-							matchString));
+						proposeParameter(project, start, length,
+							MybatipseXmlUtil.findEnclosingStatementNode(node), true, matchString));
 					break;
 				case ParamPropertyPartial:
 					AttrTextParser parser = new AttrTextParser(currentValue, matchString.length());
 					addProposals(
 						contentAssistRequest,
 						proposeParameter(project, start + parser.getMatchStringStart(),
-							parser.getReplacementLength(), findEnclosingStatementNode(node.getParentNode()),
-							true, parser.getMatchString()));
+							parser.getReplacementLength(),
+							MybatipseXmlUtil.findEnclosingStatementNode(node.getParentNode()), true,
+							parser.getMatchString()));
 					break;
 				default:
 					break;
