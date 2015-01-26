@@ -149,6 +149,9 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 		Document domDoc, String attrName, String attrValue, Region linkRegion, String targetElement)
 		throws XPathExpressionException, CoreException, IOException
 	{
+		if (attrValue.indexOf('$') > -1)
+			return null;
+
 		int lastDot = attrValue.lastIndexOf('.');
 		if (lastDot == -1)
 		{
