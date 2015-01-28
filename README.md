@@ -58,6 +58,9 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 
 ## Configuration
 
+### XML mapper location
+- MyBatipse searches XML mapper files under your project's __Source Folder__. To make a directory __Source Folder__, right click the directory in the package explorer and choose __Build Path__ -> __Use as Source Folder__ from the menu.
+
 ### MyBatis Nature
 - By default, each file is validated when it's saved, but you would want to validate the XML mapper when the related Java classes are updated as well. For that purpose, MyBatipse provides a custom nature __MyBatis Nature__.  
 To add the nature, right click the project in the package explorer and choose __Configure__ -> __Add MyBatis Nature__ from the menu.   
