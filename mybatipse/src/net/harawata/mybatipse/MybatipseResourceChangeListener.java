@@ -121,7 +121,8 @@ public class MybatipseResourceChangeListener implements IResourceChangeListener
 				String superType = null;
 				try
 				{
-					superType = type.getSuperclassName();
+					if (type.exists())
+						superType = type.getSuperclassName();
 				}
 				catch (JavaModelException e)
 				{
