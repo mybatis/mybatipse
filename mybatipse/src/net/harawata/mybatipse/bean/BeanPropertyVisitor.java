@@ -188,10 +188,10 @@ public class BeanPropertyVisitor extends ASTVisitor
 		return qualifiedName;
 	}
 
-	private String resolveTypeParam(String qualifiedName)
+	private String resolveTypeParam(String typeParam)
 	{
-		int typeParamIdx = typeParams.indexOf(qualifiedName);
-		return typeParamIdx == -1 ? qualifiedName : actualTypeParams.get(typeParamIdx);
+		int typeParamIdx = typeParams.indexOf(typeParam);
+		return typeParamIdx == -1 ? typeParam : actualTypeParams.get(typeParamIdx);
 	}
 
 	public static boolean isGetter(String methodName, int parameterCount)
@@ -227,6 +227,14 @@ public class BeanPropertyVisitor extends ASTVisitor
 					if (binding.isParameterizedType())
 					{
 						superclassGenericFqn = NameUtil.stripTypeArguments(superclassFqn);
+						StringBuilder superclassFqnBuilder = new StringBuilder(superclassGenericFqn).append('<');
+						List<String> superclassTypeParams = NameUtil.extractTypeParams(superclassFqn);
+						for (String superclassTypeParam : superclassTypeParams)
+						{
+							superclassFqnBuilder.append(resolveTypeParam(superclassTypeParam));
+						}
+						superclassFqnBuilder.append('>');
+						superclassFqn = superclassFqnBuilder.toString();
 					}
 					Set<String> subclasses = subclassMap.get(superclassGenericFqn);
 					if (subclasses == null)
