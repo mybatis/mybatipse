@@ -40,6 +40,12 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 ![refid error](screen/err-refid.png)
 ![problem view](screen/prblm-view.png)
 
+#### Mapper Declaration View
+- This feature is ported from [MyBatis Editor plugin](https://code.google.com/a/eclipselabs.org/p/mybatiseditor/) by @peterhendriks .  
+![sqlview xml](screen/sqlview-xml.png)
+![sqlview](screen/sqlview.png)
+
+
 ### Java Editor Enhancements
 
 #### Auto-completion

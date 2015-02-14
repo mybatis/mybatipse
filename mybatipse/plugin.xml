@@ -330,4 +330,60 @@
             icon="icons/mybatis.png">
       </proposalCategory>
    </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            allowMultiple="false"
+            category="net.harawata.mybatipse.ui.viewcategory"
+            class="net.harawata.mybatipse.view.MyBatisSqlView"
+            icon="icons/mybatis.png"
+            id="net.harawata.mybatipseui.mybatissqlview"
+            name="MyBatis Declaration"
+            restorable="true">
+      </view>
+      <category
+            id="net.harawata.mybatipse.ui.viewcategory"
+            name="MyBatis">
+      </category>
+   </extension>
+   <extension
+         point="org.eclipse.ui.themes">
+      <themeElementCategory
+            id="net.harawata.mybatipse.ui.themeElementCategory"
+            label="mybatipse">
+         <description>
+            Colors and fonts for mybatipse plugin.
+         </description>
+      </themeElementCategory>
+      <colorDefinition
+            categoryId="net.harawata.mybatipse.ui.themeElementCategory"
+            id="net.harawata.mybatipse.ui.mybatissqlviewBackground"
+            isEditable="true"
+            label="MyBatis Declaration view background"
+            value="COLOR_INFO_BACKGROUND">
+         <description>
+            Background color for the MyBatis Declaration view.
+         </description>
+      </colorDefinition>
+      <fontDefinition
+            categoryId="net.harawata.mybatipse.ui.themeElementCategory"
+            defaultsTo="org.eclipse.jface.dialogfont"
+            id="net.harawata.mybatipse.ui.mybatissqlviewFont"
+            isEditable="true"
+            label="MyBatis Declaration view font">
+         <description>
+            Font for the MyBatis Declaration view.
+         </description>
+      </fontDefinition>
+      <colorDefinition
+            categoryId="net.harawata.mybatipse.ui.themeElementCategory"
+            id="net.harawata.mybatipse.ui.mybatissqlviewTextColor"
+            isEditable="true"
+            label="MyBatis Declaration view text color"
+            value="COLOR_INFO_FOREGROUND">
+         <description>
+            Text color for the MyBatis Declaration view.
+         </description>
+      </colorDefinition>
+   </extension>
 </plugin>
