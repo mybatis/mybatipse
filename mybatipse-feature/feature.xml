@@ -2,7 +2,7 @@
 <feature
       id="net.harawata.mybatipse.feature"
       label="MyBatipse"
-      version="1.0.11.qualifier"
+      version="1.0.12.qualifier"
       provider-name="Iwao AVE!">
 
    <description url="https://marketplace.eclipse.org/content/mybatipse">

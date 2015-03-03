@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: MyBatipse
 Bundle-SymbolicName: net.harawata.mybatipse;singleton:=true
-Bundle-Version: 1.0.11.qualifier
+Bundle-Version: 1.0.12.qualifier
 Bundle-Activator: net.harawata.mybatipse.Activator
 Bundle-Vendor: Iwao AVE!
 Require-Bundle: org.eclipse.core.runtime,
