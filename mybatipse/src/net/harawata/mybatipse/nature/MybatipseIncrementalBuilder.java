@@ -27,7 +27,6 @@ import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceProxy;
 import org.eclipse.core.resources.IResourceProxyVisitor;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
@@ -37,7 +36,7 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.content.IContentDescription;
 import org.eclipse.core.runtime.content.IContentType;
-import org.eclipse.wst.validation.ValidationState;
+import org.eclipse.wst.validation.ValidationFramework;
 
 /**
  * @author Iwao AVE!
@@ -63,7 +62,6 @@ public class MybatipseIncrementalBuilder extends IncrementalProjectBuilder
 		monitor.beginTask("Mybatipse validation", totalWork);
 		currentWork = 1;
 
-		final XmlValidator validator = new XmlValidator();
 		try
 		{
 			getProject().accept(new IResourceProxyVisitor()
@@ -96,8 +94,7 @@ public class MybatipseIncrementalBuilder extends IncrementalProjectBuilder
 							if (contentType != null
 								&& (contentType.isKindOf(configContentType) || contentType.isKindOf(mapperContentType)))
 							{
-								validator.validate(file, IResourceDelta.NO_CHANGE, new ValidationState(),
-									monitor);
+								ValidationFramework.getDefault().validate(file, monitor);
 							}
 						}
 					}

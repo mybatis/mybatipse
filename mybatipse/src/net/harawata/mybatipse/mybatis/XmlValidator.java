@@ -26,7 +26,6 @@ import net.harawata.mybatipse.util.XpathUtil;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -42,6 +41,7 @@ import org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocument;
 import org.eclipse.wst.validation.AbstractValidator;
 import org.eclipse.wst.validation.ValidationResult;
 import org.eclipse.wst.validation.ValidationState;
+import org.eclipse.wst.validation.ValidatorMessage;
 import org.eclipse.wst.validation.internal.provisional.core.IReporter;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMAttr;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
@@ -428,29 +428,21 @@ public class XmlValidator extends AbstractValidator
 		int start = attr.getValueRegionStartOffset();
 		int length = attr.getValueRegionText().length();
 		int lineNo = doc.getLineOfOffset(start);
-		try
+		ValidatorMessage marker = ValidatorMessage.create(message, file);
+		marker.setType(MARKER_ID);
+		marker.setAttribute(IMarker.SEVERITY, severity);
+		marker.setAttribute(IMarker.PRIORITY, priority);
+		marker.setAttribute(IMarker.MESSAGE, message);
+		marker.setAttribute(IMarker.LINE_NUMBER, lineNo);
+		if (start != 0)
 		{
-			// ValidatorMessage marker = ValidatorMessage.create(message, file);
-			// marker.setType(MARKER_ID);
-			IMarker marker = file.createMarker(MARKER_ID);
-			marker.setAttribute(IMarker.SEVERITY, severity);
-			marker.setAttribute(IMarker.PRIORITY, priority);
-			marker.setAttribute(IMarker.MESSAGE, message);
-			marker.setAttribute(IMarker.LINE_NUMBER, lineNo);
-			if (start != 0)
-			{
-				marker.setAttribute(IMarker.CHAR_START, start);
-				marker.setAttribute(IMarker.CHAR_END, start + length);
-			}
-			// Adds custom attributes.
-			marker.setAttribute("problemType", problemType);
-			marker.setAttribute("errorValue", attr.getValue());
-			// result.add(marker);
+			marker.setAttribute(IMarker.CHAR_START, start);
+			marker.setAttribute(IMarker.CHAR_END, start + length);
 		}
-		catch (CoreException e)
-		{
-			Activator.log(Status.ERROR, e.getMessage(), e);
-		}
+		// Adds custom attributes.
+		marker.setAttribute("problemType", problemType);
+		marker.setAttribute("errorValue", attr.getValue());
+		result.add(marker);
 	}
 
 	private boolean isElementExists(IFile file, String xpath)
