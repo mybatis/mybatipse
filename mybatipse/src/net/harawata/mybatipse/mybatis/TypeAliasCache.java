@@ -445,7 +445,7 @@ public class TypeAliasCache
 		for (int i = 0; i < nodes.getLength(); i++)
 		{
 			String value = nodes.item(i).getNodeValue();
-			String[] arr = value.split(",; \t\n");
+			String[] arr = value.split("[,; \t\n]");
 			for (String pkg : arr)
 			{
 				if (pkg != null && pkg.length() > 0)
