@@ -83,7 +83,10 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		SelectId,
 		KeyProperty,
 		ParamProperty,
-		ParamPropertyPartial
+		ParamPropertyPartial,
+		ObjectFactory,
+		ObjectWrapperFactory,
+		SettingName
 	}
 
 	@Override
@@ -357,6 +360,19 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					addProposals(contentAssistRequest,
 						ProposalComputorHelper.proposeCacheType(project, start, length, matchString));
 					break;
+				case SettingName:
+					addProposals(contentAssistRequest,
+						ProposalComputorHelper.proposeSettingName(start, length, matchString));
+					break;
+				case ObjectFactory:
+					addProposals(contentAssistRequest,
+						ProposalComputorHelper.proposeObjectFactory(project, start, length, matchString));
+					break;
+				case ObjectWrapperFactory:
+					addProposals(contentAssistRequest,
+						ProposalComputorHelper.proposeObjectWrapperFactory(project, start, length,
+							matchString));
+					break;
 				case StatementId:
 					proposeStatementId(contentAssistRequest, project, matchString, start, length, node);
 					break;
@@ -536,10 +552,12 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			return ProposalType.TypeAlias;
 		else if ("type".equals(attr) && "cache".equals(tag))
 			return ProposalType.CacheType;
+		else if ("name".equals(attr) && "setting".equals(tag))
+			return ProposalType.SettingName;
 		else if ("type".equals(attr) && "objectFactory".equals(tag))
-			return ProposalType.None; // TODO propose object factory
+			return ProposalType.ObjectFactory;
 		else if ("type".equals(attr) && "objectWrapperFactory".equals(tag))
-			return ProposalType.None; // TODO propose object wrapper factory
+			return ProposalType.ObjectWrapperFactory;
 		else if ("type".equals(attr) || "resultType".equals(attr) || "parameterType".equals(attr)
 			|| "ofType".equals(attr) || "javaType".equals(attr))
 			return ProposalType.ResultType;

@@ -20,12 +20,6 @@ import java.util.Map.Entry;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.bean.BeanPropertyCache;
-import net.harawata.mybatipse.bean.JavaCompletionProposal;
-import net.harawata.mybatipse.util.NameUtil;
-import net.harawata.mybatipse.util.XpathUtil;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.Flags;
@@ -43,11 +37,39 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.bean.BeanPropertyCache;
+import net.harawata.mybatipse.bean.JavaCompletionProposal;
+import net.harawata.mybatipse.util.NameUtil;
+import net.harawata.mybatipse.util.XpathUtil;
+
 /**
  * @author Iwao AVE!
  */
 public class ProposalComputorHelper
 {
+	private static final char[] JAVA_LANG = "java.lang".toCharArray();
+
+	public static String[] options = {
+		"jdbcType", "javaType", "typeHandler", "mode", "resultMap", "numericScale"
+	};
+
+	public static String[] jdbcTypes = {
+		"ARRAY", "BIGINT", "BINARY", "BIT", "BLOB", "BOOLEAN", "CHAR", "CLOB", "CURSOR", "DATE",
+		"DECIMAL", "DOUBLE", "FLOAT", "INTEGER", "LONGVARBINARY", "LONGVARCHAR", "NUMERIC", "NCHAR",
+		"NCLOB", "NULL", "NVARCHAR", "OTHER", "REAL", "SMALLINT", "STRUCT", "TIME", "TIMESTAMP",
+		"TINYINT", "UNDEFINED", "VARBINARY", "VARCHAR"
+	};
+
+	public static String[] settingNames = {
+		"autoMappingBehavior", "cacheEnabled", "proxyFactory", "lazyLoadingEnabled",
+		"aggressiveLazyLoading", "multipleResultSetsEnabled", "useColumnLabel", "useGeneratedKeys",
+		"defaultExecutorType", "defaultStatementTimeout", "mapUnderscoreToCamelCase",
+		"safeRowBoundsEnabled", "localCacheScope", "jdbcTypeForNull", "lazyLoadTriggerMethods",
+		"safeResultHandlerEnabled", "defaultScriptingLanguage", "callSettersOnNulls", "logPrefix",
+		"logImpl", "configurationFactory", "vfsImpl"
+	};
+
 	public static List<ICompletionProposal> proposeReference(IJavaProject project,
 		Document domDoc, String matchString, int start, int length, String targetElement)
 	{
@@ -75,7 +97,8 @@ public class ProposalComputorHelper
 						NodeList nodes = XpathUtil.xpathNodes(mapperDoc, "//" + targetElement + "/@id");
 						results.addAll(proposalFromNodes(nodes, namespace, matchChrs, start, length));
 					}
-					results.addAll(proposeNamespace(project, domDoc, namespace, matchChrs, start, length));
+					results
+						.addAll(proposeNamespace(project, domDoc, namespace, matchChrs, start, length));
 				}
 			}
 		}
@@ -131,9 +154,9 @@ public class ProposalComputorHelper
 							.append(" - ")
 							.append(namespace)
 							.toString();
-						results.add(new JavaCompletionProposal(replacementStr.toString(), start, length,
-							cursorPos, Activator.getIcon("/icons/mybatis-ns.png"), displayString, null, null,
-							100));
+						results.add(
+							new JavaCompletionProposal(replacementStr.toString(), start, length, cursorPos,
+								Activator.getIcon("/icons/mybatis-ns.png"), displayString, null, null, 100));
 					}
 				}
 			}
@@ -149,7 +172,7 @@ public class ProposalComputorHelper
 		String matchString)
 	{
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-		for (String option : ExpressionProposalParser.options)
+		for (String option : options)
 		{
 			if (matchString.length() == 0
 				|| CharOperation.camelCaseMatch(matchString.toCharArray(), option.toCharArray()))
@@ -162,11 +185,27 @@ public class ProposalComputorHelper
 		return proposals;
 	}
 
+	public static List<ICompletionProposal> proposeSettingName(int offset, int length,
+		String matchString)
+	{
+		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+		for (String settingName : settingNames)
+		{
+			if (matchString.length() == 0
+				|| CharOperation.camelCaseMatch(matchString.toCharArray(), settingName.toCharArray()))
+			{
+				proposals.add(new CompletionProposal(settingName, offset, length, settingName.length(),
+					Activator.getIcon(), null, null, null));
+			}
+		}
+		return proposals;
+	}
+
 	public static List<ICompletionProposal> proposeJdbcType(int offset, int length,
 		String matchString)
 	{
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-		for (String jdbcType : ExpressionProposalParser.jdbcTypes)
+		for (String jdbcType : jdbcTypes)
 		{
 			if (matchString.length() == 0
 				|| CharOperation.prefixEquals(matchString.toCharArray(), jdbcType.toCharArray(), false))
@@ -178,8 +217,8 @@ public class ProposalComputorHelper
 		return proposals;
 	}
 
-	public static List<ICompletionProposal> proposeJavaType(IJavaProject project,
-		final int start, final int length, boolean includeAlias, String matchString)
+	public static List<ICompletionProposal> proposeJavaType(IJavaProject project, final int start,
+		final int length, boolean includeAlias, String matchString)
 	{
 		final List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		if (includeAlias)
@@ -264,8 +303,8 @@ public class ProposalComputorHelper
 				String qualifiedName = paramMap.get(paramName);
 				if (qualifiedName != null)
 				{
-					proposals = proposePropertyFor(project, offset, length, qualifiedName,
-						searchReadable, dotPos, matchString);
+					proposals = proposePropertyFor(project, offset, length, qualifiedName, searchReadable,
+						dotPos, matchString);
 				}
 			}
 		}
@@ -303,17 +342,45 @@ public class ProposalComputorHelper
 	public static List<ICompletionProposal> proposeTypeHandler(IJavaProject project,
 		final int start, final int length, String matchString)
 	{
+		String interfaceFqn = "org.apache.ibatis.type.TypeHandler";
+		return proposeImplementation(project, start, length, matchString, interfaceFqn);
+	}
+
+	public static List<ICompletionProposal> proposeCacheType(IJavaProject project,
+		final int start, final int length, String matchString)
+	{
+		String interfaceFqn = "org.apache.ibatis.cache.Cache";
+		return proposeImplementation(project, start, length, matchString, interfaceFqn);
+	}
+
+	public static List<ICompletionProposal> proposeObjectFactory(IJavaProject project,
+		final int start, final int length, String matchString)
+	{
+		String interfaceFqn = "org.apache.ibatis.reflection.factory.ObjectFactory";
+		return proposeImplementation(project, start, length, matchString, interfaceFqn);
+	}
+
+	public static List<ICompletionProposal> proposeObjectWrapperFactory(IJavaProject project,
+		final int start, final int length, String matchString)
+	{
+		String interfaceFqn = "org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory";
+		return proposeImplementation(project, start, length, matchString, interfaceFqn);
+	}
+
+	private static List<ICompletionProposal> proposeImplementation(IJavaProject project,
+		final int start, final int length, String matchString, String interfaceFqn)
+	{
+		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
+		IType interfaceType;
+		IJavaSearchScope scope;
 		try
 		{
-			final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
-			IType typeHandler;
-			IJavaSearchScope scope;
-			typeHandler = project.findType("org.apache.ibatis.type.TypeHandler");
-			if (typeHandler == null)
-				return Collections.emptyList();
-			final Map<String, String> aliasMap = TypeAliasCache.getInstance().searchTypeAliases(
-				project, matchString);
-			scope = SearchEngine.createStrictHierarchyScope(project, typeHandler, true, false, null);
+			interfaceType = project.findType(interfaceFqn);
+			if (interfaceType == null)
+				return results;
+			scope = SearchEngine.createHierarchyScope(interfaceType);
+			final Map<String, String> aliasMap = TypeAliasCache.getInstance()
+				.searchTypeAliases(project, matchString);
 			TypeNameRequestor requestor = new JavaTypeNameRequestor()
 			{
 				@Override
@@ -321,7 +388,7 @@ public class ProposalComputorHelper
 					char[][] enclosingTypeNames, String path)
 				{
 					// Ignore abstract classes.
-					if (Flags.isAbstract(modifiers))
+					if (Flags.isAbstract(modifiers) || Arrays.equals(JAVA_LANG, packageName))
 						return;
 
 					addJavaTypeProposal(results, start, length, packageName, simpleTypeName,
@@ -339,42 +406,6 @@ public class ProposalComputorHelper
 				}
 			};
 			searchJavaType(matchString, scope, requestor);
-			return results;
-		}
-		catch (JavaModelException e)
-		{
-			Activator.log(Status.ERROR, e.getMessage(), e);
-		}
-		return Collections.emptyList();
-	}
-
-	public static List<ICompletionProposal> proposeCacheType(IJavaProject project,
-		final int start, final int length, String matchString)
-	{
-		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
-		IType cache;
-		IJavaSearchScope scope;
-		try
-		{
-			cache = project.findType("org.apache.ibatis.cache.Cache");
-			if (cache == null)
-				return results;
-			scope = SearchEngine.createHierarchyScope(cache);
-			TypeNameRequestor requestor = new JavaTypeNameRequestor()
-			{
-				@Override
-				public void acceptType(int modifiers, char[] packageName, char[] simpleTypeName,
-					char[][] enclosingTypeNames, String path)
-				{
-					// Ignore abstract classes.
-					if (Flags.isAbstract(modifiers))
-						return;
-
-					addJavaTypeProposal(results, start, length, packageName, simpleTypeName,
-						enclosingTypeNames);
-				}
-			};
-			searchJavaType(matchString, scope, requestor);
 		}
 		catch (JavaModelException e)
 		{
@@ -384,7 +415,8 @@ public class ProposalComputorHelper
 	}
 
 	public static List<ICompletionProposal> proposePropertyFor(IJavaProject project, int offset,
-		int length, String qualifiedName, boolean searchReadable, int currentIdx, String matchString)
+		int length, String qualifiedName, boolean searchReadable, int currentIdx,
+		String matchString)
 	{
 		if (MybatipseXmlUtil.isDefaultTypeAlias(qualifiedName))
 			return Collections.emptyList();
@@ -397,9 +429,8 @@ public class ProposalComputorHelper
 	{
 		private int relevance = 100;
 
-		protected void addJavaTypeProposal(final List<ICompletionProposal> results,
-			final int start, final int length, char[] packageName, char[] simpleTypeName,
-			char[][] enclosingTypeNames)
+		protected void addJavaTypeProposal(final List<ICompletionProposal> results, final int start,
+			final int length, char[] packageName, char[] simpleTypeName, char[][] enclosingTypeNames)
 		{
 			String typeFqn = NameUtil.buildQualifiedName(packageName, simpleTypeName,
 				enclosingTypeNames, true);

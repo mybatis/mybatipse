@@ -26,17 +26,6 @@ public class ExpressionProposalParser
 
 	private boolean proposable;
 
-	public static String[] options = {
-		"jdbcType", "javaType", "typeHandler", "mode", "resultMap", "numericScale"
-	};
-
-	public static String[] jdbcTypes = {
-		"ARRAY", "BIGINT", "BINARY", "BIT", "BLOB", "BOOLEAN", "CHAR", "CLOB", "CURSOR", "DATE",
-		"DECIMAL", "DOUBLE", "FLOAT", "INTEGER", "LONGVARBINARY", "LONGVARCHAR", "NUMERIC",
-		"NCHAR", "NCLOB", "NULL", "NVARCHAR", "OTHER", "REAL", "SMALLINT", "STRUCT", "TIME",
-		"TIMESTAMP", "TINYINT", "UNDEFINED", "VARBINARY", "VARCHAR"
-	};
-
 	public ExpressionProposalParser(String text, int offset)
 	{
 		this.text = text;
