@@ -71,7 +71,8 @@ public class ProposalComputorHelper
 	};
 
 	public static List<ICompletionProposal> proposeReference(IJavaProject project,
-		Document domDoc, String matchString, int start, int length, String targetElement)
+		Document domDoc, String matchString, int start, int length, String targetElement,
+		String exclude)
 	{
 		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		try
@@ -81,7 +82,7 @@ public class ProposalComputorHelper
 			{
 				char[] matchChrs = matchString.toCharArray();
 				NodeList nodes = XpathUtil.xpathNodes(domDoc, "//" + targetElement + "/@id");
-				results.addAll(proposalFromNodes(nodes, null, matchChrs, start, length));
+				results.addAll(proposalFromNodes(nodes, null, matchChrs, start, length, exclude));
 				results.addAll(proposeNamespace(project, domDoc, "", matchChrs, start, length));
 			}
 			else
@@ -95,7 +96,10 @@ public class ProposalComputorHelper
 					if (mapperDoc != null)
 					{
 						NodeList nodes = XpathUtil.xpathNodes(mapperDoc, "//" + targetElement + "/@id");
-						results.addAll(proposalFromNodes(nodes, namespace, matchChrs, start, length));
+						String excludeInNamespace = exclude != null && exclude.length() > 0
+							&& namespace.equals(MybatipseXmlUtil.getNamespace(domDoc)) ? exclude : null;
+						results.addAll(proposalFromNodes(nodes, namespace, matchChrs, start, length,
+							excludeInNamespace));
 					}
 					results
 						.addAll(proposeNamespace(project, domDoc, namespace, matchChrs, start, length));
@@ -110,13 +114,14 @@ public class ProposalComputorHelper
 	}
 
 	private static List<ICompletionProposal> proposalFromNodes(NodeList nodes, String namespace,
-		char[] matchChrs, int start, int length)
+		char[] matchChrs, int start, int length, String exclude)
 	{
 		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		for (int j = 0; j < nodes.getLength(); j++)
 		{
 			String id = nodes.item(j).getNodeValue();
-			if (matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, id.toCharArray()))
+			if ((matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, id.toCharArray()))
+				&& (exclude == null || !exclude.equals(id)))
 			{
 				StringBuilder replacementStr = new StringBuilder();
 				if (namespace != null && namespace.length() > 0)

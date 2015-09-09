@@ -380,20 +380,19 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					proposeMapperNamespace(contentAssistRequest, project, start, length);
 					break;
 				case ResultMap:
-					// TODO: Exclude the current resultMap id when proposing 'extends'
-					addProposals(
-						contentAssistRequest,
-						proposeResultMapReference(project, node.getOwnerDocument(), start, currentValue,
-							matchString.length()));
+					String ownId = "resultMap".equals(tagName) && "extends".equals(attributeName)
+						? XpathUtil.xpathString(node, "@id") : null;
+					addProposals(contentAssistRequest, proposeResultMapReference(project,
+						node.getOwnerDocument(), start, currentValue, matchString.length(), ownId));
 					break;
 				case Include:
 					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
-						node.getOwnerDocument(), matchString, start, length, "sql"));
+						node.getOwnerDocument(), matchString, start, length, "sql", null));
 					break;
 				case SelectId:
 					// TODO: include mapper methods with @Select.
 					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
-						node.getOwnerDocument(), matchString, start, length, "select"));
+						node.getOwnerDocument(), matchString, start, length, "select", null));
 					break;
 				case KeyProperty:
 					String nodeName = node.getNodeName();
@@ -428,8 +427,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 	}
 
 	private List<ICompletionProposal> proposeResultMapReference(IJavaProject project,
-		Document domDoc, int start, String currentValue, int offsetInCurrentValue)
-		throws XPathExpressionException, IOException, CoreException
+		Document domDoc, int start, String currentValue, int offsetInCurrentValue, String exclude)
+			throws XPathExpressionException, IOException, CoreException
 	{
 		int leftComma = currentValue.lastIndexOf(',', offsetInCurrentValue);
 		int rightComma = currentValue.indexOf(',', offsetInCurrentValue);
@@ -438,7 +437,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		int newLength = currentValue.length() - (offsetInCurrentValue - newMatchString.length())
 			- (rightComma > -1 ? currentValue.length() - rightComma : 0);
 		return ProposalComputorHelper.proposeReference(project, domDoc, newMatchString, newStart,
-			newLength, "resultMap");
+			newLength, "resultMap", exclude);
 	}
 
 	private void proposeMapperNamespace(ContentAssistRequest contentAssistRequest,

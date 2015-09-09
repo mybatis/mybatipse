@@ -96,7 +96,7 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 						Document mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
 						String matchString = parser.getMatchString();
 						return ProposalComputorHelper.proposeReference(project, mapperDoc, matchString,
-							offset - matchString.length(), parser.getReplacementLength(), "resultMap");
+							offset - matchString.length(), parser.getReplacementLength(), "resultMap", null);
 					}
 				}
 			}
