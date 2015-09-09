@@ -13,10 +13,6 @@ package net.harawata.mybatipse.mybatis;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.hyperlink.ToXmlHyperlink;
-import net.harawata.mybatipse.util.XpathUtil;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaElement;
@@ -33,6 +29,10 @@ import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.hyperlink.ToXmlHyperlink;
+import net.harawata.mybatipse.util.XpathUtil;
 
 /**
  * @author Iwao AVE!

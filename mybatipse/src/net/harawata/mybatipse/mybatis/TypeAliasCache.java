@@ -31,11 +31,6 @@ import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPathExpressionException;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.mybatis.TypeAliasMap.TypeAliasInfo;
-import net.harawata.mybatipse.util.NameUtil;
-import net.harawata.mybatipse.util.XpathUtil;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
@@ -78,6 +73,11 @@ import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.mybatis.TypeAliasMap.TypeAliasInfo;
+import net.harawata.mybatipse.util.NameUtil;
+import net.harawata.mybatipse.util.XpathUtil;
 
 /**
  * @author Iwao AVE!

@@ -28,10 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.xml.crypto.Data;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.MybatipseConstants;
-import net.harawata.mybatipse.util.NameUtil;
-
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
@@ -49,6 +45,10 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.util.NameUtil;
 
 /**
  * @author Iwao AVE!

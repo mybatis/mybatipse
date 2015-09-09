@@ -14,8 +14,6 @@ package net.harawata.mybatipse.mybatis;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.harawata.mybatipse.Activator;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
@@ -56,6 +54,8 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
+
+import net.harawata.mybatipse.Activator;
 
 /**
  * @author Iwao AVE!

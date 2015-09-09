@@ -16,11 +16,6 @@ import java.text.MessageFormat;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.hyperlink.ToJavaHyperlink;
-import net.harawata.mybatipse.hyperlink.ToXmlHyperlink;
-import net.harawata.mybatipse.util.XpathUtil;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
@@ -50,6 +45,11 @@ import org.eclipse.wst.xml.core.internal.regions.DOMRegionContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.hyperlink.ToJavaHyperlink;
+import net.harawata.mybatipse.hyperlink.ToXmlHyperlink;
+import net.harawata.mybatipse.util.XpathUtil;
 
 /**
  * @author Iwao AVE!

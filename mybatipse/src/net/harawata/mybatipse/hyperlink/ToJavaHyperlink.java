@@ -11,13 +11,13 @@
 
 package net.harawata.mybatipse.hyperlink;
 
-import net.harawata.mybatipse.Activator;
-
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
+
+import net.harawata.mybatipse.Activator;
 
 /**
  * @author Iwao AVE!

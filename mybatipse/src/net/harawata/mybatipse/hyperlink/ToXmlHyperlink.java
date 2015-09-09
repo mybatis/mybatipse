@@ -11,8 +11,6 @@
 
 package net.harawata.mybatipse.hyperlink;
 
-import net.harawata.mybatipse.Activator;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.text.IRegion;
@@ -24,6 +22,8 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.part.MultiPageEditorPart;
 import org.eclipse.ui.texteditor.ITextEditor;
+
+import net.harawata.mybatipse.Activator;
 
 /**
  * @author Iwao AVE!

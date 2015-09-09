@@ -13,8 +13,6 @@ package net.harawata.mybatipse.nature;
 
 import java.util.Iterator;
 
-import net.harawata.mybatipse.Activator;
-
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -29,6 +27,8 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
+
+import net.harawata.mybatipse.Activator;
 
 /**
  * @author Iwao AVE!

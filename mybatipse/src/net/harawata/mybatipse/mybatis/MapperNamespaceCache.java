@@ -18,9 +18,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.util.XpathUtil;
-
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -40,6 +37,9 @@ import org.eclipse.wst.validation.internal.provisional.core.IReporter;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.w3c.dom.Node;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.util.XpathUtil;
 
 /**
  * @author Iwao AVE!

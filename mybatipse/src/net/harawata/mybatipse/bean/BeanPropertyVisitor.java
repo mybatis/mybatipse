@@ -19,8 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.harawata.mybatipse.util.NameUtil;
-
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
@@ -34,6 +32,8 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+
+import net.harawata.mybatipse.util.NameUtil;
 
 /**
  * @author Iwao AVE!

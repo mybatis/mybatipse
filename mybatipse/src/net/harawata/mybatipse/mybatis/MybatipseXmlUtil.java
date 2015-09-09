@@ -17,9 +17,6 @@ import java.util.Locale;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.util.XpathUtil;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -47,6 +44,9 @@ import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.util.XpathUtil;
 
 /**
  * @author Iwao AVE!

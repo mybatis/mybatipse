@@ -12,8 +12,6 @@
 package net.harawata.mybatipse;
 
 import static net.harawata.mybatipse.MybatipseConstants.*;
-import net.harawata.mybatipse.mybatis.TypeAliasCache;
-import net.harawata.mybatipse.preference.ScopedFieldEditorPreferencePage;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResourceChangeEvent;
@@ -31,6 +29,9 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 import org.osgi.framework.BundleContext;
+
+import net.harawata.mybatipse.mybatis.TypeAliasCache;
+import net.harawata.mybatipse.preference.ScopedFieldEditorPreferencePage;
 
 /**
  * @author Iwao AVE!

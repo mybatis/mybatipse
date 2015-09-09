@@ -12,10 +12,6 @@
 package net.harawata.mybatipse;
 
 import static net.harawata.mybatipse.MybatipseConstants.*;
-import net.harawata.mybatipse.bean.BeanPropertyCache;
-import net.harawata.mybatipse.mybatis.ConfigRegistry;
-import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
-import net.harawata.mybatipse.mybatis.TypeAliasCache;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -34,6 +30,11 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+
+import net.harawata.mybatipse.bean.BeanPropertyCache;
+import net.harawata.mybatipse.mybatis.ConfigRegistry;
+import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
+import net.harawata.mybatipse.mybatis.TypeAliasCache;
 
 /**
  * @author Iwao AVE!

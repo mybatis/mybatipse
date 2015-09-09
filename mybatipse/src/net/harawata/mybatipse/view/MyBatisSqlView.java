@@ -15,11 +15,6 @@ package net.harawata.mybatipse.view;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
-import net.harawata.mybatipse.mybatis.MybatipseXmlUtil;
-import net.harawata.mybatipse.util.XpathUtil;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
@@ -49,6 +44,11 @@ import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
+import net.harawata.mybatipse.mybatis.MybatipseXmlUtil;
+import net.harawata.mybatipse.util.XpathUtil;
 
 @SuppressWarnings("restriction")
 public class MyBatisSqlView extends ViewPart

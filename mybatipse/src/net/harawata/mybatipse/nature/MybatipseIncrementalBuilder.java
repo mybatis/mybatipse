@@ -16,13 +16,6 @@ import static net.harawata.mybatipse.MybatipseConstants.*;
 import java.text.MessageFormat;
 import java.util.Map;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.bean.BeanPropertyCache;
-import net.harawata.mybatipse.mybatis.ConfigRegistry;
-import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
-import net.harawata.mybatipse.mybatis.TypeAliasCache;
-import net.harawata.mybatipse.mybatis.XmlValidator;
-
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -37,6 +30,13 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.content.IContentDescription;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.wst.validation.ValidationFramework;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.bean.BeanPropertyCache;
+import net.harawata.mybatipse.mybatis.ConfigRegistry;
+import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
+import net.harawata.mybatipse.mybatis.TypeAliasCache;
+import net.harawata.mybatipse.mybatis.XmlValidator;
 
 /**
  * @author Iwao AVE!

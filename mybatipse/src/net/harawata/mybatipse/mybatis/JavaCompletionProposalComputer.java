@@ -16,9 +16,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Status;
@@ -37,6 +34,9 @@ import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.w3c.dom.Document;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 
 /**
  * @author Iwao AVE!

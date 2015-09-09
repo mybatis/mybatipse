@@ -16,8 +16,6 @@ import static net.harawata.mybatipse.MybatipseConstants.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.harawata.mybatipse.Activator;
-
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -30,6 +28,8 @@ import org.eclipse.core.runtime.content.IContentDescription;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
+
+import net.harawata.mybatipse.Activator;
 
 /**
  * @author Iwao AVE!

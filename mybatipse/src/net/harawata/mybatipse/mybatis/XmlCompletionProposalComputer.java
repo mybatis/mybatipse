@@ -22,12 +22,6 @@ import java.util.Set;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.bean.BeanPropertyCache;
-import net.harawata.mybatipse.bean.BeanPropertyInfo;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
-import net.harawata.mybatipse.util.XpathUtil;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
@@ -60,6 +54,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.bean.BeanPropertyCache;
+import net.harawata.mybatipse.bean.BeanPropertyInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.util.XpathUtil;
 
 /**
  * @author Iwao AVE!
