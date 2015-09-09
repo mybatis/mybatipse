@@ -230,9 +230,11 @@ public class BeanPropertyVisitor extends ASTVisitor
 						StringBuilder superclassFqnBuilder = new StringBuilder(superclassGenericFqn)
 							.append('<');
 						List<String> superclassTypeParams = NameUtil.extractTypeParams(superclassFqn);
-						for (String superclassTypeParam : superclassTypeParams)
+						for (int i = 0; i < superclassTypeParams.size(); i++)
 						{
-							superclassFqnBuilder.append(resolveTypeParam(superclassTypeParam));
+							if (i > 0)
+								superclassFqnBuilder.append(',');
+							superclassFqnBuilder.append(resolveTypeParam(superclassTypeParams.get(i)));
 						}
 						superclassFqnBuilder.append('>');
 						superclassFqn = superclassFqnBuilder.toString();
