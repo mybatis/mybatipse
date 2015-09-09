@@ -28,11 +28,11 @@ public class XpathUtil
 {
 	public static boolean xpathBool(Node node, String expression) throws XPathExpressionException
 	{
-		return ((Boolean)evaluateXpath(expression, node, XPathConstants.BOOLEAN, null)).booleanValue();
+		return ((Boolean)evaluateXpath(expression, node, XPathConstants.BOOLEAN, null))
+			.booleanValue();
 	}
 
-	public static String xpathString(Node node, String expression)
-		throws XPathExpressionException
+	public static String xpathString(Node node, String expression) throws XPathExpressionException
 	{
 		return (String)evaluateXpath(expression, node, XPathConstants.STRING, null);
 	}

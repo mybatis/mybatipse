@@ -57,33 +57,32 @@ public class MybatipseXmlUtil
 	private static final List<String> defaultTypeAliases = Arrays.asList("string", "map",
 		"hashmap", "list", "arraylist", "collection", "iterator", "resultset",
 
-		"_byte", "_long", "_short", "_int", "_integer", "_double", "_float", "_boolean",
+	"_byte", "_long", "_short", "_int", "_integer", "_double", "_float", "_boolean",
 
-		"_byte[]", "_long[]", "_short[]", "_int[]", "_integer[]", "_double[]", "_float[]",
+	"_byte[]", "_long[]", "_short[]", "_int[]", "_integer[]", "_double[]", "_float[]",
 		"_boolean[]",
 
-		"byte", "long", "short", "int", "integer", "double", "float", "boolean",
+	"byte", "long", "short", "int", "integer", "double", "float", "boolean",
 
-		"byte[]", "long[]", "short[]", "int[]", "integer[]", "double[]", "float[]", "boolean[]",
+	"byte[]", "long[]", "short[]", "int[]", "integer[]", "double[]", "float[]", "boolean[]",
 
-		"date", "decimal", "bigdecimal", "biginteger", "object",
+	"date", "decimal", "bigdecimal", "biginteger", "object",
 
-		"date[]", "decimal[]", "bigdecimal[]", "biginteger[]", "object[]",
+	"date[]", "decimal[]", "bigdecimal[]", "biginteger[]", "object[]",
 
-		"jdbc", "managed",
+	"jdbc", "managed",
 
-		"jndi", "pooled", "unpooled",
+	"jndi", "pooled", "unpooled",
 
-		"perpetual", "fifo", "lru", "soft", "weak",
+	"perpetual", "fifo", "lru", "soft", "weak",
 
-		"db_vendor",
+	"db_vendor",
 
-		"xml", "raw",
+	"xml", "raw",
 
-		"slf4j", "commons_logging", "log4j", "log4j2", "jdk_logging", "stdout_logging",
-		"no_logging",
+	"slf4j", "commons_logging", "log4j", "log4j2", "jdk_logging", "stdout_logging", "no_logging",
 
-		"cglib", "javassist");
+	"cglib", "javassist");
 
 	public static boolean isDefaultTypeAlias(String type)
 	{
@@ -205,9 +204,8 @@ public class MybatipseXmlUtil
 	{
 		try
 		{
-			return XpathUtil.xpathNode(parentNode,
-				"ancestor-or-self::select|ancestor-or-self::update"
-					+ "|ancestor-or-self::insert|ancestor-or-self::delete");
+			return XpathUtil.xpathNode(parentNode, "ancestor-or-self::select|ancestor-or-self::update"
+				+ "|ancestor-or-self::insert|ancestor-or-self::delete");
 		}
 		catch (XPathExpressionException e)
 		{

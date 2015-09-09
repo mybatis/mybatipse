@@ -94,7 +94,8 @@ public class ToXmlHyperlink implements IHyperlink
 					if (editorPart instanceof MultiPageEditorPart)
 					{
 						MultiPageEditorPart multiPageEditorPart = (MultiPageEditorPart)editorPart;
-						IEditorPart[] editors = multiPageEditorPart.findEditors(editorPart.getEditorInput());
+						IEditorPart[] editors = multiPageEditorPart
+							.findEditors(editorPart.getEditorInput());
 						if (editors.length == 1 && editors[0] instanceof ITextEditor)
 						{
 							((ITextEditor)editors[0]).selectAndReveal(destRegion.getOffset(),

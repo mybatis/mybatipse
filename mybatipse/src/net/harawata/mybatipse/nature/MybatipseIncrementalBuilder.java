@@ -91,8 +91,8 @@ public class MybatipseIncrementalBuilder extends IncrementalProjectBuilder
 						if (contentDesc != null)
 						{
 							IContentType contentType = contentDesc.getContentType();
-							if (contentType != null
-								&& (contentType.isKindOf(configContentType) || contentType.isKindOf(mapperContentType)))
+							if (contentType != null && (contentType.isKindOf(configContentType)
+								|| contentType.isKindOf(mapperContentType)))
 							{
 								ValidationFramework.getDefault().validate(file, monitor);
 							}
@@ -136,8 +136,8 @@ public class MybatipseIncrementalBuilder extends IncrementalProjectBuilder
 						if (contentDesc != null)
 						{
 							IContentType contentType = contentDesc.getContentType();
-							if (contentType != null
-								&& (contentType.isKindOf(configContentType) || contentType.isKindOf(springConfigContentType)))
+							if (contentType != null && (contentType.isKindOf(configContentType)
+								|| contentType.isKindOf(springConfigContentType)))
 							{
 								file.deleteMarkers(XmlValidator.MARKER_ID, false, IResource.DEPTH_ZERO);
 							}

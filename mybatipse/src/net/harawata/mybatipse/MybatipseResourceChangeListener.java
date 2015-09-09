@@ -65,7 +65,8 @@ public class MybatipseResourceChangeListener implements IResourceChangeListener
 
 		IResourceDelta delta = event.getDelta();
 		if (delta.getKind() == IResourceDelta.CHANGED
-			&& (delta.getFlags() == IResourceDelta.ENCODING || delta.getFlags() == IResourceDelta.MARKERS))
+			&& (delta.getFlags() == IResourceDelta.ENCODING
+				|| delta.getFlags() == IResourceDelta.MARKERS))
 			return;
 
 		IResourceDeltaVisitor visitor = new IResourceDeltaVisitor()
@@ -79,7 +80,8 @@ public class MybatipseResourceChangeListener implements IResourceChangeListener
 				if (resource.getType() == IResource.FILE)
 				{
 					if (delta.getKind() == IResourceDelta.CHANGED
-						&& (delta.getFlags() == IResourceDelta.ENCODING || delta.getFlags() == IResourceDelta.MARKERS))
+						&& (delta.getFlags() == IResourceDelta.ENCODING
+							|| delta.getFlags() == IResourceDelta.MARKERS))
 						return false;
 
 					IProject project = resource.getProject();

@@ -27,8 +27,8 @@ public class MybatipsePreferenceInitializer extends AbstractPreferenceInitialize
 	public void initializeDefaultPreferences()
 	{
 		IEclipsePreferences node = DefaultScope.INSTANCE.getNode(PLUGIN_ID);
-		//		node.put(PREF_PRIMARY_CONFIG_PATH, ""); //$NON-NLS-N$
-		//		node.put(PREF_DISABLE_TYPE_ALIAS_RESOLUTION, "false"); //$NON-NLS-N$
+		// node.put(PREF_PRIMARY_CONFIG_PATH, ""); //$NON-NLS-N$
+		// node.put(PREF_DISABLE_TYPE_ALIAS_RESOLUTION, "false"); //$NON-NLS-N$
 	}
 
 }

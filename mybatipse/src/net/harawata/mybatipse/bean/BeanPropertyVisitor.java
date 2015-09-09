@@ -227,7 +227,8 @@ public class BeanPropertyVisitor extends ASTVisitor
 					if (binding.isParameterizedType())
 					{
 						superclassGenericFqn = NameUtil.stripTypeArguments(superclassFqn);
-						StringBuilder superclassFqnBuilder = new StringBuilder(superclassGenericFqn).append('<');
+						StringBuilder superclassFqnBuilder = new StringBuilder(superclassGenericFqn)
+							.append('<');
 						List<String> superclassTypeParams = NameUtil.extractTypeParams(superclassFqn);
 						for (String superclassTypeParam : superclassTypeParams)
 						{

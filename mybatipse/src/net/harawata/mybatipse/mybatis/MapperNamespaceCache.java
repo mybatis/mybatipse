@@ -49,8 +49,8 @@ public class MapperNamespaceCache
 {
 	private static final MapperNamespaceCache INSTANCE = new MapperNamespaceCache();
 
-	private IContentType mapperContentType = Platform.getContentTypeManager().getContentType(
-		CONTENT_TYPE_MAPPER);
+	private IContentType mapperContentType = Platform.getContentTypeManager()
+		.getContentType(CONTENT_TYPE_MAPPER);
 
 	private final Map<String, Map<String, IFile>> cache = new ConcurrentHashMap<String, Map<String, IFile>>();
 

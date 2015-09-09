@@ -169,7 +169,8 @@ public abstract class ScopedFieldEditorPreferencePage extends FieldEditorPrefere
 	public void setElement(IAdaptable element)
 	{
 		this.element = element;
-		setPreferenceStore(new ScopedPreferenceStore(new ProjectScope(getProject()), getPluginId()));
+		setPreferenceStore(
+			new ScopedPreferenceStore(new ProjectScope(getProject()), getPluginId()));
 	}
 
 	protected IProject getProject()

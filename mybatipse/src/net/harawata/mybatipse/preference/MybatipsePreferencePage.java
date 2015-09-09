@@ -23,8 +23,8 @@ import org.eclipse.ui.preferences.ScopedPreferenceStore;
 /**
  * @author Iwao AVE!
  */
-public class MybatipsePreferencePage extends ScopedFieldEditorPreferencePage implements
-	IWorkbenchPreferencePage
+public class MybatipsePreferencePage extends ScopedFieldEditorPreferencePage
+	implements IWorkbenchPreferencePage
 {
 	private CustomTypeAliasListEditor customTypeAliases;
 

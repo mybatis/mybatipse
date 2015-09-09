@@ -140,8 +140,8 @@ public class ConfigRegistry
 				if (contentDesc != null)
 				{
 					IContentType contentType = contentDesc.getContentType();
-					if (contentType != null
-						&& (contentType.isKindOf(configContentType) || contentType.isKindOf(springConfigContentType)))
+					if (contentType != null && (contentType.isKindOf(configContentType)
+						|| contentType.isKindOf(springConfigContentType)))
 					{
 						configFiles.put(file, contentType);
 					}

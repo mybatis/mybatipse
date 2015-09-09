@@ -22,7 +22,9 @@ public class BeanPropertyInfo
 
 	private Map<String, String> writableFields;
 
-	public BeanPropertyInfo(Map<String, String> readableFields, Map<String, String> writableFields)
+	public BeanPropertyInfo(
+		Map<String, String> readableFields,
+		Map<String, String> writableFields)
 	{
 		super();
 		this.readableFields = readableFields;

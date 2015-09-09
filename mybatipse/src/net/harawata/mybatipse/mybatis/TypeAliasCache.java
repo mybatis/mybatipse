@@ -239,8 +239,8 @@ public class TypeAliasCache
 						IType type = javaProject.findType(qualifiedName);
 						if (type == null)
 						{
-							Activator.log(Status.WARNING, "Missing '" + qualifiedName
-								+ "' specified in the custom type alias setting.");
+							Activator.log(Status.WARNING,
+								"Missing '" + qualifiedName + "' specified in the custom type alias setting.");
 						}
 						else
 						{
@@ -304,20 +304,19 @@ public class TypeAliasCache
 			if (mybatisModuleType == null || !mybatisModuleType.exists())
 				return;
 
-			IMethod addSimpleAliasMethod = mybatisModuleType.getMethod("addSimpleAlias",
-				new String[]{
-					"Ljava.lang.Class;"
-				});
+			IMethod addSimpleAliasMethod = mybatisModuleType.getMethod("addSimpleAlias", new String[]{
+				"Ljava.lang.Class;"
+			});
 			SearchPattern pattern = SearchPattern.createPattern(addSimpleAliasMethod,
 				IJavaSearchConstants.REFERENCES | IJavaSearchConstants.IGNORE_DECLARING_TYPE
 					| IJavaSearchConstants.IMPLEMENTORS);
 			searchEngine.search(pattern, participants, scope, new MethodSearchRequestor(typeRoots),
 				null);
 
-			IMethod addSimpleAliasesMethodWithPackage = mybatisModuleType.getMethod(
-				"addSimpleAliases", new String[]{
+			IMethod addSimpleAliasesMethodWithPackage = mybatisModuleType
+				.getMethod("addSimpleAliases", new String[]{
 					"Ljava.lang.String;"
-				});
+			});
 			pattern = SearchPattern.createPattern(addSimpleAliasesMethodWithPackage,
 				IJavaSearchConstants.REFERENCES | IJavaSearchConstants.IGNORE_DECLARING_TYPE);
 			searchEngine.search(pattern, participants, scope, new MethodSearchRequestor(typeRoots),
@@ -369,9 +368,9 @@ public class TypeAliasCache
 		}
 	}
 
-	private void parseConfigFiles(IJavaProject project, IFile configFile,
-		IContentType configType, final TypeAliasMap aliasMap, Set<String> packages,
-		Set<String> superTypeList, IReporter reporter)
+	private void parseConfigFiles(IJavaProject project, IFile configFile, IContentType configType,
+		final TypeAliasMap aliasMap, Set<String> packages, Set<String> superTypeList,
+		IReporter reporter)
 	{
 		IStructuredModel model = null;
 		try
@@ -650,8 +649,8 @@ public class TypeAliasCache
 				List args = node.arguments();
 				if (args.size() != 1)
 				{
-					Activator.log(Status.WARNING, "Unexpected parameter count (possible API change): "
-						+ invokedMethod);
+					Activator.log(Status.WARNING,
+						"Unexpected parameter count (possible API change): " + invokedMethod);
 				}
 				else
 				{
@@ -687,7 +686,8 @@ public class TypeAliasCache
 								+ " Only a literal parameter is supported for addSimpleAliases(String).");
 						}
 					}
-					else if ("java.util.Collection<java.lang.Class<?>>".equals(argType.getQualifiedName()))
+					else
+						if ("java.util.Collection<java.lang.Class<?>>".equals(argType.getQualifiedName()))
 					{
 						Activator.log(Status.INFO, "TypeAlias detection failed. "
 							+ "addSimpleAliases(Collection<Class<?>>) is not supported.");

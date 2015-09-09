@@ -139,8 +139,8 @@ public class XmlValidator extends AbstractValidator
 	}
 
 	private void validateElement(IJavaProject project, IDOMElement element, IFile file,
-		IDOMDocument doc, IReporter reporter, ValidationResult result) throws JavaModelException,
-		XPathExpressionException
+		IDOMDocument doc, IReporter reporter, ValidationResult result)
+			throws JavaModelException, XPathExpressionException
 	{
 		if ((reporter != null) && (reporter.isCancelled() == true))
 		{
@@ -174,8 +174,8 @@ public class XmlValidator extends AbstractValidator
 				{
 					validateProperty(element, file, doc, result, project, attr, attrValue, reporter);
 				}
-				else if ("id".equals(attrName)
-					&& ("select".equals(tagName) || "update".equals(tagName) || "insert".equals(tagName) || "delete".equals(tagName)))
+				else if ("id".equals(attrName) && ("select".equals(tagName) || "update".equals(tagName)
+					|| "insert".equals(tagName) || "delete".equals(tagName)))
 				{
 					validateStatementId(element, file, doc, result, project, attr, attrValue);
 				}
@@ -229,7 +229,7 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateResultMapId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
-		throws JavaModelException
+			throws JavaModelException
 	{
 		if (attrValue.indexOf(',') == -1)
 		{
@@ -251,14 +251,14 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateSelectId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
-		throws JavaModelException
+			throws JavaModelException
 	{
 		validateReference(project, file, doc, result, attr, attrValue, "select", reporter);
 	}
 
 	private void validateSqlId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
-		throws JavaModelException
+			throws JavaModelException
 	{
 		validateReference(project, file, doc, result, attr, attrValue, "sql", reporter);
 	}
@@ -287,8 +287,8 @@ public class XmlValidator extends AbstractValidator
 				if (!XpathUtil.xpathBool(doc, xpath))
 				{
 					addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_SQL,
-						IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH, targetElement + " with id='"
-							+ attrValue + "' not found.");
+						IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
+						targetElement + " with id='" + attrValue + "' not found.");
 				}
 			}
 			else
@@ -306,8 +306,8 @@ public class XmlValidator extends AbstractValidator
 				if (mapperFile == null)
 				{
 					addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_NAMESPACE,
-						IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH, "Namespace='" + namespace
-							+ "' not found.");
+						IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
+						"Namespace='" + namespace + "' not found.");
 				}
 				else
 				{
@@ -315,8 +315,8 @@ public class XmlValidator extends AbstractValidator
 					if (!isElementExists(mapperFile, xpath))
 					{
 						addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_SQL,
-							IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH, targetElement + " with id='"
-								+ attrValue + "' not found.");
+							IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
+							targetElement + " with id='" + attrValue + "' not found.");
 					}
 				}
 			}
@@ -329,7 +329,7 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateStatementId(IDOMElement element, IFile file, IDOMDocument doc,
 		ValidationResult result, IJavaProject project, IDOMAttr attr, String attrValue)
-		throws JavaModelException, XPathExpressionException
+			throws JavaModelException, XPathExpressionException
 	{
 		if (attrValue == null)
 		{
@@ -341,8 +341,8 @@ public class XmlValidator extends AbstractValidator
 		if (mapperType != null && !mapperMethodExists(project, qualifiedName, attrValue))
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_STATEMENT_METHOD,
-				IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH, "Method '" + attrValue
-					+ "' not found or there is an overload method"
+				IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH,
+				"Method '" + attrValue + "' not found or there is an overload method"
 					+ " (same name with different parameters) in mapper interface " + qualifiedName);
 		}
 	}
@@ -351,7 +351,8 @@ public class XmlValidator extends AbstractValidator
 		String methodName) throws JavaModelException
 	{
 		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
-		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodName, true, true);
+		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodName, true,
+			true);
 		return methodInfos.size() == 1;
 	}
 
@@ -382,8 +383,8 @@ public class XmlValidator extends AbstractValidator
 		if (fields.size() == 0)
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_TYPE,
-				IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH, "Property '" + attrValue
-					+ "' not found in class " + qualifiedName);
+				IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
+				"Property '" + attrValue + "' not found in class " + qualifiedName);
 		}
 	}
 
@@ -402,15 +403,15 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateJavaType(IJavaProject project, IFile file, IDOMDocument doc,
 		IDOMAttr attr, String qualifiedName, ValidationResult result, IReporter reporter)
-		throws JavaModelException
+			throws JavaModelException
 	{
 		if (!MybatipseXmlUtil.isDefaultTypeAlias(qualifiedName)
 			&& project.findType(qualifiedName) == null
 			&& TypeAliasCache.getInstance().resolveAlias(project, qualifiedName, reporter) == null)
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_TYPE,
-				IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH, "Class/TypeAlias '" + qualifiedName
-					+ "' not found.");
+				IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
+				"Class/TypeAlias '" + qualifiedName + "' not found.");
 		}
 	}
 
@@ -418,8 +419,8 @@ public class XmlValidator extends AbstractValidator
 		String tagName, IDOMAttr attr)
 	{
 		addMarker(result, file, doc.getStructuredDocument(), attr, DEPRECATED,
-			IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH, "'" + tagName
-				+ "' is deprecated and should not be used.");
+			IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH,
+			"'" + tagName + "' is deprecated and should not be used.");
 	}
 
 	private void addMarker(ValidationResult result, IFile file, IStructuredDocument doc,

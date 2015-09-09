@@ -85,7 +85,8 @@ public class JavaMapperUtil
 		IJavaProject project, String mapperFqn, String matchString, boolean exactMatch,
 		boolean excludeAnnotated, IType mapperType)
 	{
-		ICompilationUnit compilationUnit = (ICompilationUnit)mapperType.getAncestor(IJavaElement.COMPILATION_UNIT);
+		ICompilationUnit compilationUnit = (ICompilationUnit)mapperType
+			.getAncestor(IJavaElement.COMPILATION_UNIT);
 		ASTParser parser = ASTParser.newParser(AST.JLS4);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(compilationUnit);
@@ -149,10 +150,9 @@ public class JavaMapperUtil
 
 	private static boolean matches(String methodName, String matchString, boolean exactMatch)
 	{
-		return exactMatch
-			&& methodName.equals(matchString)
-			|| (!exactMatch && (matchString.length() == 0 || CharOperation.camelCaseMatch(
-				matchString.toCharArray(), methodName.toCharArray())));
+		return exactMatch && methodName.equals(matchString)
+			|| (!exactMatch && (matchString.length() == 0
+				|| CharOperation.camelCaseMatch(matchString.toCharArray(), methodName.toCharArray())));
 	}
 
 	private static boolean hasStatementAnnotation(IMethod method) throws JavaModelException
@@ -283,8 +283,8 @@ public class JavaMapperUtil
 								int paramIdx = superInterfaceFqn.indexOf('<');
 								superInterfaceFqn = superInterfaceFqn.substring(0, paramIdx);
 							}
-							findMapperMethod(methodInfos, project, superInterfaceFqn, matchString,
-								exactMatch, excludeAnnotated);
+							findMapperMethod(methodInfos, project, superInterfaceFqn, matchString, exactMatch,
+								excludeAnnotated);
 						}
 					}
 				}

@@ -86,8 +86,8 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 					// This can be null right after emptying the literal, for example.
 					if (text == null)
 						return Collections.emptyList();
-					SimpleParser parser = new SimpleParser(text, offset
-						- annotation.getSourceRange().getOffset() - 1);
+					SimpleParser parser = new SimpleParser(text,
+						offset - annotation.getSourceRange().getOffset() - 1);
 					final IJavaProject project = javaContext.getProject();
 					IFile mapperFile = MapperNamespaceCache.getInstance().get(project,
 						primaryType.getFullyQualifiedName(), null);

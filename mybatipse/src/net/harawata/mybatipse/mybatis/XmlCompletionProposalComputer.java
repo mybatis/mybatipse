@@ -182,7 +182,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 	}
 
 	private List<ICompletionProposal> proposeParameter(IJavaProject project, final int offset,
-		final int length, Node statementNode, final boolean searchReadable, final String matchString)
+		final int length, Node statementNode, final boolean searchReadable,
+		final String matchString)
 	{
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		if (statementNode == null)
@@ -270,9 +271,9 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 						.append("\" />\n");
 				}
 			}
-			contentAssistRequest.addProposal(new CompletionProposal(resultTags.toString(), offset,
-				length, resultTags.length(), Activator.getIcon(), "<result /> for properties", null,
-				null));
+			contentAssistRequest
+				.addProposal(new CompletionProposal(resultTags.toString(), offset, length,
+					resultTags.length(), Activator.getIcon(), "<result /> for properties", null, null));
 		}
 		catch (XPathExpressionException e)
 		{
@@ -369,9 +370,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 						ProposalComputorHelper.proposeObjectFactory(project, start, length, matchString));
 					break;
 				case ObjectWrapperFactory:
-					addProposals(contentAssistRequest,
-						ProposalComputorHelper.proposeObjectWrapperFactory(project, start, length,
-							matchString));
+					addProposals(contentAssistRequest, ProposalComputorHelper
+						.proposeObjectWrapperFactory(project, start, length, matchString));
 					break;
 				case StatementId:
 					proposeStatementId(contentAssistRequest, project, matchString, start, length, node);
@@ -402,15 +402,12 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 						proposeParameter(project, start, length, statementNode, false, matchString));
 					break;
 				case ParamProperty:
-					addProposals(
-						contentAssistRequest,
-						proposeParameter(project, start, length,
-							MybatipseXmlUtil.findEnclosingStatementNode(node), true, matchString));
+					addProposals(contentAssistRequest, proposeParameter(project, start, length,
+						MybatipseXmlUtil.findEnclosingStatementNode(node), true, matchString));
 					break;
 				case ParamPropertyPartial:
 					AttrTextParser parser = new AttrTextParser(currentValue, matchString.length());
-					addProposals(
-						contentAssistRequest,
+					addProposals(contentAssistRequest,
 						proposeParameter(project, start + parser.getMatchStringStart(),
 							parser.getReplacementLength(),
 							MybatipseXmlUtil.findEnclosingStatementNode(node.getParentNode()), true,
@@ -452,7 +449,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 
 	private void proposeStatementId(ContentAssistRequest contentAssistRequest,
 		IJavaProject project, String matchString, int start, int length, IDOMNode node)
-		throws JavaModelException, XPathExpressionException
+			throws JavaModelException, XPathExpressionException
 	{
 		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
@@ -489,7 +486,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 
 	private void proposePackage(final ContentAssistRequest contentAssistRequest,
 		IJavaProject project, String matchString, final int start, final int length)
-		throws CoreException
+			throws CoreException
 	{
 		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		final Set<String> foundPkgs = new HashSet<String>();
@@ -578,8 +575,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			return ProposalType.ParamProperty;
 		else if ("test".equals(attr) || ("bind".equals(tag) && "value".equals(attr)))
 			return ProposalType.ParamPropertyPartial;
-		else if ("id".equals(attr)
-			&& ("select".equals(tag) || "update".equals(tag) || "insert".equals(tag) || "delete".equals(tag)))
+		else if ("id".equals(attr) && ("select".equals(tag) || "update".equals(tag)
+			|| "insert".equals(tag) || "delete".equals(tag)))
 			return ProposalType.StatementId;
 		return ProposalType.None;
 	}

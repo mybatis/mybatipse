@@ -71,8 +71,10 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 				if (currentNode != null && currentNode.getNodeType() == Node.ELEMENT_NODE)
 				{
 					Element element = (Element)currentNode;
-					IStructuredDocumentRegion documentRegion = ((IStructuredDocument)document).getRegionAtCharacterOffset(region.getOffset());
-					ITextRegion textRegion = documentRegion.getRegionAtCharacterOffset(region.getOffset());
+					IStructuredDocumentRegion documentRegion = ((IStructuredDocument)document)
+						.getRegionAtCharacterOffset(region.getOffset());
+					ITextRegion textRegion = documentRegion
+						.getRegionAtCharacterOffset(region.getOffset());
 					ITextRegion nameRegion = null;
 					ITextRegion valueRegion = null;
 					String tagName = element.getTagName();
@@ -147,7 +149,7 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 
 	private IHyperlink[] linkToReference(ITextViewer textViewer, IDocument document,
 		Document domDoc, String attrName, String attrValue, Region linkRegion, String targetElement)
-		throws XPathExpressionException, CoreException, IOException
+			throws XPathExpressionException, CoreException, IOException
 	{
 		if (attrValue.indexOf('$') > -1)
 			return null;
@@ -156,13 +158,13 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 		if (lastDot == -1)
 		{
 			// Internal reference.
-			Node node = XpathUtil.xpathNode(domDoc, "//" + targetElement + "[@id='" + attrValue
-				+ "']");
+			Node node = XpathUtil.xpathNode(domDoc,
+				"//" + targetElement + "[@id='" + attrValue + "']");
 			ElementImpl elem = (ElementImpl)node;
 			if (elem != null)
 			{
-				IRegion destRegion = new Region(elem.getStartOffset(), elem.getEndOffset()
-					- elem.getStartOffset());
+				IRegion destRegion = new Region(elem.getStartOffset(),
+					elem.getEndOffset() - elem.getStartOffset());
 				return new IHyperlink[]{
 					new ToXmlHyperlink(textViewer, linkRegion, attrValue, destRegion)
 				};
@@ -177,12 +179,12 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 			IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
 
 			IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
-			IDOMNode domNode = (IDOMNode)XpathUtil.xpathNode(mapperDocument, "//" + targetElement
-				+ "[@id='" + elementId + "']");
+			IDOMNode domNode = (IDOMNode)XpathUtil.xpathNode(mapperDocument,
+				"//" + targetElement + "[@id='" + elementId + "']");
 			if (domNode != null)
 			{
-				IRegion destRegion = new Region(domNode.getStartOffset(), domNode.getEndOffset()
-					- domNode.getStartOffset());
+				IRegion destRegion = new Region(domNode.getStartOffset(),
+					domNode.getEndOffset() - domNode.getStartOffset());
 				return new IHyperlink[]{
 					new ToXmlHyperlink(mapperFile, linkRegion, attrValue, destRegion)
 				};
@@ -288,7 +290,8 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 		return MessageFormat.format("Open {0} in Java Editor", target);
 	}
 
-	private Region getLinkRegion(IStructuredDocumentRegion documentRegion, ITextRegion valueRegion)
+	private Region getLinkRegion(IStructuredDocumentRegion documentRegion,
+		ITextRegion valueRegion)
 	{
 		int offset = documentRegion.getStartOffset() + valueRegion.getStart();
 		int length = valueRegion.getTextLength();

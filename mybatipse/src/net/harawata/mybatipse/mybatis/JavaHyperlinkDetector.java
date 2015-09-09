@@ -99,8 +99,8 @@ public class JavaHyperlinkDetector extends AbstractHyperlinkDetector
 							IDOMNode domNode = (IDOMNode)XpathUtil.xpathNode(mapperDocument, expression);
 							if (domNode != null)
 							{
-								Region destRegion = new Region(domNode.getStartOffset(), domNode.getEndOffset()
-									- domNode.getStartOffset());
+								Region destRegion = new Region(domNode.getStartOffset(),
+									domNode.getEndOffset() - domNode.getStartOffset());
 								String label = "Open <" + domNode.getNodeName() + "/> in XML mapper.";
 								return new IHyperlink[]{
 									new ToXmlHyperlink(mapperFile, srcRegion, label, destRegion)

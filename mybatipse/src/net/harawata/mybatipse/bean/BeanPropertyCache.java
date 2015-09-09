@@ -55,8 +55,8 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
  */
 public class BeanPropertyCache
 {
-	private static boolean DEBUG = Activator.getDefault().isDebugging()
-		&& Boolean.parseBoolean(Platform.getDebugOption(MybatipseConstants.DEBUG_BEAN_PROPERTY_CACHE));
+	private static boolean DEBUG = Activator.getDefault().isDebugging() && Boolean
+		.parseBoolean(Platform.getDebugOption(MybatipseConstants.DEBUG_BEAN_PROPERTY_CACHE));
 
 	private static final Map<IProject, Map<String, BeanPropertyInfo>> projectCache = new ConcurrentHashMap<IProject, Map<String, BeanPropertyInfo>>();
 
@@ -80,7 +80,8 @@ public class BeanPropertyCache
 	public static void clearBeanPropertyCache(IProject project)
 	{
 		if (DEBUG)
-			Activator.log(IStatus.INFO, "Remove bean property cache for project " + project.getName());
+			Activator.log(IStatus.INFO,
+				"Remove bean property cache for project " + project.getName());
 		projectCache.remove(project);
 		subclassCache.remove(project);
 	}
@@ -96,7 +97,8 @@ public class BeanPropertyCache
 				Activator.log(IStatus.INFO, "Remove bean property cache for class " + qualifiedName);
 			// Clear cache for inner classes.
 			String innerClassPrefix = topLevelClass + ".";
-			for (Iterator<Entry<String, BeanPropertyInfo>> it = beans.entrySet().iterator(); it.hasNext();)
+			for (Iterator<Entry<String, BeanPropertyInfo>> it = beans.entrySet().iterator(); it
+				.hasNext();)
 			{
 				Entry<String, BeanPropertyInfo> entry = it.next();
 				String fqn = entry.getKey();
@@ -176,13 +178,15 @@ public class BeanPropertyCache
 				if (type.isBinary())
 				{
 					if (DEBUG)
-						Activator.log(IStatus.INFO, "Parsing properties of a binary class " + qualifiedName);
+						Activator.log(IStatus.INFO,
+							"Parsing properties of a binary class " + qualifiedName);
 					parseBinary(project, type, readableFields, writableFields, subclassMap);
 				}
 				else
 				{
 					if (DEBUG)
-						Activator.log(IStatus.INFO, "Parsing properties of a source class " + qualifiedName);
+						Activator.log(IStatus.INFO,
+							"Parsing properties of a source class " + qualifiedName);
 					parseSource(project, type, qualifiedName,
 						NameUtil.extractTypeParams(qualifiedNameWithArgs), readableFields, writableFields,
 						subclassMap);
@@ -219,7 +223,7 @@ public class BeanPropertyCache
 
 	protected static void parseBinaryMethods(final IType type,
 		final Map<String, String> readableFields, final Map<String, String> writableFields)
-		throws JavaModelException
+			throws JavaModelException
 	{
 		for (IMethod method : type.getMethods())
 		{
@@ -252,7 +256,7 @@ public class BeanPropertyCache
 
 	protected static void parseBinaryFields(final IType type,
 		final Map<String, String> readableFields, final Map<String, String> writableFields)
-		throws JavaModelException
+			throws JavaModelException
 	{
 		for (IField field : type.getFields())
 		{
@@ -276,7 +280,8 @@ public class BeanPropertyCache
 		final Map<String, String> readableFields, final Map<String, String> writableFields,
 		final Map<String, Set<String>> subclassMap) throws JavaModelException
 	{
-		ICompilationUnit compilationUnit = (ICompilationUnit)type.getAncestor(IJavaElement.COMPILATION_UNIT);
+		ICompilationUnit compilationUnit = (ICompilationUnit)type
+			.getAncestor(IJavaElement.COMPILATION_UNIT);
 		ASTParser parser = ASTParser.newParser(AST.JLS4);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(compilationUnit);

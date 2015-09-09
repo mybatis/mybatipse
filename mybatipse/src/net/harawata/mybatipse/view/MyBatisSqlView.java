@@ -226,7 +226,8 @@ public class MyBatisSqlView extends ViewPart
 				else if (lastDot + 1 < refId.length())
 				{
 					// External reference.
-					IJavaProject project = MybatipseXmlUtil.getJavaProject(includeElement.getStructuredDocument());
+					IJavaProject project = MybatipseXmlUtil
+						.getJavaProject(includeElement.getStructuredDocument());
 					String namespace = refId.substring(0, lastDot);
 					String sqlId = refId.substring(lastDot + 1);
 					IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);

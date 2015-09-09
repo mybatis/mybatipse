@@ -122,9 +122,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 								List<IExtendedModifier> modifiers = param.modifiers();
 								if (!hasParamAnnotation(modifiers))
 								{
-									if (JavaMapperUtil.TYPE_ROW_BOUNDS.equals(param.resolveBinding()
-										.getType()
-										.getQualifiedName()))
+									if (JavaMapperUtil.TYPE_ROW_BOUNDS
+										.equals(param.resolveBinding().getType().getQualifiedName()))
 										continue;
 									AST ast = param.getAST();
 									SingleMemberAnnotation annotation = ast.newSingleMemberAnnotation();
@@ -154,9 +153,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 						{
 							for (IExtendedModifier modifier : modifiers)
 							{
-								if (modifier.isAnnotation()
-									&& "Param".equals(((Annotation)modifier).getTypeName()
-										.getFullyQualifiedName()))
+								if (modifier.isAnnotation() && "Param"
+									.equals(((Annotation)modifier).getTypeName().getFullyQualifiedName()))
 								{
 									return true;
 								}
@@ -176,8 +174,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 
 				if (mapperMethod.getStatement() != null)
 				{
-					proposals.add(new QuickAssistCompletionProposal("Copy @" + statementAnnotation
-						+ " statement to clipboard")
+					proposals.add(new QuickAssistCompletionProposal(
+						"Copy @" + statementAnnotation + " statement to clipboard")
 					{
 						@Override
 						public void apply(IDocument document)
@@ -293,9 +291,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		@Override
 		public boolean visit(TypeDeclaration node)
 		{
-			String targetType = targetMethod.getDeclaringType()
-				.getFullyQualifiedName()
-				.replace('$', '.');
+			String targetType = targetMethod.getDeclaringType().getFullyQualifiedName().replace('$',
+				'.');
 			String currentType = node.resolveBinding().getQualifiedName();
 			if (targetType.equals(currentType))
 				nestLevel = 1;
@@ -350,7 +347,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 				{
 					StringBuilder buffer = new StringBuilder();
 					@SuppressWarnings("unchecked")
-					List<Expression> expressions = (List<Expression>)((ArrayInitializer)value).expressions();
+					List<Expression> expressions = (List<Expression>)((ArrayInitializer)value)
+						.expressions();
 					for (Expression expression : expressions)
 					{
 						int expressionType = expression.getNodeType();
