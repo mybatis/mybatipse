@@ -101,9 +101,8 @@ public class ProposalComputorHelper
 						results.addAll(proposalFromNodes(nodes, namespace, matchChrs, start, length,
 							excludeInNamespace));
 					}
-					results
-						.addAll(proposeNamespace(project, domDoc, namespace, matchChrs, start, length));
 				}
+				results.addAll(proposeNamespace(project, domDoc, namespace, matchChrs, start, length));
 			}
 		}
 		catch (XPathExpressionException e)
