@@ -440,8 +440,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 	private void proposeMapperNamespace(ContentAssistRequest contentAssistRequest,
 		IJavaProject project, int start, int length)
 	{
-		// Calculate namespace from the file's classpath.
-		String namespace = MybatipseXmlUtil.getJavaMapperType(project);
+		String namespace = MybatipseXmlUtil.getNamespaceFromActiveEditor(project);
 		ICompletionProposal proposal = new CompletionProposal(namespace, start, length,
 			namespace.length(), Activator.getIcon("/icons/mybatis-ns.png"), namespace, null, null);
 		contentAssistRequest.addProposal(proposal);

@@ -19,7 +19,6 @@ import javax.xml.xpath.XPathExpressionException;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
@@ -133,27 +132,14 @@ public class MybatipseXmlUtil
 		return XpathUtil.xpathString(document, "//mapper/@namespace");
 	}
 
-	public static String getJavaMapperType(IJavaProject project)
+	public static String getNamespaceFromActiveEditor(IJavaProject project)
 	{
-		return getJavaMapperFqn(project, null);
-	}
-
-	public static String getJavaMapperFqn(IJavaProject project, IResource resource)
-	{
-		IPath path = null;
-		if (resource != null)
-		{
-			path = resource.getFullPath();
-		}
-		else
-		{
-			IWorkbench wb = PlatformUI.getWorkbench();
-			IWorkbenchWindow window = wb.getActiveWorkbenchWindow();
-			IWorkbenchPage page = window.getActivePage();
-			IEditorPart editor = page.getActiveEditor();
-			IEditorInput input = editor.getEditorInput();
-			path = ((FileEditorInput)input).getFile().getFullPath();
-		}
+		IWorkbench wb = PlatformUI.getWorkbench();
+		IWorkbenchWindow window = wb.getActiveWorkbenchWindow();
+		IWorkbenchPage page = window.getActivePage();
+		IEditorPart editor = page.getActiveEditor();
+		IEditorInput input = editor.getEditorInput();
+		IPath path = ((FileEditorInput)input).getFile().getFullPath();
 
 		try
 		{
