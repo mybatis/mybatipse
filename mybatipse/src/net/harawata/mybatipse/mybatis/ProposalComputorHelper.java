@@ -40,7 +40,7 @@ import org.w3c.dom.NodeList;
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.JavaCompletionProposal;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.AnnotationFilter;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 import net.harawata.mybatipse.util.NameUtil;
 import net.harawata.mybatipse.util.XpathUtil;
@@ -176,29 +176,7 @@ public class ProposalComputorHelper
 	{
 		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 		JavaMapperUtil.findMapperMethod(methodInfos, project, namespace, matchString, false,
-			new AnnotationFilter()
-			{
-				private boolean acceptable = false;
-
-				@Override
-				public void reset()
-				{
-					acceptable = false;
-				}
-
-				@Override
-				public void check(String annotationName)
-				{
-					acceptable |= "Select".equals(annotationName)
-						|| "SelectProvider".equals(annotationName);
-				}
-
-				@Override
-				public boolean acceptable()
-				{
-					return acceptable;
-				}
-			});
+			new HasSelectAnnotation());
 		for (MapperMethodInfo methodInfo : methodInfos)
 		{
 			String methodName = methodInfo.getMethodName();

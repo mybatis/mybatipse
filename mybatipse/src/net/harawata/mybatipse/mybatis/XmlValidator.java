@@ -48,6 +48,8 @@ import org.w3c.dom.NodeList;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.AnnotationFilter;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
 import net.harawata.mybatipse.util.XpathUtil;
@@ -279,7 +281,7 @@ public class XmlValidator extends AbstractValidator
 				if ("select".equals(targetElement))
 				{
 					String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
-					if (mapperMethodExists(project, qualifiedName, attrValue))
+					if (mapperMethodExists(project, qualifiedName, attrValue, new HasSelectAnnotation()))
 					{
 						return;
 					}
@@ -299,7 +301,7 @@ public class XmlValidator extends AbstractValidator
 				String namespace = attrValue.substring(0, lastDot);
 				String statementId = attrValue.substring(lastDot + 1);
 				if ("select".equals(targetElement)
-					&& mapperMethodExists(project, namespace, statementId))
+					&& mapperMethodExists(project, namespace, statementId, new HasSelectAnnotation()))
 				{
 					return;
 				}
@@ -339,7 +341,8 @@ public class XmlValidator extends AbstractValidator
 
 		String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
 		IType mapperType = project.findType(qualifiedName);
-		if (mapperType != null && !mapperMethodExists(project, qualifiedName, attrValue))
+		if (mapperType != null && !mapperMethodExists(project, qualifiedName, attrValue,
+			new RejectStatementAnnotation()))
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_STATEMENT_METHOD,
 				IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH,
@@ -349,11 +352,11 @@ public class XmlValidator extends AbstractValidator
 	}
 
 	private boolean mapperMethodExists(IJavaProject project, String qualifiedName,
-		String methodName) throws JavaModelException
+		String methodName, AnnotationFilter annotationFilter) throws JavaModelException
 	{
 		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodName, true,
-			new RejectStatementAnnotation());
+			annotationFilter);
 		return methodInfos.size() == 1;
 	}
 

@@ -109,7 +109,7 @@ public class JavaMapperUtil
 			if (matches(methodName, matchString, exactMatch))
 			{
 				Map<String, String> paramMap = new HashMap<String, String>();
-				MapperMethodInfo methodInfo = new MapperMethodInfo(methodName, paramMap);
+				MapperMethodInfo methodInfo = new MapperMethodInfo(method, paramMap);
 				methodInfos.add(methodInfo);
 
 				if (matchString.length() == 0
@@ -236,7 +236,8 @@ public class JavaMapperUtil
 				if (matches(methodName, matchString, exactMatch))
 				{
 					Map<String, String> paramMap = new HashMap<String, String>();
-					MapperMethodInfo methodInfo = new MapperMethodInfo(methodName, paramMap);
+					MapperMethodInfo methodInfo = new MapperMethodInfo((IMethod)method.getJavaElement(),
+						paramMap);
 					methodInfos.add(methodInfo);
 					collectMethodParams(node, paramMap);
 				}
@@ -350,21 +351,49 @@ public class JavaMapperUtil
 		}
 	}
 
+	public static class HasSelectAnnotation implements AnnotationFilter
+	{
+		private boolean acceptable = false;
+
+		@Override
+		public void reset()
+		{
+			acceptable = false;
+		}
+
+		@Override
+		public void check(String annotationName)
+		{
+			acceptable |= "Select".equals(annotationName) || "SelectProvider".equals(annotationName);
+		}
+
+		@Override
+		public boolean acceptable()
+		{
+			return acceptable;
+		}
+	}
+
 	public static class MapperMethodInfo
 	{
-		private String methodName;
+		private IMethod method;
 
 		private Map<String, String> params;
 
-		public MapperMethodInfo(String methodName, Map<String, String> params)
+		public MapperMethodInfo(IMethod method, Map<String, String> params)
 		{
-			this.methodName = methodName;
+			this.method = method;
 			this.params = params;
+		}
+
+		public IMethod getMethod()
+		{
+			return method;
 		}
 
 		public String getMethodName()
 		{
-			return methodName;
+			return method.getElementName();
 		}
 
 		public Map<String, String> getParams()
