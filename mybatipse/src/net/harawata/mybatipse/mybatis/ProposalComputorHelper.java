@@ -40,6 +40,8 @@ import org.w3c.dom.NodeList;
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.JavaCompletionProposal;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.AnnotationFilter;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 import net.harawata.mybatipse.util.NameUtil;
 import net.harawata.mybatipse.util.XpathUtil;
 
@@ -72,37 +74,48 @@ public class ProposalComputorHelper
 
 	public static List<ICompletionProposal> proposeReference(IJavaProject project,
 		Document domDoc, String matchString, int start, int length, String targetElement,
-		String exclude)
+		String idToExclude)
 	{
 		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		try
 		{
-			int lastDot = matchString.lastIndexOf('.');
-			if (lastDot == -1)
+			final int lastDot = matchString.lastIndexOf('.');
+			final String namespacePart = lastDot == -1 ? "" : matchString.substring(0, lastDot);
+			final String matchStr = matchString.substring(lastDot + 1);
+			final char[] matchChrs = matchStr.toCharArray();
+			int replacementStart = lastDot == -1 ? start : start + lastDot + 1;
+			int replacementLength = lastDot == -1 ? length : length - lastDot - 1;
+
+			final String currentNamespace = MybatipseXmlUtil.getNamespace(domDoc);
+			final String exclude = idToExclude != null && idToExclude.length() > 0
+				&& namespacePart.equals(currentNamespace) ? idToExclude : null;
+
+			final Document xmlMapper;
+			if (namespacePart.length() == 0)
 			{
-				char[] matchChrs = matchString.toCharArray();
-				NodeList nodes = XpathUtil.xpathNodes(domDoc, "//" + targetElement + "/@id");
-				results.addAll(proposalFromNodes(nodes, null, matchChrs, start, length, exclude));
-				results.addAll(proposeNamespace(project, domDoc, "", matchChrs, start, length));
+				xmlMapper = domDoc;
 			}
 			else
 			{
-				String namespace = matchString.substring(0, lastDot);
-				char[] matchChrs = matchString.substring(lastDot + 1).toCharArray();
-				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
-				if (mapperFile != null)
-				{
-					Document mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
-					if (mapperDoc != null)
-					{
-						NodeList nodes = XpathUtil.xpathNodes(mapperDoc, "//" + targetElement + "/@id");
-						String excludeInNamespace = exclude != null && exclude.length() > 0
-							&& namespace.equals(MybatipseXmlUtil.getNamespace(domDoc)) ? exclude : null;
-						results.addAll(proposalFromNodes(nodes, namespace, matchChrs, start, length,
-							excludeInNamespace));
-					}
-				}
-				results.addAll(proposeNamespace(project, domDoc, namespace, matchChrs, start, length));
+				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespacePart, null);
+				xmlMapper = mapperFile == null ? null : MybatipseXmlUtil.getMapperDocument(mapperFile);
+			}
+
+			if (xmlMapper != null)
+			{
+				NodeList nodes = XpathUtil.xpathNodes(xmlMapper, "//" + targetElement + "/@id");
+				proposeXmlElements(results, nodes, matchChrs, replacementStart, replacementLength,
+					exclude);
+			}
+
+			proposeNamespaces(results, project, domDoc, namespacePart, currentNamespace, matchChrs,
+				start, length);
+
+			if ("select".equals(targetElement))
+			{
+				proposeJavaSelect(results, project,
+					namespacePart.length() > 0 ? namespacePart : currentNamespace, matchStr,
+					replacementStart, replacementLength);
 			}
 		}
 		catch (XPathExpressionException e)
@@ -110,66 +123,88 @@ public class ProposalComputorHelper
 			Activator.log(Status.ERROR, e.getMessage(), e);
 		}
 		return results;
+
 	}
 
-	private static List<ICompletionProposal> proposalFromNodes(NodeList nodes, String namespace,
+	private static void proposeXmlElements(List<ICompletionProposal> results, NodeList nodes,
 		char[] matchChrs, int start, int length, String exclude)
 	{
-		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		for (int j = 0; j < nodes.getLength(); j++)
 		{
 			String id = nodes.item(j).getNodeValue();
 			if ((matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, id.toCharArray()))
 				&& (exclude == null || !exclude.equals(id)))
 			{
-				StringBuilder replacementStr = new StringBuilder();
-				if (namespace != null && namespace.length() > 0)
-					replacementStr.append(namespace).append('.');
-				replacementStr.append(id);
-				int cursorPos = replacementStr.length();
-				ICompletionProposal proposal = new JavaCompletionProposal(replacementStr.toString(),
-					start, length, cursorPos, Activator.getIcon(), id, null, null, 200);
+				int cursorPos = id.length();
+				ICompletionProposal proposal = new JavaCompletionProposal(id.toString(), start, length,
+					cursorPos, Activator.getIcon(), id, null, null, 200);
 				results.add(proposal);
 			}
 		}
-		return results;
 	}
 
-	private static List<? extends ICompletionProposal> proposeNamespace(IJavaProject project,
-		Document domDoc, String partialNamespace, char[] matchChrs, int start, int length)
+	private static void proposeNamespaces(List<ICompletionProposal> results, IJavaProject project,
+		Document domDoc, String partialNamespace, String currentNamespace, char[] matchChrs,
+		int start, int length)
 	{
-		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
-		try
+		for (String namespace : MapperNamespaceCache.getInstance()
+			.getCacheMap(project, null)
+			.keySet())
 		{
-			String currentNamespace = XpathUtil.xpathString(domDoc, "//mapper/@namespace");
-			for (String namespace : MapperNamespaceCache.getInstance()
-				.getCacheMap(project, null)
-				.keySet())
+			if (!namespace.equals(currentNamespace) && namespace.startsWith(partialNamespace)
+				&& !namespace.equals(partialNamespace))
 			{
-				if (!namespace.equals(currentNamespace) && namespace.startsWith(partialNamespace)
-					&& !namespace.equals(partialNamespace))
+				char[] simpleName = CharOperation.lastSegment(namespace.toCharArray(), '.');
+				if (matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, simpleName))
 				{
-					char[] simpleName = CharOperation.lastSegment(namespace.toCharArray(), '.');
-					if (matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, simpleName))
-					{
-						StringBuilder replacementStr = new StringBuilder().append(namespace).append('.');
-						int cursorPos = replacementStr.length();
-						String displayString = new StringBuilder().append(simpleName)
-							.append(" - ")
-							.append(namespace)
-							.toString();
-						results.add(
-							new JavaCompletionProposal(replacementStr.toString(), start, length, cursorPos,
-								Activator.getIcon("/icons/mybatis-ns.png"), displayString, null, null, 100));
-					}
+					StringBuilder replacementStr = new StringBuilder().append(namespace).append('.');
+					int cursorPos = replacementStr.length();
+					String displayString = new StringBuilder().append(simpleName)
+						.append(" - ")
+						.append(namespace)
+						.toString();
+					results
+						.add(new JavaCompletionProposal(replacementStr.toString(), start, length, cursorPos,
+							Activator.getIcon("/icons/mybatis-ns.png"), displayString, null, null, 100));
 				}
 			}
 		}
-		catch (XPathExpressionException e)
+	}
+
+	private static void proposeJavaSelect(List<ICompletionProposal> results, IJavaProject project,
+		String namespace, String matchString, int start, int length)
+	{
+		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
+		JavaMapperUtil.findMapperMethod(methodInfos, project, namespace, matchString, false,
+			new AnnotationFilter()
+			{
+				private boolean acceptable = false;
+
+				@Override
+				public void reset()
+				{
+					acceptable = false;
+				}
+
+				@Override
+				public void check(String annotationName)
+				{
+					acceptable |= "Select".equals(annotationName)
+						|| "SelectProvider".equals(annotationName);
+				}
+
+				@Override
+				public boolean acceptable()
+				{
+					return acceptable;
+				}
+			});
+		for (MapperMethodInfo methodInfo : methodInfos)
 		{
-			Activator.log(Status.ERROR, e.getMessage(), e);
+			String methodName = methodInfo.getMethodName();
+			results.add(new JavaCompletionProposal(methodName, start, length, methodName.length(),
+				Activator.getIcon(), methodName, null, null, 200));
 		}
-		return results;
 	}
 
 	public static List<ICompletionProposal> proposeOptionName(int offset, int length,

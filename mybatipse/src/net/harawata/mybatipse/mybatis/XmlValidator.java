@@ -49,6 +49,7 @@ import org.w3c.dom.NodeList;
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
 import net.harawata.mybatipse.util.XpathUtil;
 
 /**
@@ -352,7 +353,7 @@ public class XmlValidator extends AbstractValidator
 	{
 		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodName, true,
-			true);
+			new RejectStatementAnnotation());
 		return methodInfos.size() == 1;
 	}
 

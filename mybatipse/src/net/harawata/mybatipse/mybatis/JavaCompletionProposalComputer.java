@@ -43,8 +43,8 @@ import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
  */
 public class JavaCompletionProposalComputer implements IJavaCompletionProposalComputer
 {
-	private static final List<String> statementAnnotations = Arrays.asList("Select", "Update",
-		"Insert", "Delete");
+	private static final List<String> inlineStatementAnnotations = Arrays.asList("Select",
+		"Update", "Insert", "Delete");
 
 	public void sessionStarted()
 	{
@@ -76,7 +76,7 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 					return Collections.emptyList();
 
 				IMethod method = (IMethod)element;
-				if (isStatementAnnotation(annotation))
+				if (isInlineStatementAnnotation(annotation))
 				{
 					return proposeStatementText(javaContext, unit, offset, annotation, method);
 				}
@@ -138,7 +138,7 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 				String mapperFqn = primaryType.getFullyQualifiedName();
 				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn,
-					method.getElementName(), true, false);
+					method.getElementName(), true, null);
 				if (methodInfos.size() > 0)
 				{
 					return ProposalComputorHelper.proposeParameters(project, offset, length,
@@ -156,10 +156,10 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 		return Collections.emptyList();
 	}
 
-	private boolean isStatementAnnotation(IAnnotation annotation)
+	private boolean isInlineStatementAnnotation(IAnnotation annotation)
 	{
 		String annotationName = annotation.getElementName();
-		return statementAnnotations.contains(annotationName);
+		return inlineStatementAnnotations.contains(annotationName);
 	}
 
 	private IAnnotation getAnnotationAt(IAnnotatable annotatable, int offset)

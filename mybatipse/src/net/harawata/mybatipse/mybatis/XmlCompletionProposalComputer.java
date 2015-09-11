@@ -59,6 +59,7 @@ import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.BeanPropertyInfo;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
 import net.harawata.mybatipse.util.XpathUtil;
 
 /**
@@ -216,7 +217,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 				String mapperFqn = MybatipseXmlUtil.getNamespace(statementNode.getOwnerDocument());
 				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn, statementId, true,
-					true);
+					new RejectStatementAnnotation());
 				if (methodInfos.size() > 0)
 				{
 					proposals = ProposalComputorHelper.proposeParameters(project, offset, length,
@@ -454,7 +455,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 		String qualifiedName = MybatipseXmlUtil.getNamespace(node.getOwnerDocument());
 		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, matchString, false,
-			true);
+			new RejectStatementAnnotation());
 		for (MapperMethodInfo methodInfo : methodInfos)
 		{
 			String methodName = methodInfo.getMethodName();
