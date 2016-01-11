@@ -30,8 +30,13 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 - __[2]__ There is a limitation for the type alias support. Basically, if type aliases are registered using Java API, they are not automatically detected. As a workaround, you can register type aliases in MyBatipse's preference. See the _Configuration_ section.
 
 #### Hyperlinks
-- To referenced resultMap/select/sql element. External reference is supported.
-- To mapper interface method.
+- To referenced resultMap/select/sql element. External reference is supported.  
+![link to external reference](screen/hl-refid.png)
+- From/to Java/XML declaration.  
+![link to xml mapper](screen/hl-xml-mapper.png)  
+![link to xml statement](screen/hl-xml-statement.png)  
+![link to java method](screen/hl-java-method.png)
+
 
 #### Validation
 - Missing TypeAlias, Java class/property.
