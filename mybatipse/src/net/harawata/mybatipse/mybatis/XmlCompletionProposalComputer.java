@@ -391,7 +391,6 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 						node.getOwnerDocument(), matchString, start, length, "sql", null));
 					break;
 				case SelectId:
-					// TODO: include mapper methods with @Select.
 					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
 						node.getOwnerDocument(), matchString, start, length, "select", null));
 					break;
