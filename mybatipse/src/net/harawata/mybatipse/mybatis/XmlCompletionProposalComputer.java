@@ -248,7 +248,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		if (qualifiedName == null)
 		{
 			// Assumed to be FQN.
-			qualifiedName = typeValue;
+			qualifiedName = MybatipseXmlUtil.normalizeTypeName(typeValue);
 		}
 		BeanPropertyInfo beanProps = BeanPropertyCache.getBeanPropertyInfo(project, qualifiedName);
 		try
@@ -425,7 +425,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 
 	private List<ICompletionProposal> proposeResultMapReference(IJavaProject project,
 		Document domDoc, int start, String currentValue, int offsetInCurrentValue, String exclude)
-			throws XPathExpressionException, IOException, CoreException
+		throws XPathExpressionException, IOException, CoreException
 	{
 		int leftComma = currentValue.lastIndexOf(',', offsetInCurrentValue);
 		int rightComma = currentValue.indexOf(',', offsetInCurrentValue);
@@ -448,7 +448,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 
 	private void proposeStatementId(ContentAssistRequest contentAssistRequest,
 		IJavaProject project, String matchString, int start, int length, IDOMNode node)
-			throws JavaModelException, XPathExpressionException
+		throws JavaModelException, XPathExpressionException
 	{
 		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
@@ -485,7 +485,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 
 	private void proposePackage(final ContentAssistRequest contentAssistRequest,
 		IJavaProject project, String matchString, final int start, final int length)
-			throws CoreException
+		throws CoreException
 	{
 		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		final Set<String> foundPkgs = new HashSet<String>();
