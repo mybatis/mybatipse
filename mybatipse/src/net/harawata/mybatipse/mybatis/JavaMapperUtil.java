@@ -57,7 +57,7 @@ public class JavaMapperUtil
 		"Update", "Delete", "SelectProvider", "InsertProvider", "UpdateProvider", "DeleteProvider");
 
 	public static void findMapperMethod(List<MapperMethodInfo> methodInfos, IJavaProject project,
-		String mapperFqn, String matchString, boolean exactMatch, AnnotationFilter annotationFilter)
+		String mapperFqn, MethodMatcher annotationFilter)
 	{
 		try
 		{
@@ -66,13 +66,11 @@ public class JavaMapperUtil
 				return;
 			if (mapperType.isBinary())
 			{
-				findMapperMethodBinary(methodInfos, project, matchString, exactMatch, annotationFilter,
-					mapperType);
+				findMapperMethodBinary(methodInfos, project, annotationFilter, mapperType);
 			}
 			else
 			{
-				findMapperMethodSource(methodInfos, project, mapperFqn, matchString, exactMatch,
-					annotationFilter, mapperType);
+				findMapperMethodSource(methodInfos, project, mapperFqn, annotationFilter, mapperType);
 			}
 		}
 		catch (JavaModelException e)
@@ -82,8 +80,7 @@ public class JavaMapperUtil
 	}
 
 	private static void findMapperMethodSource(List<MapperMethodInfo> methodInfos,
-		IJavaProject project, String mapperFqn, String matchString, boolean exactMatch,
-		AnnotationFilter annotationFilter, IType mapperType)
+		IJavaProject project, String mapperFqn, MethodMatcher annotationFilter, IType mapperType)
 	{
 		ICompilationUnit compilationUnit = (ICompilationUnit)mapperType
 			.getAncestor(IJavaElement.COMPILATION_UNIT);
@@ -93,82 +90,51 @@ public class JavaMapperUtil
 		parser.setResolveBindings(true);
 		// parser.setIgnoreMethodBodies(true);
 		CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
-		astUnit.accept(new JavaMapperVisitor(methodInfos, project, mapperFqn, matchString,
-			exactMatch, annotationFilter));
+		astUnit.accept(new JavaMapperVisitor(methodInfos, project, mapperFqn, annotationFilter));
 	}
 
 	private static void findMapperMethodBinary(List<MapperMethodInfo> methodInfos,
-		IJavaProject project, String matchString, boolean exactMatch,
-		AnnotationFilter annotationFilter, IType mapperType) throws JavaModelException
+		IJavaProject project, MethodMatcher methodMatcher, IType mapperType)
+		throws JavaModelException
 	{
 		for (IMethod method : mapperType.getMethods())
 		{
-			if (hasUnacceptableStatementAnnotation(method, annotationFilter))
+			if (!methodMatcher.matches(method))
 				continue;
-			String methodName = method.getElementName();
-			if (matches(methodName, matchString, exactMatch))
-			{
-				Map<String, String> paramMap = new HashMap<String, String>();
-				MapperMethodInfo methodInfo = new MapperMethodInfo(method, paramMap);
-				methodInfos.add(methodInfo);
 
-				if (matchString.length() == 0
-					|| CharOperation.camelCaseMatch(matchString.toCharArray(), methodName.toCharArray()))
+			Map<String, String> paramMap = new HashMap<String, String>();
+			MapperMethodInfo methodInfo = new MapperMethodInfo(method, paramMap);
+			methodInfos.add(methodInfo);
+
+			ILocalVariable[] parameters = method.getParameters();
+			for (int i = 0; i < parameters.length; i++)
+			{
+				String paramFqn = parameters[i].getElementName();
+				for (IAnnotation annotation : parameters[i].getAnnotations())
 				{
-					ILocalVariable[] parameters = method.getParameters();
-					for (int i = 0; i < parameters.length; i++)
+					if (ANNOTATION_PARAM.equals(annotation.getElementName()))
 					{
-						String paramFqn = parameters[i].getElementName();
-						for (IAnnotation annotation : parameters[i].getAnnotations())
+						IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
+						if (valuePairs.length == 1)
 						{
-							if (ANNOTATION_PARAM.equals(annotation.getElementName()))
-							{
-								IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
-								if (valuePairs.length == 1)
-								{
-									IMemberValuePair valuePair = valuePairs[0];
-									String paramValue = (String)valuePair.getValue();
-									paramMap.put(paramValue, paramFqn);
-								}
-							}
+							IMemberValuePair valuePair = valuePairs[0];
+							String paramValue = (String)valuePair.getValue();
+							paramMap.put(paramValue, paramFqn);
 						}
-						paramMap.put("param" + (i + 1), paramFqn); //$NON-NLS-1$
 					}
 				}
+				paramMap.put("param" + (i + 1), paramFqn); //$NON-NLS-1$
 			}
 		}
+
 		String[] superInterfaces = mapperType.getSuperInterfaceNames();
 		for (String superInterface : superInterfaces)
 		{
 			if (!Object.class.getName().equals(superInterface))
 			{
-				findMapperMethod(methodInfos, project, superInterface, matchString, exactMatch,
-					annotationFilter);
+				findMapperMethod(methodInfos, project, superInterface, methodMatcher);
 			}
 		}
-	}
-
-	private static boolean matches(String methodName, String matchString, boolean exactMatch)
-	{
-		return exactMatch && methodName.equals(matchString)
-			|| (!exactMatch && (matchString.length() == 0
-				|| CharOperation.camelCaseMatch(matchString.toCharArray(), methodName.toCharArray())));
-	}
-
-	private static boolean hasUnacceptableStatementAnnotation(IMethod method,
-		AnnotationFilter annotationFilter) throws JavaModelException
-	{
-		if (annotationFilter == null)
-			return false;
-
-		IAnnotation[] annotations = method.getAnnotations();
-		annotationFilter.reset();
-		for (IAnnotation annotation : annotations)
-		{
-			String annotationName = annotation.getElementName();
-			annotationFilter.check(annotationName);
-		}
-		return !annotationFilter.acceptable();
 	}
 
 	public static class JavaMapperVisitor extends ASTVisitor
@@ -177,13 +143,9 @@ public class JavaMapperUtil
 
 		private IJavaProject project;
 
-		private String mapeprFqn;
+		private String mapperFqn;
 
-		private String matchString;
-
-		private boolean exactMatch;
-
-		private AnnotationFilter annotationFilter;
+		private MethodMatcher methodMatcher;
 
 		private int nestLevel;
 
@@ -194,7 +156,7 @@ public class JavaMapperUtil
 			if (binding == null)
 				return false;
 
-			if (mapeprFqn.equals(binding.getQualifiedName()))
+			if (mapperFqn.equals(binding.getQualifiedName()))
 				nestLevel = 1;
 			else if (nestLevel > 0)
 				nestLevel++;
@@ -217,23 +179,15 @@ public class JavaMapperUtil
 			// node.getModifiers() returns incorrect access modifiers for them.
 			// https://github.com/harawata/stlipse/issues/2
 			IMethodBinding method = node.resolveBinding();
-			if (method != null)
-			{
-				if (annotationFilter != null)
-				{
-					IAnnotationBinding[] methodAnnotations = method.getAnnotations();
-					annotationFilter.reset();
-					for (IAnnotationBinding annotation : methodAnnotations)
-					{
-						String annotationName = annotation.getName();
-						annotationFilter.check(annotationName);
-					}
-					if (!annotationFilter.acceptable())
-						return false;
-				}
+			if (method == null)
+				return false;
 
-				String methodName = node.getName().toString();
-				if (matches(methodName, matchString, exactMatch))
+			if (methodMatcher == null)
+				return false;
+
+			try
+			{
+				if (methodMatcher.matches((IMethod)method.getJavaElement()))
 				{
 					Map<String, String> paramMap = new HashMap<String, String>();
 					MapperMethodInfo methodInfo = new MapperMethodInfo((IMethod)method.getJavaElement(),
@@ -241,6 +195,11 @@ public class JavaMapperUtil
 					methodInfos.add(methodInfo);
 					collectMethodParams(node, paramMap);
 				}
+			}
+			catch (JavaModelException e)
+			{
+				Activator.log(Status.ERROR,
+					"Failed to visit method " + node.getName().toString() + " in " + mapperFqn, e);
 			}
 			return false;
 		}
@@ -275,7 +234,7 @@ public class JavaMapperUtil
 
 		public void endVisit(TypeDeclaration node)
 		{
-			if (nestLevel == 1 && (!exactMatch || methodInfos.isEmpty()))
+			if (nestLevel == 1 && (!methodMatcher.needExactMatch() || methodInfos.isEmpty()))
 			{
 				@SuppressWarnings("unchecked")
 				List<Type> superInterfaceTypes = node.superInterfaceTypes();
@@ -293,8 +252,7 @@ public class JavaMapperUtil
 								int paramIdx = superInterfaceFqn.indexOf('<');
 								superInterfaceFqn = superInterfaceFqn.substring(0, paramIdx);
 							}
-							findMapperMethod(methodInfos, project, superInterfaceFqn, matchString, exactMatch,
-								annotationFilter);
+							findMapperMethod(methodInfos, project, superInterfaceFqn, methodMatcher);
 						}
 					}
 				}
@@ -306,71 +264,134 @@ public class JavaMapperUtil
 			List<MapperMethodInfo> methodInfos,
 			IJavaProject project,
 			String mapperFqn,
-			String matchString,
-			boolean exactMatch,
-			AnnotationFilter annotationFilter)
+			MethodMatcher annotationFilter)
 		{
 			this.methodInfos = methodInfos;
 			this.project = project;
-			this.mapeprFqn = mapperFqn;
+			this.mapperFqn = mapperFqn;
+			this.methodMatcher = annotationFilter;
+		}
+	}
+
+	public static abstract class MethodMatcher
+	{
+		abstract boolean matches(IMethod method) throws JavaModelException;
+
+		abstract boolean needExactMatch();
+
+		protected boolean hasAnnotations(IAnnotation[] annotations, List<String> annotationsToFind)
+		{
+			for (IAnnotation annotation : annotations)
+			{
+				String annotationName = annotation.getElementName();
+				if (annotationsToFind.contains(annotationName))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		protected boolean nameMatches(String methodName, String matchString, boolean exactMatch)
+		{
+			if (exactMatch)
+			{
+				return methodName.equals(matchString);
+			}
+			else
+			{
+				return matchString.length() == 0
+					|| CharOperation.camelCaseMatch(matchString.toCharArray(), methodName.toCharArray());
+			}
+		}
+	}
+
+	public static class MethodNameMatcher extends MethodMatcher
+	{
+		private String matchString;
+
+		private boolean exactMatch;
+
+		public MethodNameMatcher(String matchString, boolean exactMatch)
+		{
+			super();
 			this.matchString = matchString;
 			this.exactMatch = exactMatch;
-			this.annotationFilter = annotationFilter;
+		}
+
+		@Override
+		public boolean matches(IMethod method) throws JavaModelException
+		{
+			return nameMatches(method.getElementName(), matchString, exactMatch);
+		}
+
+		@Override
+		boolean needExactMatch()
+		{
+			return exactMatch;
 		}
 	}
 
-	public static interface AnnotationFilter
+	public static class RejectStatementAnnotation extends MethodMatcher
 	{
-		void reset();
+		private String matchString;
 
-		void check(String annotationName);
+		private boolean exactMatch;
 
-		boolean acceptable();
+		public RejectStatementAnnotation(String matchString, boolean exactMatch)
+		{
+			super();
+			this.matchString = matchString;
+			this.exactMatch = exactMatch;
+		}
+
+		@Override
+		public boolean matches(IMethod method) throws JavaModelException
+		{
+			if (hasAnnotations(method.getAnnotations(), statementAnnotations))
+			{
+				return false;
+			}
+			return nameMatches(method.getElementName(), matchString, exactMatch);
+		}
+
+		@Override
+		boolean needExactMatch()
+		{
+			return exactMatch;
+		}
 	}
 
-	public static class RejectStatementAnnotation implements AnnotationFilter
+	public static class HasSelectAnnotation extends MethodMatcher
 	{
-		private boolean acceptable = true;
+		private String matchString;
+
+		private boolean exactMatch;
+
+		public HasSelectAnnotation(String matchString, boolean exactMatch)
+		{
+			super();
+			this.matchString = matchString;
+			this.exactMatch = exactMatch;
+		}
+
+		private static final List<String> selectAnnotations = Arrays.asList("Select",
+			"SelectProvider");
 
 		@Override
-		public void reset()
+		public boolean matches(IMethod method) throws JavaModelException
 		{
-			acceptable = true;
+			if (!hasAnnotations(method.getAnnotations(), selectAnnotations))
+			{
+				return false;
+			}
+			return nameMatches(method.getElementName(), matchString, exactMatch);
 		}
 
 		@Override
-		public void check(String annotationName)
+		boolean needExactMatch()
 		{
-			acceptable &= !statementAnnotations.contains(annotationName);
-		}
-
-		@Override
-		public boolean acceptable()
-		{
-			return acceptable;
-		}
-	}
-
-	public static class HasSelectAnnotation implements AnnotationFilter
-	{
-		private boolean acceptable = false;
-
-		@Override
-		public void reset()
-		{
-			acceptable = false;
-		}
-
-		@Override
-		public void check(String annotationName)
-		{
-			acceptable |= "Select".equals(annotationName) || "SelectProvider".equals(annotationName);
-		}
-
-		@Override
-		public boolean acceptable()
-		{
-			return acceptable;
+			return exactMatch;
 		}
 	}
 

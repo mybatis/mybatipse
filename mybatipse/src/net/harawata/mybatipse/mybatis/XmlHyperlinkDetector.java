@@ -48,9 +48,9 @@ import org.w3c.dom.Node;
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.hyperlink.ToJavaHyperlink;
 import net.harawata.mybatipse.hyperlink.ToXmlHyperlink;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.AnnotationFilter;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
 import net.harawata.mybatipse.util.XpathUtil;
 
@@ -109,8 +109,9 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 									|| "insert".equals(tagName) || "delete".equals(tagName)))
 							{
 								hyperlinks = linkToJavaMapperMethod(document,
-									MybatipseXmlUtil.getNamespace(currentNode.getOwnerDocument()), attrValue,
-									getLinkRegion(documentRegion, valueRegion), new RejectStatementAnnotation());
+									MybatipseXmlUtil.getNamespace(currentNode.getOwnerDocument()),
+									getLinkRegion(documentRegion, valueRegion),
+									new RejectStatementAnnotation(attrValue, true));
 							}
 							else if ("property".equals(attrName))
 							{
@@ -153,7 +154,7 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 
 	private IHyperlink[] linkToReference(ITextViewer textViewer, IDocument document,
 		Document domDoc, String attrName, String attrValue, Region linkRegion, String targetElement)
-			throws XPathExpressionException, CoreException, IOException
+		throws XPathExpressionException, CoreException, IOException
 	{
 		if (attrValue.indexOf('$') > -1)
 			return null;
@@ -206,8 +207,8 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 		{
 			String mapperFqn = namespace.length() > 0 ? namespace
 				: MybatipseXmlUtil.getNamespace(domDoc);
-			return linkToJavaMapperMethod(document, mapperFqn, elementId, linkRegion,
-				new HasSelectAnnotation());
+			return linkToJavaMapperMethod(document, mapperFqn, linkRegion,
+				new HasSelectAnnotation(elementId, true));
 		}
 
 		return null;
@@ -251,13 +252,12 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 	}
 
 	private IHyperlink[] linkToJavaMapperMethod(IDocument document, String mapperFqn,
-		String methodName, Region linkRegion, AnnotationFilter annotationFilter)
-			throws JavaModelException, XPathExpressionException
+		Region linkRegion, MethodMatcher methodMatcher)
+		throws JavaModelException, XPathExpressionException
 	{
 		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 		IJavaProject project = MybatipseXmlUtil.getJavaProject(document);
-		JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn, methodName, true,
-			annotationFilter);
+		JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn, methodMatcher);
 		for (MapperMethodInfo methodInfo : methodInfos)
 		{
 			// There should be only one matching method.

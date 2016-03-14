@@ -175,8 +175,8 @@ public class ProposalComputorHelper
 		String namespace, String matchString, int start, int length)
 	{
 		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
-		JavaMapperUtil.findMapperMethod(methodInfos, project, namespace, matchString, false,
-			new HasSelectAnnotation());
+		JavaMapperUtil.findMapperMethod(methodInfos, project, namespace,
+			new HasSelectAnnotation(matchString, false));
 		for (MapperMethodInfo methodInfo : methodInfos)
 		{
 			String methodName = methodInfo.getMethodName();

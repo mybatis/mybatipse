@@ -216,8 +216,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			{
 				final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 				String mapperFqn = MybatipseXmlUtil.getNamespace(statementNode.getOwnerDocument());
-				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn, statementId, true,
-					new RejectStatementAnnotation());
+				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn,
+					new RejectStatementAnnotation(statementId, true));
 				if (methodInfos.size() > 0)
 				{
 					proposals = ProposalComputorHelper.proposeParameters(project, offset, length,
@@ -453,8 +453,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 		String qualifiedName = MybatipseXmlUtil.getNamespace(node.getOwnerDocument());
-		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, matchString, false,
-			new RejectStatementAnnotation());
+		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName,
+			new RejectStatementAnnotation(matchString, false));
 		for (MapperMethodInfo methodInfo : methodInfos)
 		{
 			String methodName = methodInfo.getMethodName();

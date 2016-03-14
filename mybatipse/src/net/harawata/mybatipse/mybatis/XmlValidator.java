@@ -48,9 +48,9 @@ import org.w3c.dom.NodeList;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.AnnotationFilter;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
 import net.harawata.mybatipse.util.XpathUtil;
 
@@ -143,7 +143,7 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateElement(IJavaProject project, IDOMElement element, IFile file,
 		IDOMDocument doc, IReporter reporter, ValidationResult result)
-			throws JavaModelException, XPathExpressionException
+		throws JavaModelException, XPathExpressionException
 	{
 		if ((reporter != null) && (reporter.isCancelled() == true))
 		{
@@ -232,7 +232,7 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateResultMapId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
-			throws JavaModelException
+		throws JavaModelException
 	{
 		if (attrValue.indexOf(',') == -1)
 		{
@@ -254,14 +254,14 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateSelectId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
-			throws JavaModelException
+		throws JavaModelException
 	{
 		validateReference(project, file, doc, result, attr, attrValue, "select", reporter);
 	}
 
 	private void validateSqlId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
-			throws JavaModelException
+		throws JavaModelException
 	{
 		validateReference(project, file, doc, result, attr, attrValue, "sql", reporter);
 	}
@@ -281,7 +281,8 @@ public class XmlValidator extends AbstractValidator
 				if ("select".equals(targetElement))
 				{
 					String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
-					if (mapperMethodExists(project, qualifiedName, attrValue, new HasSelectAnnotation()))
+					if (mapperMethodExists(project, qualifiedName,
+						new HasSelectAnnotation(attrValue, true)))
 					{
 						return;
 					}
@@ -301,7 +302,7 @@ public class XmlValidator extends AbstractValidator
 				String namespace = attrValue.substring(0, lastDot);
 				String statementId = attrValue.substring(lastDot + 1);
 				if ("select".equals(targetElement)
-					&& mapperMethodExists(project, namespace, statementId, new HasSelectAnnotation()))
+					&& mapperMethodExists(project, namespace, new HasSelectAnnotation(statementId, true)))
 				{
 					return;
 				}
@@ -332,7 +333,7 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateStatementId(IDOMElement element, IFile file, IDOMDocument doc,
 		ValidationResult result, IJavaProject project, IDOMAttr attr, String attrValue)
-			throws JavaModelException, XPathExpressionException
+		throws JavaModelException, XPathExpressionException
 	{
 		if (attrValue == null)
 		{
@@ -341,8 +342,8 @@ public class XmlValidator extends AbstractValidator
 
 		String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
 		IType mapperType = project.findType(qualifiedName);
-		if (mapperType != null && !mapperMethodExists(project, qualifiedName, attrValue,
-			new RejectStatementAnnotation()))
+		if (mapperType != null && !mapperMethodExists(project, qualifiedName,
+			new RejectStatementAnnotation(attrValue, true)))
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_STATEMENT_METHOD,
 				IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH,
@@ -352,11 +353,10 @@ public class XmlValidator extends AbstractValidator
 	}
 
 	private boolean mapperMethodExists(IJavaProject project, String qualifiedName,
-		String methodName, AnnotationFilter annotationFilter) throws JavaModelException
+		MethodMatcher methodMatcher) throws JavaModelException
 	{
 		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
-		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodName, true,
-			annotationFilter);
+		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodMatcher);
 		return methodInfos.size() == 1;
 	}
 
@@ -407,7 +407,7 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateJavaType(IJavaProject project, IFile file, IDOMDocument doc,
 		IDOMAttr attr, String qualifiedName, ValidationResult result, IReporter reporter)
-			throws JavaModelException
+		throws JavaModelException
 	{
 		if (!MybatipseXmlUtil.isDefaultTypeAlias(qualifiedName)
 			&& project.findType(qualifiedName) == null

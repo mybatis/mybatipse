@@ -37,6 +37,7 @@ import org.w3c.dom.Document;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameMatcher;
 
 /**
  * @author Iwao AVE!
@@ -138,7 +139,7 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 				String mapperFqn = primaryType.getFullyQualifiedName();
 				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn,
-					method.getElementName(), true, null);
+					new MethodNameMatcher(method.getElementName(), true));
 				if (methodInfos.size() > 0)
 				{
 					return ProposalComputorHelper.proposeParameters(project, offset, length,
