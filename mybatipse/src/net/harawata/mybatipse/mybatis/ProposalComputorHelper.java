@@ -42,6 +42,7 @@ import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.JavaCompletionProposal;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.ResultsAnnotationWithId;
 import net.harawata.mybatipse.util.NameUtil;
 import net.harawata.mybatipse.util.XpathUtil;
 
@@ -117,6 +118,12 @@ public class ProposalComputorHelper
 					namespacePart.length() > 0 ? namespacePart : currentNamespace, matchStr,
 					replacementStart, replacementLength);
 			}
+			else if ("resultMap".equals(targetElement))
+			{
+				proposeJavaResultMap(results, project,
+					namespacePart.length() > 0 ? namespacePart : currentNamespace, matchStr,
+					replacementStart, replacementLength);
+			}
 		}
 		catch (XPathExpressionException e)
 		{
@@ -182,6 +189,20 @@ public class ProposalComputorHelper
 			String methodName = methodInfo.getMethodName();
 			results.add(new JavaCompletionProposal(methodName, start, length, methodName.length(),
 				Activator.getIcon(), methodName, null, null, 200));
+		}
+	}
+
+	private static void proposeJavaResultMap(List<ICompletionProposal> results,
+		IJavaProject project, String namespace, String matchString, int start, int length)
+	{
+		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
+		JavaMapperUtil.findMapperMethod(methodInfos, project, namespace,
+			new ResultsAnnotationWithId(matchString, false));
+		for (MapperMethodInfo methodInfo : methodInfos)
+		{
+			String resultMapId = (String)methodInfo.getAnnotationAttr("Results", "id");
+			results.add(new JavaCompletionProposal(resultMapId, start, length, resultMapId.length(),
+				Activator.getIcon(), resultMapId, null, null, 200));
 		}
 	}
 

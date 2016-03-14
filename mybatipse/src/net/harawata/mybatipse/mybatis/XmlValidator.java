@@ -52,6 +52,7 @@ import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.ResultsAnnotationWithId;
 import net.harawata.mybatipse.util.XpathUtil;
 
 /**
@@ -278,11 +279,19 @@ public class XmlValidator extends AbstractValidator
 			if (attrValue.indexOf('.') == -1)
 			{
 				// Internal reference
+				String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
 				if ("select".equals(targetElement))
 				{
-					String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
 					if (mapperMethodExists(project, qualifiedName,
 						new HasSelectAnnotation(attrValue, true)))
+					{
+						return;
+					}
+				}
+				if ("resultMap".equals(targetElement))
+				{
+					if (mapperMethodExists(project, qualifiedName,
+						new ResultsAnnotationWithId(attrValue, true)))
 					{
 						return;
 					}
@@ -303,6 +312,11 @@ public class XmlValidator extends AbstractValidator
 				String statementId = attrValue.substring(lastDot + 1);
 				if ("select".equals(targetElement)
 					&& mapperMethodExists(project, namespace, new HasSelectAnnotation(statementId, true)))
+				{
+					return;
+				}
+				else if ("resultMap".equals(targetElement) && mapperMethodExists(project, namespace,
+					new ResultsAnnotationWithId(statementId, true)))
 				{
 					return;
 				}

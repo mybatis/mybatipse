@@ -279,29 +279,16 @@ public class JavaMapperUtil
 
 		abstract boolean needExactMatch();
 
-		protected boolean hasAnnotations(IAnnotation[] annotations, List<String> annotationsToFind)
-		{
-			for (IAnnotation annotation : annotations)
-			{
-				String annotationName = annotation.getElementName();
-				if (annotationsToFind.contains(annotationName))
-				{
-					return true;
-				}
-			}
-			return false;
-		}
-
-		protected boolean nameMatches(String methodName, String matchString, boolean exactMatch)
+		protected boolean nameMatches(String elementId, String matchString, boolean exactMatch)
 		{
 			if (exactMatch)
 			{
-				return methodName.equals(matchString);
+				return elementId.equals(matchString);
 			}
 			else
 			{
 				return matchString.length() == 0
-					|| CharOperation.camelCaseMatch(matchString.toCharArray(), methodName.toCharArray());
+					|| CharOperation.camelCaseMatch(matchString.toCharArray(), elementId.toCharArray());
 			}
 		}
 	}
@@ -348,9 +335,13 @@ public class JavaMapperUtil
 		@Override
 		public boolean matches(IMethod method) throws JavaModelException
 		{
-			if (hasAnnotations(method.getAnnotations(), statementAnnotations))
+			for (IAnnotation annotation : method.getAnnotations())
 			{
-				return false;
+				String annotationName = annotation.getElementName();
+				if (statementAnnotations.contains(annotationName))
+				{
+					return false;
+				}
 			}
 			return nameMatches(method.getElementName(), matchString, exactMatch);
 		}
@@ -375,17 +366,66 @@ public class JavaMapperUtil
 			this.exactMatch = exactMatch;
 		}
 
-		private static final List<String> selectAnnotations = Arrays.asList("Select",
-			"SelectProvider");
-
 		@Override
 		public boolean matches(IMethod method) throws JavaModelException
 		{
-			if (!hasAnnotations(method.getAnnotations(), selectAnnotations))
+			boolean hasSelectAnnotation = false;
+			for (IAnnotation annotation : method.getAnnotations())
+			{
+				String annotationName = annotation.getElementName();
+				if ("Select".equals(annotationName) || "SelectProvider".equals(annotationName))
+				{
+					hasSelectAnnotation = true;
+					break;
+				}
+			}
+			if (!hasSelectAnnotation)
 			{
 				return false;
 			}
 			return nameMatches(method.getElementName(), matchString, exactMatch);
+		}
+
+		@Override
+		boolean needExactMatch()
+		{
+			return exactMatch;
+		}
+	}
+
+	public static class ResultsAnnotationWithId extends MethodMatcher
+	{
+		private String matchString;
+
+		private boolean exactMatch;
+
+		public ResultsAnnotationWithId(String matchString, boolean exactMatch)
+		{
+			super();
+			this.matchString = matchString;
+			this.exactMatch = exactMatch;
+		}
+
+		@Override
+		public boolean matches(IMethod method) throws JavaModelException
+		{
+			for (IAnnotation annotation : method.getAnnotations())
+			{
+				String annotationName = annotation.getElementName();
+				if ("Results".equals(annotationName))
+				{
+					IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
+					for (IMemberValuePair valuePair : valuePairs)
+					{
+						if ("id".equals(valuePair.getMemberName()))
+						{
+							String resultsId = (String)valuePair.getValue();
+							return nameMatches(resultsId, matchString, exactMatch);
+						}
+					}
+				}
+			}
+			return false;
 		}
 
 		@Override
@@ -420,6 +460,34 @@ public class JavaMapperUtil
 		public Map<String, String> getParams()
 		{
 			return params;
+		}
+
+		public Object getAnnotationAttr(String targetAnnotation, String targetAttr)
+		{
+			try
+			{
+				for (IAnnotation annotation : method.getAnnotations())
+				{
+					String annotationName = annotation.getElementName();
+					if (targetAnnotation.equals(annotationName))
+					{
+						IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
+						for (IMemberValuePair valuePair : valuePairs)
+						{
+							if (targetAttr.equals(valuePair.getMemberName()))
+							{
+								return valuePair.getValue();
+							}
+						}
+					}
+				}
+			}
+			catch (JavaModelException e)
+			{
+				Activator.log(Status.ERROR, "Error occurred while searching '" + targetAttr
+					+ "' attribute of '" + targetAnnotation + "'", e);
+			}
+			return null;
 		}
 	}
 }

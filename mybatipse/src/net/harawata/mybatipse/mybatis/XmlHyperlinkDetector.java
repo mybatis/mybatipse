@@ -52,6 +52,7 @@ import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.ResultsAnnotationWithId;
 import net.harawata.mybatipse.util.XpathUtil;
 
 /**
@@ -209,6 +210,13 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 				: MybatipseXmlUtil.getNamespace(domDoc);
 			return linkToJavaMapperMethod(document, mapperFqn, linkRegion,
 				new HasSelectAnnotation(elementId, true));
+		}
+		else if ("resultMap".equals(targetElement))
+		{
+			String mapperFqn = namespace.length() > 0 ? namespace
+				: MybatipseXmlUtil.getNamespace(domDoc);
+			return linkToJavaMapperMethod(document, mapperFqn, linkRegion,
+				new ResultsAnnotationWithId(elementId, true));
 		}
 
 		return null;
