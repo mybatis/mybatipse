@@ -74,8 +74,30 @@ public class ProposalComputorHelper
 	};
 
 	public static List<ICompletionProposal> proposeReference(IJavaProject project,
+		String currentNamespace, String matchString, int start, int length, String targetElement,
+		String idToExclude)
+	{
+		Document mapperDoc = null;
+		IFile mapperFile = MapperNamespaceCache.getInstance().get(project, currentNamespace, null);
+		if (mapperFile != null)
+		{
+			mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
+		}
+		return ProposalComputorHelper.proposeReference(project, mapperDoc, currentNamespace,
+			matchString, start, length, "resultMap", null);
+	}
+
+	public static List<ICompletionProposal> proposeReference(IJavaProject project,
 		Document domDoc, String matchString, int start, int length, String targetElement,
 		String idToExclude)
+	{
+		return ProposalComputorHelper.proposeReference(project, domDoc, null, matchString, start,
+			length, "resultMap", null);
+	}
+
+	private static List<ICompletionProposal> proposeReference(IJavaProject project,
+		Document domDoc, String currentNamespace, String matchString, int start, int length,
+		String targetElement, String idToExclude)
 	{
 		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		try
@@ -87,19 +109,27 @@ public class ProposalComputorHelper
 			int replacementStart = lastDot == -1 ? start : start + lastDot + 1;
 			int replacementLength = lastDot == -1 ? length : length - lastDot - 1;
 
-			final String currentNamespace = MybatipseXmlUtil.getNamespace(domDoc);
+			if (currentNamespace == null)
+			{
+				currentNamespace = MybatipseXmlUtil.getNamespace(domDoc);
+			}
+
 			final String exclude = idToExclude != null && idToExclude.length() > 0
 				&& namespacePart.equals(currentNamespace) ? idToExclude : null;
 
 			final Document xmlMapper;
-			if (namespacePart.length() == 0)
+			if (namespacePart.length() > 0)
+			{
+				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespacePart, null);
+				xmlMapper = mapperFile == null ? null : MybatipseXmlUtil.getMapperDocument(mapperFile);
+			}
+			else if (domDoc != null)
 			{
 				xmlMapper = domDoc;
 			}
 			else
 			{
-				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespacePart, null);
-				xmlMapper = mapperFile == null ? null : MybatipseXmlUtil.getMapperDocument(mapperFile);
+				xmlMapper = null;
 			}
 
 			if (xmlMapper != null)
@@ -109,8 +139,8 @@ public class ProposalComputorHelper
 					exclude);
 			}
 
-			proposeNamespaces(results, project, domDoc, namespacePart, currentNamespace, matchChrs,
-				start, length);
+			proposeNamespaces(results, project, namespacePart, currentNamespace, matchChrs, start,
+				length);
 
 			if ("select".equals(targetElement))
 			{
@@ -151,8 +181,7 @@ public class ProposalComputorHelper
 	}
 
 	private static void proposeNamespaces(List<ICompletionProposal> results, IJavaProject project,
-		Document domDoc, String partialNamespace, String currentNamespace, char[] matchChrs,
-		int start, int length)
+		String partialNamespace, String currentNamespace, char[] matchChrs, int start, int length)
 	{
 		for (String namespace : MapperNamespaceCache.getInstance()
 			.getCacheMap(project, null)

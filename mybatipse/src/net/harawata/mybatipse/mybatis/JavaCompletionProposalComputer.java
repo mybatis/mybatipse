@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IAnnotatable;
@@ -33,7 +32,6 @@ import org.eclipse.jdt.ui.text.java.IJavaCompletionProposalComputer;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContextInformation;
-import org.w3c.dom.Document;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
@@ -90,15 +88,10 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 					SimpleParser parser = new SimpleParser(text,
 						offset - annotation.getSourceRange().getOffset() - 1);
 					final IJavaProject project = javaContext.getProject();
-					IFile mapperFile = MapperNamespaceCache.getInstance().get(project,
-						primaryType.getFullyQualifiedName(), null);
-					if (mapperFile != null)
-					{
-						Document mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
-						String matchString = parser.getMatchString();
-						return ProposalComputorHelper.proposeReference(project, mapperDoc, matchString,
-							offset - matchString.length(), parser.getReplacementLength(), "resultMap", null);
-					}
+					String matchString = parser.getMatchString();
+					return ProposalComputorHelper.proposeReference(project,
+						primaryType.getFullyQualifiedName(), matchString, offset - matchString.length(),
+						parser.getReplacementLength(), "resultMap", null);
 				}
 			}
 			catch (JavaModelException e)
