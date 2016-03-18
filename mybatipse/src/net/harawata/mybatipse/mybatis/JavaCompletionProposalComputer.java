@@ -81,17 +81,7 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				}
 				else if ("ResultMap".equals(annotation.getElementName()))
 				{
-					String text = annotation.getSource();
-					// This can be null right after emptying the literal, for example.
-					if (text == null)
-						return Collections.emptyList();
-					SimpleParser parser = new SimpleParser(text,
-						offset - annotation.getSourceRange().getOffset() - 1);
-					final IJavaProject project = javaContext.getProject();
-					String matchString = parser.getMatchString();
-					return ProposalComputorHelper.proposeReference(project,
-						primaryType.getFullyQualifiedName(), matchString, offset - matchString.length(),
-						parser.getReplacementLength(), "resultMap", null);
+					return proposeResultMap(javaContext, primaryType, offset, annotation);
 				}
 			}
 			catch (JavaModelException e)
@@ -100,6 +90,23 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 			}
 		}
 		return Collections.emptyList();
+	}
+
+	private List<ICompletionProposal> proposeResultMap(
+		JavaContentAssistInvocationContext javaContext, IType primaryType, int offset,
+		IAnnotation annotation) throws JavaModelException
+	{
+		String text = annotation.getSource();
+		// This can be null right after emptying the literal, for example.
+		if (text == null)
+			return Collections.emptyList();
+		SimpleParser parser = new SimpleParser(text,
+			offset - annotation.getSourceRange().getOffset() - 1);
+		final IJavaProject project = javaContext.getProject();
+		String matchString = parser.getMatchString();
+		return ProposalComputorHelper.proposeReference(project,
+			primaryType.getFullyQualifiedName(), matchString, offset - matchString.length(),
+			parser.getReplacementLength(), "resultMap", null);
 	}
 
 	private List<ICompletionProposal> proposeStatementText(
