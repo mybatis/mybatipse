@@ -13,8 +13,6 @@ package net.harawata.mybatipse.mybatis;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.xml.xpath.XPathExpressionException;
 
@@ -23,8 +21,10 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextViewer;
@@ -49,7 +49,7 @@ import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.hyperlink.ToJavaHyperlink;
 import net.harawata.mybatipse.hyperlink.ToXmlHyperlink;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodStore;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.ResultsAnnotationWithId;
@@ -263,17 +263,16 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 		Region linkRegion, MethodMatcher methodMatcher)
 		throws JavaModelException, XPathExpressionException
 	{
-		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
 		IJavaProject project = MybatipseXmlUtil.getJavaProject(document);
-		JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn, methodMatcher);
-		for (MapperMethodInfo methodInfo : methodInfos)
+		SingleMethodStore methodStore = new SingleMethodStore();
+		JavaMapperUtil.findMapperMethod(methodStore, project, mapperFqn, methodMatcher);
+		if (methodStore.isEmpty())
 		{
-			// There should be only one matching method.
-			return new IHyperlink[]{
-				new ToJavaHyperlink(methodInfo.getMethod(), linkRegion, javaLinkLabel("Mapper method"))
-			};
+			return null;
 		}
-		return null;
+		return new IHyperlink[]{
+			new ToJavaHyperlink(methodStore.getMethod(), linkRegion, javaLinkLabel("Mapper method"))
+		};
 	}
 
 	private IHyperlink[] linkToJavaProperty(IDocument document, Node currentNode,
@@ -360,4 +359,31 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 		return null;
 	}
 
+	public static class SingleMethodStore implements MapperMethodStore
+	{
+		private IMethod method;
+
+		public IMethod getMethod()
+		{
+			return this.method;
+		}
+
+		@Override
+		public void add(IMethod method)
+		{
+			this.method = method;
+		}
+
+		@Override
+		public void add(IMethodBinding method)
+		{
+			this.method = (IMethod)method.getJavaElement();
+		}
+
+		@Override
+		public boolean isEmpty()
+		{
+			return method == null;
+		}
+	}
 }

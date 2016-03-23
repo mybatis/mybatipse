@@ -11,7 +11,6 @@
 
 package net.harawata.mybatipse.mybatis;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -34,8 +33,8 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 
 import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameMatcher;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodParametersStore;
 
 /**
  * @author Iwao AVE!
@@ -104,9 +103,9 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 			offset - annotation.getSourceRange().getOffset() - 1);
 		final IJavaProject project = javaContext.getProject();
 		String matchString = parser.getMatchString();
-		return ProposalComputorHelper.proposeReference(project,
-			primaryType.getFullyQualifiedName(), matchString, offset - matchString.length(),
-			parser.getReplacementLength(), "resultMap", null);
+		return ProposalComputorHelper.proposeReference(project, primaryType.getFullyQualifiedName(),
+			matchString, offset - matchString.length(), parser.getReplacementLength(), "resultMap",
+			null);
 	}
 
 	private List<ICompletionProposal> proposeStatementText(
@@ -136,14 +135,14 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				if (primaryType == null || !primaryType.isInterface())
 					return Collections.emptyList();
 
-				final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
+				final MethodParametersStore methodStore = new MethodParametersStore();
 				String mapperFqn = primaryType.getFullyQualifiedName();
-				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn,
+				JavaMapperUtil.findMapperMethod(methodStore, project, mapperFqn,
 					new MethodNameMatcher(method.getElementName(), true));
-				if (methodInfos.size() > 0)
+				if (!methodStore.isEmpty())
 				{
 					return ProposalComputorHelper.proposeParameters(project, offset, length,
-						methodInfos.get(0).getParams(), true, matchString);
+						methodStore.getParamMap(), true, matchString);
 				}
 			}
 			else if ("jdbcType".equals(proposalTarget))

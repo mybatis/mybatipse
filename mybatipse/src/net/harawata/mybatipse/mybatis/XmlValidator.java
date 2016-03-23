@@ -11,7 +11,6 @@
 
 package net.harawata.mybatipse.mybatis;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +25,12 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.sse.core.internal.provisional.IStructuredModel;
 import org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocument;
@@ -49,7 +50,7 @@ import org.w3c.dom.NodeList;
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodStore;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.ResultsAnnotationWithId;
@@ -369,9 +370,30 @@ public class XmlValidator extends AbstractValidator
 	private boolean mapperMethodExists(IJavaProject project, String qualifiedName,
 		MethodMatcher methodMatcher) throws JavaModelException
 	{
-		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
-		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName, methodMatcher);
-		return methodInfos.size() == 1;
+		MapperMethodStore methodStore = new MapperMethodStore()
+		{
+			boolean found;
+
+			@Override
+			public void add(IMethod method)
+			{
+				found = true;
+			}
+
+			@Override
+			public void add(IMethodBinding method)
+			{
+				found = true;
+			}
+
+			@Override
+			public boolean isEmpty()
+			{
+				return !found;
+			}
+		};
+		JavaMapperUtil.findMapperMethod(methodStore, project, qualifiedName, methodMatcher);
+		return !methodStore.isEmpty();
 	}
 
 	private void validateProperty(IDOMElement element, IFile file, IDOMDocument doc,

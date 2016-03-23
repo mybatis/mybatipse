@@ -58,7 +58,8 @@ import org.w3c.dom.NodeList;
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.BeanPropertyInfo;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameStore;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodParametersStore;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
 import net.harawata.mybatipse.util.XpathUtil;
 
@@ -214,14 +215,14 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		{
 			try
 			{
-				final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
+				final MethodParametersStore methodStore = new MethodParametersStore();
 				String mapperFqn = MybatipseXmlUtil.getNamespace(statementNode.getOwnerDocument());
-				JavaMapperUtil.findMapperMethod(methodInfos, project, mapperFqn,
+				JavaMapperUtil.findMapperMethod(methodStore, project, mapperFqn,
 					new RejectStatementAnnotation(statementId, true));
-				if (methodInfos.size() > 0)
+				if (!methodStore.isEmpty())
 				{
 					proposals = ProposalComputorHelper.proposeParameters(project, offset, length,
-						methodInfos.get(0).getParams(), searchReadable, matchString);
+						methodStore.getParamMap(), searchReadable, matchString);
 				}
 			}
 			catch (XPathExpressionException e)
@@ -451,13 +452,12 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		throws JavaModelException, XPathExpressionException
 	{
 		final List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
-		final List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
+		final MethodNameStore methodStore = new MethodNameStore();
 		String qualifiedName = MybatipseXmlUtil.getNamespace(node.getOwnerDocument());
-		JavaMapperUtil.findMapperMethod(methodInfos, project, qualifiedName,
+		JavaMapperUtil.findMapperMethod(methodStore, project, qualifiedName,
 			new RejectStatementAnnotation(matchString, false));
-		for (MapperMethodInfo methodInfo : methodInfos)
+		for (String methodName : methodStore.getMethodNames())
 		{
-			String methodName = methodInfo.getMethodName();
 			results.add(new CompletionProposal(methodName, start, length, methodName.length(),
 				Activator.getIcon(), methodName, null, null));
 		}

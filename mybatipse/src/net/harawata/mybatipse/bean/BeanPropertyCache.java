@@ -39,6 +39,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.AST;
@@ -180,7 +181,9 @@ public class BeanPropertyCache
 					if (DEBUG)
 						Activator.log(IStatus.INFO,
 							"Parsing properties of a binary class " + qualifiedName);
-					parseBinary(project, type, readableFields, writableFields, subclassMap);
+					parseBinary(project, type, qualifiedName,
+						NameUtil.extractTypeParams(qualifiedNameWithArgs), readableFields, writableFields,
+						subclassMap);
 				}
 				else
 				{
@@ -200,30 +203,56 @@ public class BeanPropertyCache
 	}
 
 	protected static void parseBinary(IJavaProject project, final IType type,
+		final String qualifiedName, List<String> actualTypeParams,
 		final Map<String, String> readableFields, final Map<String, String> writableFields,
 		final Map<String, Set<String>> subclassMap) throws JavaModelException
 	{
-		parseBinaryFields(type, readableFields, writableFields);
-
-		parseBinaryMethods(type, readableFields, writableFields);
-
-		String superclass = Signature.toString(type.getSuperclassTypeSignature());
-		if (!Object.class.getName().equals(superclass))
+		final List<String> typeParams = new ArrayList<String>();
+		final ITypeParameter[] typeParameters = type.getTypeParameters();
+		for (ITypeParameter typeParameter : typeParameters)
 		{
-			Set<String> subclasses = subclassMap.get(superclass);
-			if (subclasses == null)
-			{
-				subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-				subclassMap.put(superclass, subclasses);
-			}
-			subclasses.add(type.getFullyQualifiedName());
-			parseBean(project, superclass, readableFields, writableFields, subclassMap);
+			typeParams.add(typeParameter.getElementName());
 		}
+
+		parseBinaryFields(type, actualTypeParams, typeParams, readableFields, writableFields);
+
+		parseBinaryMethods(type, actualTypeParams, typeParams, readableFields, writableFields);
+
+		String superclassFqn = Signature.toString(type.getSuperclassTypeSignature());
+		if (Object.class.getName().equals(superclassFqn))
+			return;
+
+		String rawSuperclass = superclassFqn;
+		if (superclassFqn.indexOf('<') > -1)
+		{
+			rawSuperclass = NameUtil.stripTypeArguments(superclassFqn);
+			StringBuilder superclassFqnBuilder = new StringBuilder(rawSuperclass).append('<');
+			List<String> superclassTypeParams = NameUtil.extractTypeParams(superclassFqn);
+			for (int i = 0; i < superclassTypeParams.size(); i++)
+			{
+				if (i > 0)
+					superclassFqnBuilder.append(',');
+				superclassFqnBuilder.append(
+					NameUtil.resolveTypeParam(actualTypeParams, typeParams, superclassTypeParams.get(i)));
+			}
+			superclassFqnBuilder.append('>');
+			superclassFqn = superclassFqnBuilder.toString();
+		}
+
+		Set<String> subclasses = subclassMap.get(superclassFqn);
+		if (subclasses == null)
+		{
+			subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+			subclassMap.put(superclassFqn, subclasses);
+		}
+		subclasses.add(type.getFullyQualifiedName());
+		parseBean(project, superclassFqn, readableFields, writableFields, subclassMap);
 	}
 
 	protected static void parseBinaryMethods(final IType type,
+		final List<String> actualTypeParams, final List<String> typeParams,
 		final Map<String, String> readableFields, final Map<String, String> writableFields)
-			throws JavaModelException
+		throws JavaModelException
 	{
 		for (IMethod method : type.getMethods())
 		{
@@ -239,7 +268,8 @@ public class BeanPropertyCache
 					{
 						String fieldName = BeanPropertyVisitor.getFieldNameFromAccessor(methodName);
 						String paramType = method.getParameterTypes()[0];
-						writableFields.put(fieldName, Signature.toString(paramType));
+						writableFields.put(fieldName, NameUtil.resolveTypeParam(actualTypeParams,
+							typeParams, Signature.toString(paramType)));
 					}
 				}
 				else
@@ -247,16 +277,17 @@ public class BeanPropertyCache
 					if (BeanPropertyVisitor.isGetter(methodName, parameterCount))
 					{
 						String fieldName = BeanPropertyVisitor.getFieldNameFromAccessor(methodName);
-						readableFields.put(fieldName, Signature.toString(returnType));
+						readableFields.put(fieldName, NameUtil.resolveTypeParam(actualTypeParams,
+							typeParams, Signature.toString(returnType)));
 					}
 				}
 			}
 		}
 	}
 
-	protected static void parseBinaryFields(final IType type,
-		final Map<String, String> readableFields, final Map<String, String> writableFields)
-			throws JavaModelException
+	protected static void parseBinaryFields(final IType type, final List<String> actualTypeParams,
+		final List<String> typeParams, final Map<String, String> readableFields,
+		final Map<String, String> writableFields) throws JavaModelException
 	{
 		for (IField field : type.getFields())
 		{
@@ -266,11 +297,13 @@ public class BeanPropertyCache
 			if (!Flags.isFinal(flags))
 			{
 				// MyBatis can write non-public fields.
-				writableFields.put(fieldName, qualifiedType);
+				writableFields.put(fieldName,
+					NameUtil.resolveTypeParam(actualTypeParams, typeParams, qualifiedType));
 			}
 			if (Flags.isPublic(flags))
 			{
-				readableFields.put(fieldName, qualifiedType);
+				readableFields.put(fieldName,
+					NameUtil.resolveTypeParam(actualTypeParams, typeParams, qualifiedType));
 			}
 		}
 	}

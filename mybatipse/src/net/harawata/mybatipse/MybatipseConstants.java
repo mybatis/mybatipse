@@ -11,6 +11,9 @@
 
 package net.harawata.mybatipse;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.core.runtime.content.IContentTypeManager;
@@ -31,6 +34,36 @@ public class MybatipseConstants
 	public static final String PREF_CUSTOM_TYPE_ALIASES = "prefCustomTypeAliases"; //$NON-NLS-1$
 
 	public static final String DEBUG_BEAN_PROPERTY_CACHE = PLUGIN_ID + "/debug/beanPropertyCache";
+
+	public static final String ANNOTATION_SELECT = "org.apache.ibatis.annotations.Select";
+
+	public static final String ANNOTATION_SELECT_PROVIDER = "org.apache.ibatis.annotations.SelectProvider";
+
+	public static final String ANNOTATION_UPDATE = "org.apache.ibatis.annotations.Update";
+
+	public static final String ANNOTATION_INSERT = "org.apache.ibatis.annotations.Insert";
+
+	public static final String ANNOTATION_DELETE = "org.apache.ibatis.annotations.Delete";
+
+	public static final String ANNOTATION_RESULTS = "org.apache.ibatis.annotations.Results";
+
+	public static final String ANNOTATION_PARAM = "org.apache.ibatis.annotations.Param";
+
+	public static final List<String> STATEMENT_ANNOTATIONS = Arrays.asList(ANNOTATION_SELECT,
+		ANNOTATION_INSERT, ANNOTATION_UPDATE, ANNOTATION_DELETE, ANNOTATION_SELECT_PROVIDER,
+		"org.apache.ibatis.annotations.InsertProvider",
+		"org.apache.ibatis.annotations.UpdateProvider",
+		"org.apache.ibatis.annotations.DeleteProvider");
+
+	public static final String TYPE_ROW_BOUNDS = "org.apache.ibatis.session.RowBounds";
+
+	public static final String TYPE_TYPE_HANDLER = "org.apache.ibatis.type.TypeHandler";
+
+	public static final String TYPE_CACHE = "org.apache.ibatis.cache.Cache";
+
+	public static final String TYPE_OBJECT_FACTORY = "org.apache.ibatis.reflection.factory.ObjectFactory";
+
+	public static final String TYPE_OBJECT_WRAPPER_FACTORY = "org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory";
 
 	public static final IContentType mapperContentType;
 

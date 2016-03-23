@@ -118,9 +118,11 @@ public class BeanPropertyVisitor extends ASTVisitor
 				if (qualifiedName != null)
 				{
 					if (Modifier.isPublic(modifiers))
-						readableFields.put(fieldName, resolveTypeParam(qualifiedName));
+						readableFields.put(fieldName,
+							NameUtil.resolveTypeParam(actualTypeParams, typeParams, qualifiedName));
 					if (!Modifier.isFinal(modifiers))
-						writableFields.put(fieldName, resolveTypeParam(qualifiedName));
+						writableFields.put(fieldName,
+							NameUtil.resolveTypeParam(actualTypeParams, typeParams, qualifiedName));
 				}
 			}
 		}
@@ -152,7 +154,8 @@ public class BeanPropertyVisitor extends ASTVisitor
 					SingleVariableDeclaration param = (SingleVariableDeclaration)node.parameters().get(0);
 					String qualifiedName = getQualifiedNameFromType(param.getType());
 					String fieldName = getFieldNameFromAccessor(methodName);
-					writableFields.put(fieldName, resolveTypeParam(qualifiedName));
+					writableFields.put(fieldName,
+						NameUtil.resolveTypeParam(actualTypeParams, typeParams, qualifiedName));
 				}
 			}
 			else
@@ -161,7 +164,8 @@ public class BeanPropertyVisitor extends ASTVisitor
 				{
 					String fieldName = getFieldNameFromAccessor(methodName);
 					String qualifiedName = getQualifiedNameFromType(returnType);
-					readableFields.put(fieldName, resolveTypeParam(qualifiedName));
+					readableFields.put(fieldName,
+						NameUtil.resolveTypeParam(actualTypeParams, typeParams, qualifiedName));
 				}
 			}
 		}
@@ -186,12 +190,6 @@ public class BeanPropertyVisitor extends ASTVisitor
 			}
 		}
 		return qualifiedName;
-	}
-
-	private String resolveTypeParam(String typeParam)
-	{
-		int typeParamIdx = typeParams.indexOf(typeParam);
-		return typeParamIdx == -1 ? typeParam : actualTypeParams.get(typeParamIdx);
 	}
 
 	public static boolean isGetter(String methodName, int parameterCount)
@@ -234,7 +232,8 @@ public class BeanPropertyVisitor extends ASTVisitor
 						{
 							if (i > 0)
 								superclassFqnBuilder.append(',');
-							superclassFqnBuilder.append(resolveTypeParam(superclassTypeParams.get(i)));
+							superclassFqnBuilder.append(NameUtil.resolveTypeParam(actualTypeParams,
+								typeParams, superclassTypeParams.get(i)));
 						}
 						superclassFqnBuilder.append('>');
 						superclassFqn = superclassFqnBuilder.toString();

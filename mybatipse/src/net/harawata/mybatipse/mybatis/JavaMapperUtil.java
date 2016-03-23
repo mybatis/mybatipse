@@ -11,7 +11,7 @@
 
 package net.harawata.mybatipse.mybatis;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,27 +36,19 @@ import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.MybatipseConstants;
 
 /**
  * @author Iwao AVE!
  */
 public class JavaMapperUtil
 {
-	public static final String TYPE_ROW_BOUNDS = "org.apache.ibatis.session.RowBounds";
-
-	public static final String ANNOTATION_PARAM = "org.apache.ibatis.annotations.Param";
-
-	public static final List<String> statementAnnotations = Arrays.asList("Select", "Insert",
-		"Update", "Delete", "SelectProvider", "InsertProvider", "UpdateProvider", "DeleteProvider");
-
-	public static void findMapperMethod(List<MapperMethodInfo> methodInfos, IJavaProject project,
+	public static void findMapperMethod(MapperMethodStore store, IJavaProject project,
 		String mapperFqn, MethodMatcher annotationFilter)
 	{
 		try
@@ -66,11 +58,11 @@ public class JavaMapperUtil
 				return;
 			if (mapperType.isBinary())
 			{
-				findMapperMethodBinary(methodInfos, project, annotationFilter, mapperType);
+				findMapperMethodBinary(store, project, annotationFilter, mapperType);
 			}
 			else
 			{
-				findMapperMethodSource(methodInfos, project, mapperFqn, annotationFilter, mapperType);
+				findMapperMethodSource(store, project, mapperFqn, annotationFilter, mapperType);
 			}
 		}
 		catch (JavaModelException e)
@@ -79,7 +71,7 @@ public class JavaMapperUtil
 		}
 	}
 
-	private static void findMapperMethodSource(List<MapperMethodInfo> methodInfos,
+	private static void findMapperMethodSource(MapperMethodStore methodStore,
 		IJavaProject project, String mapperFqn, MethodMatcher annotationFilter, IType mapperType)
 	{
 		ICompilationUnit compilationUnit = (ICompilationUnit)mapperType
@@ -90,40 +82,18 @@ public class JavaMapperUtil
 		parser.setResolveBindings(true);
 		// parser.setIgnoreMethodBodies(true);
 		CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
-		astUnit.accept(new JavaMapperVisitor(methodInfos, project, mapperFqn, annotationFilter));
+		astUnit.accept(new JavaMapperVisitor(methodStore, project, mapperFqn, annotationFilter));
 	}
 
-	private static void findMapperMethodBinary(List<MapperMethodInfo> methodInfos,
+	private static void findMapperMethodBinary(MapperMethodStore methodStore,
 		IJavaProject project, MethodMatcher methodMatcher, IType mapperType)
 		throws JavaModelException
 	{
 		for (IMethod method : mapperType.getMethods())
 		{
-			if (!methodMatcher.matches(method))
-				continue;
-
-			Map<String, String> paramMap = new HashMap<String, String>();
-			MapperMethodInfo methodInfo = new MapperMethodInfo(method, paramMap);
-			methodInfos.add(methodInfo);
-
-			ILocalVariable[] parameters = method.getParameters();
-			for (int i = 0; i < parameters.length; i++)
+			if (methodMatcher.matches(method))
 			{
-				String paramFqn = parameters[i].getElementName();
-				for (IAnnotation annotation : parameters[i].getAnnotations())
-				{
-					if (ANNOTATION_PARAM.equals(annotation.getElementName()))
-					{
-						IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
-						if (valuePairs.length == 1)
-						{
-							IMemberValuePair valuePair = valuePairs[0];
-							String paramValue = (String)valuePair.getValue();
-							paramMap.put(paramValue, paramFqn);
-						}
-					}
-				}
-				paramMap.put("param" + (i + 1), paramFqn); //$NON-NLS-1$
+				methodStore.add(method);
 			}
 		}
 
@@ -132,14 +102,14 @@ public class JavaMapperUtil
 		{
 			if (!Object.class.getName().equals(superInterface))
 			{
-				findMapperMethod(methodInfos, project, superInterface, methodMatcher);
+				findMapperMethod(methodStore, project, superInterface, methodMatcher);
 			}
 		}
 	}
 
 	public static class JavaMapperVisitor extends ASTVisitor
 	{
-		private List<MapperMethodInfo> methodInfos;
+		private MapperMethodStore methodStore;
 
 		private IJavaProject project;
 
@@ -187,13 +157,9 @@ public class JavaMapperUtil
 
 			try
 			{
-				if (methodMatcher.matches((IMethod)method.getJavaElement()))
+				if (methodMatcher.matches(method))
 				{
-					Map<String, String> paramMap = new HashMap<String, String>();
-					MapperMethodInfo methodInfo = new MapperMethodInfo((IMethod)method.getJavaElement(),
-						paramMap);
-					methodInfos.add(methodInfo);
-					collectMethodParams(node, paramMap);
+					methodStore.add(method);
 				}
 			}
 			catch (JavaModelException e)
@@ -204,37 +170,9 @@ public class JavaMapperUtil
 			return false;
 		}
 
-		private void collectMethodParams(MethodDeclaration node, Map<String, String> paramMap)
-		{
-			@SuppressWarnings("unchecked")
-			List<SingleVariableDeclaration> paramDecls = node.parameters();
-			for (int i = 0; i < paramDecls.size(); i++)
-			{
-				IVariableBinding paramBinding = paramDecls.get(i).resolveBinding();
-				String paramFqn = paramBinding.getType().getQualifiedName();
-				if (TYPE_ROW_BOUNDS.equals(paramFqn))
-					continue;
-				IAnnotationBinding[] paramAnnotations = paramBinding.getAnnotations();
-				for (IAnnotationBinding annotation : paramAnnotations)
-				{
-					if (ANNOTATION_PARAM.equals(annotation.getAnnotationType().getQualifiedName()))
-					{
-						IMemberValuePairBinding[] valuePairs = annotation.getAllMemberValuePairs();
-						if (valuePairs.length == 1)
-						{
-							IMemberValuePairBinding valuePairBinding = valuePairs[0];
-							String paramValue = (String)valuePairBinding.getValue();
-							paramMap.put(paramValue, paramFqn);
-						}
-					}
-				}
-				paramMap.put("param" + (i + 1), paramFqn); //$NON-NLS-1$
-			}
-		}
-
 		public void endVisit(TypeDeclaration node)
 		{
-			if (nestLevel == 1 && (!methodMatcher.needExactMatch() || methodInfos.isEmpty()))
+			if (nestLevel == 1 && (!methodMatcher.needExactMatch() || methodStore.isEmpty()))
 			{
 				@SuppressWarnings("unchecked")
 				List<Type> superInterfaceTypes = node.superInterfaceTypes();
@@ -252,7 +190,7 @@ public class JavaMapperUtil
 								int paramIdx = superInterfaceFqn.indexOf('<');
 								superInterfaceFqn = superInterfaceFqn.substring(0, paramIdx);
 							}
-							findMapperMethod(methodInfos, project, superInterfaceFqn, methodMatcher);
+							findMapperMethod(methodStore, project, superInterfaceFqn, methodMatcher);
 						}
 					}
 				}
@@ -261,21 +199,149 @@ public class JavaMapperUtil
 		}
 
 		private JavaMapperVisitor(
-			List<MapperMethodInfo> methodInfos,
+			MapperMethodStore methodStore,
 			IJavaProject project,
 			String mapperFqn,
 			MethodMatcher annotationFilter)
 		{
-			this.methodInfos = methodInfos;
+			this.methodStore = methodStore;
 			this.project = project;
 			this.mapperFqn = mapperFqn;
 			this.methodMatcher = annotationFilter;
 		}
 	}
 
+	public static interface MapperMethodStore
+	{
+		/**
+		 * Called when adding binary method.
+		 */
+		void add(IMethod method);
+
+		/**
+		 * Called when adding source method.
+		 */
+		void add(IMethodBinding method);
+
+		boolean isEmpty();
+	}
+
+	public static class MethodNameStore implements MapperMethodStore
+	{
+		private List<String> methodNames = new ArrayList<String>();
+
+		public List<String> getMethodNames()
+		{
+			return methodNames;
+		}
+
+		@Override
+		public void add(IMethod method)
+		{
+			methodNames.add(method.getElementName());
+		}
+
+		@Override
+		public void add(IMethodBinding method)
+		{
+			methodNames.add(method.getName());
+		}
+
+		@Override
+		public boolean isEmpty()
+		{
+			return methodNames.isEmpty();
+		}
+	}
+
+	public static class MethodParametersStore implements MapperMethodStore
+	{
+		private boolean found;
+
+		private Map<String, String> paramMap = new HashMap<String, String>();
+
+		public Map<String, String> getParamMap()
+		{
+			return paramMap;
+		}
+
+		@Override
+		public void add(IMethod method)
+		{
+			found = true;
+			try
+			{
+				ILocalVariable[] parameters = method.getParameters();
+				for (int i = 0; i < parameters.length; i++)
+				{
+					String paramFqn = parameters[i].getElementName();
+					for (IAnnotation annotation : parameters[i].getAnnotations())
+					{
+						if (MybatipseConstants.ANNOTATION_PARAM.equals(annotation.getElementName()))
+						{
+							IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
+							if (valuePairs.length == 1)
+							{
+								IMemberValuePair valuePair = valuePairs[0];
+								String paramValue = (String)valuePair.getValue();
+								paramMap.put(paramValue, paramFqn);
+							}
+						}
+					}
+					paramMap.put("param" + (i + 1), paramFqn);
+				}
+			}
+			catch (JavaModelException e)
+			{
+				Activator.log(Status.ERROR,
+					"Failed to collect parameters of method " + method.getElementName() + " in "
+						+ method.getDeclaringType().getFullyQualifiedName(),
+					e);
+			}
+		}
+
+		@Override
+		public void add(IMethodBinding method)
+		{
+			found = true;
+			ITypeBinding[] parameters = method.getParameterTypes();
+			for (int i = 0; i < parameters.length; i++)
+			{
+				String paramFqn = parameters[i].getQualifiedName();
+				if (MybatipseConstants.TYPE_ROW_BOUNDS.equals(paramFqn))
+					continue;
+
+				IAnnotationBinding[] paramAnnotations = method.getParameterAnnotations(i);
+				for (IAnnotationBinding annotation : paramAnnotations)
+				{
+					if (MybatipseConstants.ANNOTATION_PARAM
+						.equals(annotation.getAnnotationType().getQualifiedName()))
+					{
+						IMemberValuePairBinding[] valuePairs = annotation.getAllMemberValuePairs();
+						if (valuePairs.length == 1)
+						{
+							IMemberValuePairBinding valuePairBinding = valuePairs[0];
+							String paramValue = (String)valuePairBinding.getValue();
+							paramMap.put(paramValue, paramFqn);
+						}
+					}
+				}
+				paramMap.put("param" + (i + 1), paramFqn);
+			}
+		}
+
+		@Override
+		public boolean isEmpty()
+		{
+			return !found;
+		}
+	}
+
 	public static abstract class MethodMatcher
 	{
 		abstract boolean matches(IMethod method) throws JavaModelException;
+
+		abstract boolean matches(IMethodBinding method) throws JavaModelException;
 
 		abstract boolean needExactMatch();
 
@@ -313,6 +379,12 @@ public class JavaMapperUtil
 		}
 
 		@Override
+		public boolean matches(IMethodBinding method) throws JavaModelException
+		{
+			return nameMatches(method.getName(), matchString, exactMatch);
+		}
+
+		@Override
 		boolean needExactMatch()
 		{
 			return exactMatch;
@@ -338,12 +410,26 @@ public class JavaMapperUtil
 			for (IAnnotation annotation : method.getAnnotations())
 			{
 				String annotationName = annotation.getElementName();
-				if (statementAnnotations.contains(annotationName))
+				if (MybatipseConstants.STATEMENT_ANNOTATIONS.contains(annotationName))
 				{
 					return false;
 				}
 			}
 			return nameMatches(method.getElementName(), matchString, exactMatch);
+		}
+
+		@Override
+		public boolean matches(IMethodBinding method) throws JavaModelException
+		{
+			for (IAnnotationBinding annotation : method.getAnnotations())
+			{
+				String annotationName = annotation.getAnnotationType().getQualifiedName();
+				if (MybatipseConstants.STATEMENT_ANNOTATIONS.contains(annotationName))
+				{
+					return false;
+				}
+			}
+			return nameMatches(method.getName(), matchString, exactMatch);
 		}
 
 		@Override
@@ -369,21 +455,31 @@ public class JavaMapperUtil
 		@Override
 		public boolean matches(IMethod method) throws JavaModelException
 		{
-			boolean hasSelectAnnotation = false;
 			for (IAnnotation annotation : method.getAnnotations())
 			{
 				String annotationName = annotation.getElementName();
-				if ("Select".equals(annotationName) || "SelectProvider".equals(annotationName))
+				if (MybatipseConstants.ANNOTATION_SELECT.equals(annotationName)
+					|| MybatipseConstants.ANNOTATION_SELECT_PROVIDER.equals(annotationName))
 				{
-					hasSelectAnnotation = true;
-					break;
+					return nameMatches(method.getElementName(), matchString, exactMatch);
 				}
 			}
-			if (!hasSelectAnnotation)
+			return false;
+		}
+
+		@Override
+		public boolean matches(IMethodBinding method) throws JavaModelException
+		{
+			for (IAnnotationBinding annotation : method.getAnnotations())
 			{
-				return false;
+				String annotationName = annotation.getAnnotationType().getQualifiedName();
+				if (MybatipseConstants.ANNOTATION_SELECT.equals(annotationName)
+					|| MybatipseConstants.ANNOTATION_SELECT_PROVIDER.equals(annotationName))
+				{
+					return nameMatches(method.getName(), matchString, exactMatch);
+				}
 			}
-			return nameMatches(method.getElementName(), matchString, exactMatch);
+			return false;
 		}
 
 		@Override
@@ -412,7 +508,7 @@ public class JavaMapperUtil
 			for (IAnnotation annotation : method.getAnnotations())
 			{
 				String annotationName = annotation.getElementName();
-				if ("Results".equals(annotationName))
+				if (MybatipseConstants.ANNOTATION_RESULTS.equals(annotationName))
 				{
 					IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
 					for (IMemberValuePair valuePair : valuePairs)
@@ -429,65 +525,31 @@ public class JavaMapperUtil
 		}
 
 		@Override
-		boolean needExactMatch()
+		public boolean matches(IMethodBinding method) throws JavaModelException
 		{
-			return exactMatch;
-		}
-	}
-
-	public static class MapperMethodInfo
-	{
-		private IMethod method;
-
-		private Map<String, String> params;
-
-		public MapperMethodInfo(IMethod method, Map<String, String> params)
-		{
-			this.method = method;
-			this.params = params;
-		}
-
-		public IMethod getMethod()
-		{
-			return method;
-		}
-
-		public String getMethodName()
-		{
-			return method.getElementName();
-		}
-
-		public Map<String, String> getParams()
-		{
-			return params;
-		}
-
-		public Object getAnnotationAttr(String targetAnnotation, String targetAttr)
-		{
-			try
+			for (IAnnotationBinding annotation : method.getAnnotations())
 			{
-				for (IAnnotation annotation : method.getAnnotations())
+				String annotationName = annotation.getAnnotationType().getQualifiedName();
+				if (MybatipseConstants.ANNOTATION_RESULTS.equals(annotationName))
 				{
-					String annotationName = annotation.getElementName();
-					if (targetAnnotation.equals(annotationName))
+					IMemberValuePairBinding[] valuePairs = annotation.getAllMemberValuePairs();
+					for (IMemberValuePairBinding valuePair : valuePairs)
 					{
-						IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
-						for (IMemberValuePair valuePair : valuePairs)
+						if ("id".equals(valuePair.getName()))
 						{
-							if (targetAttr.equals(valuePair.getMemberName()))
-							{
-								return valuePair.getValue();
-							}
+							String resultsId = (String)valuePair.getValue();
+							return nameMatches(resultsId, matchString, exactMatch);
 						}
 					}
 				}
 			}
-			catch (JavaModelException e)
-			{
-				Activator.log(Status.ERROR, "Error occurred while searching '" + targetAttr
-					+ "' attribute of '" + targetAnnotation + "'", e);
-			}
-			return null;
+			return false;
+		}
+
+		@Override
+		boolean needExactMatch()
+		{
+			return exactMatch;
 		}
 	}
 }

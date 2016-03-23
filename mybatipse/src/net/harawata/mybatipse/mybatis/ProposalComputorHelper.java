@@ -23,10 +23,16 @@ import javax.xml.xpath.XPathExpressionException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMemberValuePair;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.CharOperation;
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
+import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -38,10 +44,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.MybatipseConstants;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.JavaCompletionProposal;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodInfo;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodStore;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameStore;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.ResultsAnnotationWithId;
 import net.harawata.mybatipse.util.NameUtil;
 import net.harawata.mybatipse.util.XpathUtil;
@@ -84,7 +92,7 @@ public class ProposalComputorHelper
 			mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
 		}
 		return ProposalComputorHelper.proposeReference(project, mapperDoc, currentNamespace,
-			matchString, start, length, "resultMap", null);
+			matchString, start, length, targetElement, null);
 	}
 
 	public static List<ICompletionProposal> proposeReference(IJavaProject project,
@@ -92,7 +100,7 @@ public class ProposalComputorHelper
 		String idToExclude)
 	{
 		return ProposalComputorHelper.proposeReference(project, domDoc, null, matchString, start,
-			length, "resultMap", null);
+			length, targetElement, null);
 	}
 
 	private static List<ICompletionProposal> proposeReference(IJavaProject project,
@@ -210,12 +218,11 @@ public class ProposalComputorHelper
 	private static void proposeJavaSelect(List<ICompletionProposal> results, IJavaProject project,
 		String namespace, String matchString, int start, int length)
 	{
-		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
-		JavaMapperUtil.findMapperMethod(methodInfos, project, namespace,
+		MethodNameStore methodStore = new MethodNameStore();
+		JavaMapperUtil.findMapperMethod(methodStore, project, namespace,
 			new HasSelectAnnotation(matchString, false));
-		for (MapperMethodInfo methodInfo : methodInfos)
+		for (String methodName : methodStore.getMethodNames())
 		{
-			String methodName = methodInfo.getMethodName();
 			results.add(new JavaCompletionProposal(methodName, start, length, methodName.length(),
 				Activator.getIcon(), methodName, null, null, 200));
 		}
@@ -224,14 +231,76 @@ public class ProposalComputorHelper
 	private static void proposeJavaResultMap(List<ICompletionProposal> results,
 		IJavaProject project, String namespace, String matchString, int start, int length)
 	{
-		List<MapperMethodInfo> methodInfos = new ArrayList<MapperMethodInfo>();
-		JavaMapperUtil.findMapperMethod(methodInfos, project, namespace,
-			new ResultsAnnotationWithId(matchString, false));
-		for (MapperMethodInfo methodInfo : methodInfos)
+		class ResultsIdStore implements MapperMethodStore
 		{
-			String resultMapId = (String)methodInfo.getAnnotationAttr("Results", "id");
-			results.add(new JavaCompletionProposal(resultMapId, start, length, resultMapId.length(),
-				Activator.getIcon(), resultMapId, null, null, 200));
+			private List<String> resultMapIds = new ArrayList<String>();
+
+			public List<String> getResultMapIds()
+			{
+				return resultMapIds;
+			}
+
+			@Override
+			public void add(IMethod method)
+			{
+				try
+				{
+					for (IAnnotation annotation : method.getAnnotations())
+					{
+						String annotationName = annotation.getElementName();
+						if (MybatipseConstants.ANNOTATION_RESULTS.equals(annotationName))
+						{
+							IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
+							for (IMemberValuePair valuePair : valuePairs)
+							{
+								if ("id".equals(valuePair.getMemberName()))
+								{
+									resultMapIds.add((String)valuePair.getValue());
+								}
+							}
+						}
+					}
+				}
+				catch (JavaModelException e)
+				{
+					Activator.log(Status.ERROR, "Failed parse annotation of " + method.getElementName()
+						+ " in " + method.getDeclaringType().getFullyQualifiedName(), e);
+				}
+			}
+
+			@Override
+			public void add(IMethodBinding method)
+			{
+				for (IAnnotationBinding annotation : method.getAnnotations())
+				{
+					String annotationName = annotation.getAnnotationType().getQualifiedName();
+					if (MybatipseConstants.ANNOTATION_RESULTS.equals(annotationName))
+					{
+						IMemberValuePairBinding[] valuePairs = annotation.getAllMemberValuePairs();
+						for (IMemberValuePairBinding valuePair : valuePairs)
+						{
+							if ("id".equals(valuePair.getName()))
+							{
+								resultMapIds.add((String)valuePair.getValue());
+							}
+						}
+					}
+				}
+			}
+
+			@Override
+			public boolean isEmpty()
+			{
+				return resultMapIds.isEmpty();
+			}
+		}
+		final ResultsIdStore methodStore = new ResultsIdStore();
+		JavaMapperUtil.findMapperMethod(methodStore, project, namespace,
+			new ResultsAnnotationWithId(matchString, false));
+		for (String resultsId : methodStore.getResultMapIds())
+		{
+			results.add(new JavaCompletionProposal(resultsId, start, length, resultsId.length(),
+				Activator.getIcon(), resultsId, null, null, 200));
 		}
 	}
 
@@ -409,28 +478,28 @@ public class ProposalComputorHelper
 	public static List<ICompletionProposal> proposeTypeHandler(IJavaProject project,
 		final int start, final int length, String matchString)
 	{
-		String interfaceFqn = "org.apache.ibatis.type.TypeHandler";
+		String interfaceFqn = MybatipseConstants.TYPE_TYPE_HANDLER;
 		return proposeImplementation(project, start, length, matchString, interfaceFqn);
 	}
 
 	public static List<ICompletionProposal> proposeCacheType(IJavaProject project,
 		final int start, final int length, String matchString)
 	{
-		String interfaceFqn = "org.apache.ibatis.cache.Cache";
+		String interfaceFqn = MybatipseConstants.TYPE_CACHE;
 		return proposeImplementation(project, start, length, matchString, interfaceFqn);
 	}
 
 	public static List<ICompletionProposal> proposeObjectFactory(IJavaProject project,
 		final int start, final int length, String matchString)
 	{
-		String interfaceFqn = "org.apache.ibatis.reflection.factory.ObjectFactory";
+		String interfaceFqn = MybatipseConstants.TYPE_OBJECT_FACTORY;
 		return proposeImplementation(project, start, length, matchString, interfaceFqn);
 	}
 
 	public static List<ICompletionProposal> proposeObjectWrapperFactory(IJavaProject project,
 		final int start, final int length, String matchString)
 	{
-		String interfaceFqn = "org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory";
+		String interfaceFqn = MybatipseConstants.TYPE_OBJECT_WRAPPER_FACTORY;
 		return proposeImplementation(project, start, length, matchString, interfaceFqn);
 	}
 

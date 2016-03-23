@@ -56,6 +56,7 @@ import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
 import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.MybatipseConstants;
 
 /**
  * @author Iwao AVE!
@@ -122,7 +123,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 								List<IExtendedModifier> modifiers = param.modifiers();
 								if (!hasParamAnnotation(modifiers))
 								{
-									if (JavaMapperUtil.TYPE_ROW_BOUNDS
+									if (MybatipseConstants.TYPE_ROW_BOUNDS
 										.equals(param.resolveBinding().getType().getQualifiedName()))
 										continue;
 									AST ast = param.getAST();
@@ -332,10 +333,10 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			if (nestLevel != 1)
 				return false;
 			String typeFqn = node.resolveTypeBinding().getQualifiedName();
-			if ("org.apache.ibatis.annotations.Select".equals(typeFqn)
-				|| "org.apache.ibatis.annotations.Update".equals(typeFqn)
-				|| "org.apache.ibatis.annotations.Insert".equals(typeFqn)
-				|| "org.apache.ibatis.annotations.Delete".equals(typeFqn))
+			if (MybatipseConstants.ANNOTATION_SELECT.equals(typeFqn)
+				|| MybatipseConstants.ANNOTATION_UPDATE.equals(typeFqn)
+				|| MybatipseConstants.ANNOTATION_INSERT.equals(typeFqn)
+				|| MybatipseConstants.ANNOTATION_DELETE.equals(typeFqn))
 			{
 				Expression value = node.getValue();
 				int valueType = value.getNodeType();

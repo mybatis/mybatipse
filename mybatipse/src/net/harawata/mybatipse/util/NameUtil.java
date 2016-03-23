@@ -80,6 +80,13 @@ public class NameUtil
 		return result;
 	}
 
+	public static String resolveTypeParam(List<String> actualTypeParams, List<String> typeParams,
+		String typeParam)
+	{
+		int typeParamIdx = typeParams.indexOf(typeParam);
+		return typeParamIdx == -1 ? typeParam : actualTypeParams.get(typeParamIdx);
+	}
+
 	private NameUtil()
 	{
 	}
