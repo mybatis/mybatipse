@@ -545,7 +545,7 @@ public class TypeAliasCache
 			}
 			try
 			{
-				searchEngine.searchAllTypeNames(pkg.toCharArray(), SearchPattern.R_EXACT_MATCH, null,
+				searchEngine.searchAllTypeNames(pkg.toCharArray(), SearchPattern.R_PREFIX_MATCH, null,
 					SearchPattern.R_CAMELCASE_MATCH, IJavaSearchConstants.CLASS, scope, requestor,
 					IJavaSearchConstants.WAIT_UNTIL_READY_TO_SEARCH, null);
 			}
