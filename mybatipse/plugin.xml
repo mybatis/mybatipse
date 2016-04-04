@@ -6,7 +6,7 @@
       <content-type
             base-type="org.eclipse.core.runtime.xml"
             file-extensions="xml"
-            id="net.harawata.mybatipse.Mapper"
+            id="mapper"
             name="MyBatis XML Mapper"
             priority="normal">
          <describer
@@ -19,7 +19,7 @@
       <content-type
             base-type="org.eclipse.core.runtime.xml"
             file-extensions="xml"
-            id="net.harawata.mybatipse.Config"
+            id="config"
             name="MyBatis XML Config"
             priority="normal">
          <describer
@@ -29,10 +29,13 @@
             </parameter>
          </describer>
       </content-type>
+      <!-- 'alias-for' does not work as advertised. -->
+      <!-- https://bugs.eclipse.org/bugs/show_bug.cgi?id=85762 -->
       <content-type
             base-type="org.eclipse.core.runtime.xml"
             file-extensions="xml"
-            id="net.harawata.mybatipse.SpringConfig"
+            id="springConfig"
+            alias-for="org.springframework.ide.eclipse.beans.ui.editor.beansConfig"
             name="MyBatis Spring XML Config"
             priority="normal">
          <describer
@@ -73,10 +76,10 @@
          <include>
             <rules>
                <contentType
-                     id="net.harawata.mybatipse.Mapper">
+                     id="net.harawata.mybatipse.mapper">
                </contentType>
                <contentType
-                     id="net.harawata.mybatipse.Config">
+                     id="net.harawata.mybatipse.config">
                </contentType></rules>
          </include>
       </validator>
@@ -90,10 +93,10 @@
             id="net.harawata.mybatipse.proposalComputer.xml"
             name="MyBatis XML Mapper Proposal">
          <contentType
-               id="net.harawata.mybatipse.Mapper">
+               id="net.harawata.mybatipse.mapper">
          </contentType>
          <contentType
-               id="net.harawata.mybatipse.Config">
+               id="net.harawata.mybatipse.config">
          </contentType>
       </proposalComputer>
       <proposalCategory
@@ -113,10 +116,10 @@
                id="org.eclipse.core.runtime.xml">
          </contentTypeIdentifier>
          <contentTypeIdentifier
-               id="net.harawata.mybatipse.Mapper">
+               id="net.harawata.mybatipse.mapper">
          </contentTypeIdentifier>
          <contentTypeIdentifier
-               id="net.harawata.mybatipse.Config">
+               id="net.harawata.mybatipse.config">
          </contentTypeIdentifier>
       </validator>
    </extension> -->

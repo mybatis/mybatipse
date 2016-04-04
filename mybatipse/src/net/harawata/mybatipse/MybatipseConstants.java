@@ -25,11 +25,13 @@ public class MybatipseConstants
 {
 	public static final String PLUGIN_ID = "net.harawata.mybatipse"; //$NON-NLS-1$
 
-	public static final String CONTENT_TYPE_CONFIG = "net.harawata.mybatipse.Config"; //$NON-NLS-1$
+	public static final String CONTENT_TYPE_CONFIG = "net.harawata.mybatipse.config"; //$NON-NLS-1$
 
-	public static final String CONTENT_TYPE_MAPPER = "net.harawata.mybatipse.Mapper"; //$NON-NLS-1$
+	public static final String CONTENT_TYPE_MAPPER = "net.harawata.mybatipse.mapper"; //$NON-NLS-1$
 
-	public static final String CONTENT_TYPE_SPRING_CONFIG = "net.harawata.mybatipse.SpringConfig"; //$NON-NLS-1$
+	public static final String CONTENT_TYPE_SPRING_CONFIG = "net.harawata.mybatipse.springConfig"; //$NON-NLS-1$
+
+	public static final String CONTENT_TYPE_SPRING_CONFIG_STS = "com.springsource.sts.config.ui.beanConfigFile"; //$NON-NLS-1$
 
 	public static final String PREF_CUSTOM_TYPE_ALIASES = "prefCustomTypeAliases"; //$NON-NLS-1$
 
@@ -69,7 +71,7 @@ public class MybatipseConstants
 
 	public static final IContentType configContentType;
 
-	public static final IContentType springConfigContentType;
+	public static IContentType springConfigContentType;
 
 	static
 	{
@@ -77,6 +79,12 @@ public class MybatipseConstants
 		mapperContentType = contentTypeManager.getContentType(CONTENT_TYPE_MAPPER);
 		configContentType = contentTypeManager.getContentType(CONTENT_TYPE_CONFIG);
 		springConfigContentType = contentTypeManager.getContentType(CONTENT_TYPE_SPRING_CONFIG);
+		if (springConfigContentType == null)
+		{
+			// this means STS is installed...I guess.
+			springConfigContentType = contentTypeManager
+				.getContentType(CONTENT_TYPE_SPRING_CONFIG_STS);
+		}
 	}
 
 	private MybatipseConstants()
