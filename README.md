@@ -62,9 +62,14 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 
 
 #### Quick Assist
-- Add @Param to method parameters : Put the cursor on the method name and press cmd + 1 (or ctrl + 1).  
+
+Put the cursor on the statement method name and press cmd + 1 (or ctrl + 1) to trigger Quick Assist.
+
+- You can add @Param to method parameters.  
 ![param-annotation1](screen/qa-add-param1.png)  
 ![param-annotation2](screen/qa-add-param2.png)  
+- You can copy annotation statement into the clipboard. 
+![param-annotation1](screen/qa-copy-statement.png)  
 
 
 ## Configuration
