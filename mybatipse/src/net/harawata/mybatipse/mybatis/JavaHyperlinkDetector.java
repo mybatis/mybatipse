@@ -17,6 +17,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
@@ -60,11 +61,12 @@ public class JavaHyperlinkDetector extends AbstractHyperlinkDetector
 				switch (srcElement.getElementType())
 				{
 					case IJavaElement.METHOD:
-						links = getLinks(typeRoot, null, "//*[@id='" + srcElement.getElementName() + "']",
-							region);
+						IMethod method = (IMethod)srcElement;
+						links = getLinks(method.getDeclaringType(), null,
+							"//*[@id='" + srcElement.getElementName() + "']", region);
 						break;
 					case IJavaElement.TYPE:
-						links = getLinks(typeRoot, null, "//mapper", region);
+						links = getLinks((IType)srcElement, null, "//mapper", region);
 						break;
 					default:
 						break;
@@ -78,17 +80,16 @@ public class JavaHyperlinkDetector extends AbstractHyperlinkDetector
 		return links;
 	}
 
-	private IHyperlink[] getLinks(ITypeRoot typeRoot, IType triggerType, String expression,
+	private IHyperlink[] getLinks(IType type, IType triggerType, String expression,
 		IRegion srcRegion) throws JavaModelException
 	{
-		IType primaryType = typeRoot.findPrimaryType();
-		if (primaryType.isInterface() && (triggerType == null || primaryType.equals(triggerType)))
+		if (type.isInterface() && (triggerType == null || type.equals(triggerType)))
 		{
-			IJavaProject project = primaryType.getJavaProject();
+			IJavaProject project = type.getJavaProject();
 			if (project != null)
 			{
 				IFile mapperFile = MapperNamespaceCache.getInstance().get(project,
-					primaryType.getFullyQualifiedName(), null);
+					type.getFullyQualifiedName(), null);
 				if (mapperFile != null)
 				{
 					IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
