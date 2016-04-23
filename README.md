@@ -32,9 +32,11 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 #### Hyperlinks
 - To referenced resultMap/select/sql element. External reference is supported.  
 ![link to external reference](screen/hl-refid.png)
-- From/to Java/XML declaration.  
+- From Java mapper interface to XML mapper element.  
 ![link to xml mapper](screen/hl-xml-mapper.png)  
+- From Java mapper method to XML mapper element.  
 ![link to xml statement](screen/hl-xml-statement.png)  
+- From XML statement id to Java mapper method.  
 ![link to java method](screen/hl-java-method.png)
 
 
@@ -56,8 +58,13 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 #### Auto-completion
 - Parameter properties : #{} and ${} in select/insert/udpate/delte annotations.
 ![autocomplete properties in java](screen/ac-stmt-prop-java.png)  
+- Return type properties in ```@Result```  
+![autocomplete return type properties in java](screen/ac-result-prop-java.png)  
+- keyProperty in ```@Options``` and ```@SelectKey```  
+![autocomplete return type properties in java](screen/ac-options-keyprop-java.png)  
+![autocomplete return type properties in java](screen/ac-selkey-keyprop-java.png)  
 - javaType, jdbcType, typeHandler in #{}  : See the XML example.
-- Reference to resultMap in @ResultMap  
+- Reference to resultMap in ```@ResultMap```  
 ![autocomplete resultmap annotation](screen/ac-rmap-java.png)  
 
 
@@ -65,7 +72,7 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 
 Put the cursor on the statement method name and press cmd + 1 (or ctrl + 1) to trigger Quick Assist.
 
-- You can add @Param to method parameters.  
+- You can add ```@Param``` to method parameters.  
 ![param-annotation1](screen/qa-add-param1.png)  
 ![param-annotation2](screen/qa-add-param2.png)  
 - You can copy annotation statement into the clipboard. 
