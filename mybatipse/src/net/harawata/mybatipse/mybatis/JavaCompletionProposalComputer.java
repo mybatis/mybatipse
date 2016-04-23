@@ -14,6 +14,8 @@ package net.harawata.mybatipse.mybatis;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -94,11 +96,73 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 					{
 						return proposeResultProperty(javaContext, primaryType, offset, annotation, method);
 					}
+					else if ("Options".equals(elementName) || "SelectKey".equals(elementName))
+					{
+						return proposeKeyProperty(javaContext, primaryType, offset, annotation, method);
+					}
 				}
 			}
 			catch (JavaModelException e)
 			{
 				Activator.log(Status.ERROR, "Something went wrong.", e);
+			}
+		}
+		return Collections.emptyList();
+	}
+
+	private List<ICompletionProposal> proposeKeyProperty(
+		JavaContentAssistInvocationContext javaContext, IType primaryType, int offset,
+		IAnnotation annotation, IMethod method) throws JavaModelException
+	{
+		AnnotationParser parser = new AnnotationParser(annotation, offset);
+		if ("keyProperty".equals(parser.getKey()))
+		{
+			IJavaProject project = javaContext.getProject();
+			String mapperFqn = primaryType.getFullyQualifiedName();
+			final MethodParametersStore methodStore = new MethodParametersStore();
+			JavaMapperUtil.findMapperMethod(methodStore, project, mapperFqn,
+				new MethodNameMatcher(method.getElementName(), true));
+			if (!methodStore.isEmpty())
+			{
+				Map<String, String> paramMap = methodStore.getParamMap();
+				if (paramMap.isEmpty())
+				{
+					return Collections.emptyList();
+				}
+				String actualParamType = null;
+				String paramType = null;
+				for (Entry<String, String> entry : paramMap.entrySet())
+				{
+					paramType = entry.getValue();
+					// only the first parameter for now
+					break;
+				}
+				if (paramType.indexOf('<') == -1)
+				{
+					actualParamType = paramType;
+				}
+				else
+				{
+					IType rawType = project.findType(NameUtil.stripTypeArguments(paramType));
+					final ITypeHierarchy supertypes = rawType
+						.newSupertypeHierarchy(new NullProgressMonitor());
+					IType collectionType = project.findType("java.util.Collection");
+					if (supertypes.contains(collectionType))
+					{
+						List<String> typeParams = NameUtil.extractTypeParams(paramType);
+						if (typeParams.size() == 1)
+						{
+							actualParamType = typeParams.get(0);
+						}
+					}
+				}
+				if (actualParamType != null)
+				{
+					String matchString = String.valueOf(parser.getValue());
+					return ProposalComputorHelper.proposePropertyFor(project,
+						offset - matchString.length(), parser.getValueLength(), actualParamType, false, -1,
+						matchString);
+				}
 			}
 		}
 		return Collections.emptyList();
