@@ -254,6 +254,45 @@ public class JavaMapperUtil
 		}
 	}
 
+	public static class MethodReturnTypeStore implements MapperMethodStore
+	{
+		private String returnType = null;
+
+		public String getReturnType()
+		{
+			return returnType;
+		}
+
+		@Override
+		public void add(IMethod method)
+		{
+			try
+			{
+				returnType = method.getReturnType();
+			}
+			catch (JavaModelException e)
+			{
+				Activator.log(Status.ERROR,
+					"Failed to collect return type of method " + method.getElementName() + " in "
+						+ method.getDeclaringType().getFullyQualifiedName(),
+					e);
+			}
+		}
+
+		@Override
+		public void add(IMethodBinding method)
+		{
+			ITypeBinding binding = method.getReturnType();
+			returnType = binding.getQualifiedName();
+		}
+
+		@Override
+		public boolean isEmpty()
+		{
+			return returnType == null;
+		}
+	}
+
 	public static class MethodParametersStore implements MapperMethodStore
 	{
 		private boolean found;

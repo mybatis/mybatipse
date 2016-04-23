@@ -16,15 +16,18 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.text.java.ContentAssistInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposalComputer;
@@ -35,6 +38,8 @@ import org.eclipse.jface.text.contentassist.IContextInformation;
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodParametersStore;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodReturnTypeStore;
+import net.harawata.mybatipse.util.NameUtil;
 
 /**
  * @author Iwao AVE!
@@ -78,14 +83,86 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				{
 					return proposeStatementText(javaContext, unit, offset, annotation, method);
 				}
-				else if ("ResultMap".equals(annotation.getElementName()))
+				else
 				{
-					return proposeResultMap(javaContext, primaryType, offset, annotation);
+					String elementName = annotation.getElementName();
+					if ("ResultMap".equals(elementName))
+					{
+						return proposeResultMap(javaContext, primaryType, offset, annotation);
+					}
+					else if ("Results".equals(elementName))
+					{
+						return proposeResultProperty(javaContext, primaryType, offset, annotation, method);
+					}
 				}
 			}
 			catch (JavaModelException e)
 			{
 				Activator.log(Status.ERROR, "Something went wrong.", e);
+			}
+		}
+		return Collections.emptyList();
+	}
+
+	private List<ICompletionProposal> proposeResultProperty(
+		JavaContentAssistInvocationContext javaContext, IType primaryType, int offset,
+		IAnnotation annotation, IMethod method) throws JavaModelException
+	{
+		IMemberValuePair[] resultsArgs = annotation.getMemberValuePairs();
+		for (IMemberValuePair resultsArg : resultsArgs)
+		{
+			if ("value".equals(resultsArg.getMemberName())
+				&& resultsArg.getValueKind() == IMemberValuePair.K_ANNOTATION)
+			{
+				Object[] resultAnnos = (Object[])resultsArg.getValue();
+				for (Object resultAnno : resultAnnos)
+				{
+					IAnnotation anno = (IAnnotation)resultAnno;
+					ISourceRange resultAnnoRange = anno.getSourceRange();
+					if (isInRange(resultAnnoRange, offset))
+					{
+						AnnotationParser parser = new AnnotationParser(anno, offset);
+						if ("property".equals(parser.getKey()))
+						{
+							IJavaProject project = javaContext.getProject();
+							String mapperFqn = primaryType.getFullyQualifiedName();
+							final MethodReturnTypeStore methodStore = new MethodReturnTypeStore();
+							JavaMapperUtil.findMapperMethod(methodStore, project, mapperFqn,
+								new MethodNameMatcher(method.getElementName(), true));
+							if (!methodStore.isEmpty())
+							{
+								String actualReturnType = null;
+								String returnType = methodStore.getReturnType();
+								if (returnType.indexOf('<') == -1)
+								{
+									actualReturnType = returnType;
+								}
+								else
+								{
+									IType rawType = project.findType(NameUtil.stripTypeArguments(returnType));
+									final ITypeHierarchy supertypes = rawType
+										.newSupertypeHierarchy(new NullProgressMonitor());
+									IType collectionType = project.findType("java.util.Collection");
+									if (supertypes.contains(collectionType))
+									{
+										List<String> typeParams = NameUtil.extractTypeParams(returnType);
+										if (typeParams.size() == 1)
+										{
+											actualReturnType = typeParams.get(0);
+										}
+									}
+								}
+								if (actualReturnType != null)
+								{
+									String matchString = String.valueOf(parser.getValue());
+									return ProposalComputorHelper.proposePropertyFor(project,
+										offset - matchString.length(), parser.getValueLength(), actualReturnType,
+										false, -1, matchString);
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 		return Collections.emptyList();
@@ -249,6 +326,108 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 		public String getMatchString()
 		{
 			return matchString;
+		}
+	}
+
+	private class AnnotationParser
+	{
+		private IAnnotation annotation;
+
+		private int offset;
+
+		private StringBuilder key = new StringBuilder();
+
+		private StringBuilder value = new StringBuilder();
+
+		private int valueLength;
+
+		public AnnotationParser(IAnnotation annotation, int offset) throws JavaModelException
+		{
+			super();
+			this.annotation = annotation;
+			this.offset = offset;
+			parse();
+		}
+
+		private void parse() throws JavaModelException
+		{
+			ISourceRange annotationRange = annotation.getSourceRange();
+			int annotationOffset = annotationRange.getOffset();
+			String source = annotation.getSource();
+			int back;
+			// get the word under the cursor
+			for (back = offset - annotationOffset - 1; back > 0; back--)
+			{
+				char c = source.charAt(back);
+				if (c == ',' || c == '"')
+				{
+					break;
+				}
+				else if (Character.isWhitespace(c))
+				{
+					// ignore
+				}
+				else
+				{
+					value.insert(0, c);
+				}
+			}
+			valueLength += value.length();
+			// get the rest of the word that will be overwritten
+			for (int forward = offset - annotationOffset; forward < annotationRange
+				.getLength(); forward++)
+			{
+				char c = source.charAt(forward);
+				if (c == ',' || c == '"')
+				{
+					break;
+				}
+				else
+				{
+					valueLength++;
+				}
+			}
+			// move the pointer back to the dquote
+			for (; back > 0; back--)
+			{
+				if (source.charAt(back) == '"')
+				{
+					break;
+				}
+			}
+			// get the property name
+			for (; back > 0; back--)
+			{
+				char c = source.charAt(back);
+				// can handle simple cases only
+				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+				{
+					key.insert(0, c);
+				}
+				else if (c == '(' || key.length() > 0)
+				{
+					break;
+				}
+				else
+				{
+					// ignore
+				}
+			}
+		}
+
+		public String getKey()
+		{
+			return key.toString();
+		}
+
+		public String getValue()
+		{
+			return value.toString();
+		}
+
+		public int getValueLength()
+		{
+			return valueLength;
 		}
 	}
 }
