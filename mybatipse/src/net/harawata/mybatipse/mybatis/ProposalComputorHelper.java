@@ -448,10 +448,24 @@ public class ProposalComputorHelper
 			return proposals;
 		}
 
+		final int dotPos = matchString.indexOf('.');
+		// Proposals for additional params.
+		if (additionalParams != null && !additionalParams.isEmpty())
+		{
+			if (dotPos == -1)
+			{
+				proposeParamName(proposals, offset, length, matchString, additionalParams);
+			}
+			else
+			{
+				proposeParamProperty(proposals, project, offset, length, searchReadable, matchString,
+					additionalParams, dotPos);
+			}
+		}
+
+		// Proposals for statement parameters.
 		String paramName = paramMap.keySet().iterator().next();
 		String paramType = paramMap.values().iterator().next();
-		final int dotPos = matchString.indexOf('.');
-		// Proposals for statement parameters.
 		if (paramMap.size() == 1 && "_parameter".equals(paramName))
 		{
 			// Sole parameter without @Param.
@@ -466,20 +480,6 @@ public class ProposalComputorHelper
 		{
 			proposeParamProperty(proposals, project, offset, length, searchReadable, matchString,
 				paramMap, dotPos);
-		}
-		// Proposals for additional params.
-		if (additionalParams == null || additionalParams.isEmpty())
-		{
-			return proposals;
-		}
-		if (dotPos == -1)
-		{
-			proposeParamName(proposals, offset, length, matchString, additionalParams);
-		}
-		else
-		{
-			proposeParamProperty(proposals, project, offset, length, searchReadable, matchString,
-				additionalParams, dotPos);
 		}
 		return proposals;
 	}

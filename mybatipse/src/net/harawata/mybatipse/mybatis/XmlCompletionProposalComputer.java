@@ -16,9 +16,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -224,7 +225,11 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			}
 			else
 			{
-				final Map<String, String> additionalParams = new HashMap<String, String>();
+				final Map<String, String> additionalParams = new LinkedHashMap<String, String>();
+				// parse foreach elements
+				parseForeachNodes(project,
+					XpathUtil.xpathNodes(parentNode, "ancestor-or-self::foreach"),
+					methodStore.getParamMap(), additionalParams);
 				// collect bind parameters
 				NodeList bindNames = XpathUtil.xpathNodes(statementNode, "bind/@name");
 				for (int i = 0; i < bindNames.getLength(); i++)
@@ -232,10 +237,6 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					String bindName = bindNames.item(i).getNodeValue();
 					additionalParams.put(bindName, "java.lang.Object");
 				}
-				// parse foreach elements
-				parseForeachNodes(project,
-					XpathUtil.xpathNodes(parentNode, "ancestor-or-self::foreach"),
-					methodStore.getParamMap(), additionalParams);
 				proposals.addAll(ProposalComputorHelper.proposeParameters(project, offset, length,
 					methodStore.getParamMap(), additionalParams, searchReadable, matchString));
 			}
@@ -255,6 +256,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		Map<String, String> paramMap, Map<String, String> additionalParams)
 		throws XPathExpressionException, JavaModelException
 	{
+		Map<String, String> map = new LinkedHashMap<String, String>();
 		for (int i = 0; i < foreachNodes.getLength(); i++)
 		{
 			Node foreachNode = foreachNodes.item(i);
@@ -262,7 +264,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			String item = XpathUtil.xpathString(foreachNode, "@item");
 			String index = XpathUtil.xpathString(foreachNode, "@index");
 			// Is collection a variable from outer foreach?
-			String collectionFqn = resolveCollectionFqn(project, additionalParams, collection);
+			String collectionFqn = resolveCollectionFqn(project, map, collection);
 			if (collectionFqn == null)
 			{
 				// Is collection a statement parameter?
@@ -283,8 +285,16 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			}
 			if (collectionFqn != null)
 			{
-				putItemAndIndex(project, additionalParams, collectionFqn, item, index);
+				putItemAndIndex(project, map, collectionFqn, item, index);
 			}
+		}
+		// reverse order of the proposals
+		ListIterator<Entry<String, String>> iter = new ArrayList<Entry<String, String>>(
+			map.entrySet()).listIterator(map.size());
+		while (iter.hasPrevious())
+		{
+			Entry<String, String> entry = iter.previous();
+			additionalParams.put(entry.getKey(), entry.getValue());
 		}
 	}
 
@@ -754,7 +764,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				if (diff != 0)
 					return diff;
 			}
-			return p1.getDisplayString().compareToIgnoreCase(p2.getDisplayString());
+			return 0;
 		}
 	}
 
