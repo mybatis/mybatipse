@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -25,6 +26,7 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.dom.AST;
@@ -42,6 +44,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.util.NameUtil;
 
 /**
  * @author Iwao AVE!
@@ -295,6 +298,8 @@ public class JavaMapperUtil
 
 	public static class MethodParametersStore implements MapperMethodStore
 	{
+		private IJavaProject project;
+
 		private boolean found;
 
 		private Map<String, String> paramMap = new HashMap<String, String>();
@@ -311,6 +316,11 @@ public class JavaMapperUtil
 			try
 			{
 				ILocalVariable[] parameters = method.getParameters();
+				if (parameters.length == 1)
+				{
+					putSoleParam(parameters[0].getElementName());
+					return;
+				}
 				for (int i = 0; i < parameters.length; i++)
 				{
 					String paramFqn = parameters[i].getElementName();
@@ -367,12 +377,68 @@ public class JavaMapperUtil
 				}
 				paramMap.put("param" + (i + 1), paramFqn);
 			}
+			if (paramMap.size() == 1)
+			{
+				// statement has a sole param without @Param
+				paramMap.clear();
+				putSoleParam(parameters[0].getQualifiedName());
+			}
+		}
+
+		private void putSoleParam(String paramFqn)
+		{
+			try
+			{
+				if (NameUtil.isArray(paramFqn))
+				{
+					paramMap.put("array", paramFqn);
+					return;
+				}
+				else
+				{
+					String rawTypeFqn = NameUtil.stripTypeArguments(paramFqn);
+					if (!paramFqn.equals(rawTypeFqn))
+					{
+						// Parameterized type.
+						final IType rawType = project.findType(rawTypeFqn);
+						final ITypeHierarchy supertypes = rawType
+							.newSupertypeHierarchy(new NullProgressMonitor());
+						final IType mapType = project.findType("java.util.Map");
+						if (supertypes.contains(mapType))
+						{
+							return;
+						}
+						final IType listType = project.findType("java.util.List");
+						final IType collectionType = project.findType("java.util.Collection");
+						if (supertypes.contains(listType))
+						{
+							paramMap.put("list", paramFqn);
+						}
+						if (supertypes.contains(collectionType))
+						{
+							paramMap.put("collection", paramFqn);
+							return;
+						}
+					}
+				}
+				paramMap.put("_parameter", paramFqn);
+			}
+			catch (JavaModelException e)
+			{
+				Activator.log(Status.ERROR, "Error occurred while putting sole param.", e);
+			}
 		}
 
 		@Override
 		public boolean isEmpty()
 		{
 			return !found;
+		}
+
+		public MethodParametersStore(IJavaProject project)
+		{
+			super();
+			this.project = project;
 		}
 	}
 

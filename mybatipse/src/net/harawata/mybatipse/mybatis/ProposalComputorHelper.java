@@ -310,13 +310,7 @@ public class ProposalComputorHelper
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		for (String option : options)
 		{
-			if (matchString.length() == 0
-				|| CharOperation.camelCaseMatch(matchString.toCharArray(), option.toCharArray()))
-			{
-				String replacementString = option + "=";
-				proposals.add(new CompletionProposal(replacementString, offset, length,
-					replacementString.length(), Activator.getIcon(), option, null, null));
-			}
+			addProposalIfMatch(proposals, matchString, option, option + "=", offset, length, option);
 		}
 		return proposals;
 	}
@@ -327,12 +321,8 @@ public class ProposalComputorHelper
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		for (String settingName : settingNames)
 		{
-			if (matchString.length() == 0
-				|| CharOperation.camelCaseMatch(matchString.toCharArray(), settingName.toCharArray()))
-			{
-				proposals.add(new CompletionProposal(settingName, offset, length, settingName.length(),
-					Activator.getIcon(), null, null, null));
-			}
+			addProposalIfMatch(proposals, matchString, settingName, settingName, offset, length,
+				settingName);
 		}
 		return proposals;
 	}
@@ -343,12 +333,7 @@ public class ProposalComputorHelper
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		for (String jdbcType : jdbcTypes)
 		{
-			if (matchString.length() == 0
-				|| CharOperation.prefixEquals(matchString.toCharArray(), jdbcType.toCharArray(), false))
-			{
-				proposals.add(new CompletionProposal(jdbcType, offset, length, jdbcType.length(),
-					Activator.getIcon(), null, null, null));
-			}
+			addProposalIfMatch(proposals, matchString, jdbcType, jdbcType, offset, length, jdbcType);
 		}
 		return proposals;
 	}
@@ -405,46 +390,78 @@ public class ProposalComputorHelper
 
 	public static List<ICompletionProposal> proposeParameters(IJavaProject project,
 		final int offset, final int length, final Map<String, String> paramMap,
-		final boolean searchReadable, final String matchString)
+		final Map<String, String> additionalParams, final boolean searchReadable,
+		final String matchString)
 	{
-		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-		if (paramMap.size() == 1)
+		final List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+		if (paramMap == null || paramMap.size() == 0)
 		{
-			// If there is only one parameter with no @Param,
-			// properties should be directly referenced.
-			String paramType = paramMap.values().iterator().next();
-			proposals = proposePropertyFor(project, offset, length, paramType, searchReadable, -1,
-				matchString);
+			return proposals;
 		}
-		else if (paramMap.size() > 1)
+
+		String paramName = paramMap.keySet().iterator().next();
+		String paramType = paramMap.values().iterator().next();
+		final int dotPos = matchString.indexOf('.');
+		// Proposals for statement parameters.
+		if (paramMap.size() == 1 && "_parameter".equals(paramName))
 		{
-			int dotPos = matchString.indexOf('.');
-			if (dotPos == -1)
-			{
-				for (Entry<String, String> paramEntry : paramMap.entrySet())
-				{
-					String paramName = paramEntry.getKey();
-					if (matchString.length() == 0
-						|| CharOperation.camelCaseMatch(matchString.toCharArray(), paramName.toCharArray()))
-					{
-						String displayStr = paramName + " - " + paramEntry.getValue();
-						proposals.add(new CompletionProposal(paramName, offset, length, paramName.length(),
-							Activator.getIcon(), displayStr, null, null));
-					}
-				}
-			}
-			else
-			{
-				String paramName = matchString.substring(0, dotPos);
-				String qualifiedName = paramMap.get(paramName);
-				if (qualifiedName != null)
-				{
-					proposals = proposePropertyFor(project, offset, length, qualifiedName, searchReadable,
-						dotPos, matchString);
-				}
-			}
+			// Sole parameter without @Param.
+			proposals.addAll(proposePropertyFor(project, offset, length, paramType, searchReadable,
+				-1, matchString));
+		}
+		else if (dotPos == -1)
+		{
+			proposeParamName(proposals, offset, length, matchString, paramMap);
+		}
+		else
+		{
+			proposeParamProperty(proposals, project, offset, length, searchReadable, matchString,
+				paramMap, dotPos);
+		}
+		// Proposals for additional params.
+		if (additionalParams == null || additionalParams.isEmpty())
+		{
+			return proposals;
+		}
+		if (dotPos == -1)
+		{
+			proposeParamName(proposals, offset, length, matchString, additionalParams);
+		}
+		else
+		{
+			proposeParamProperty(proposals, project, offset, length, searchReadable, matchString,
+				additionalParams, dotPos);
 		}
 		return proposals;
+	}
+
+	private static void proposeParamProperty(final List<ICompletionProposal> proposals,
+		IJavaProject project, final int offset, final int length, final boolean searchReadable,
+		final String matchString, final Map<String, String> additionalParams, final int dotPos)
+	{
+		for (Entry<String, String> paramEntry : additionalParams.entrySet())
+		{
+			String paramName = paramEntry.getKey();
+			if (paramName.length() == dotPos && matchString.startsWith(paramName))
+			{
+				String paramType = paramEntry.getValue();
+				proposals.addAll(proposePropertyFor(project, offset, length, paramType, searchReadable,
+					paramName.length(), matchString));
+				break;
+			}
+		}
+	}
+
+	private static void proposeParamName(final List<ICompletionProposal> proposals,
+		final int offset, final int length, final String matchString,
+		final Map<String, String> additionalParams)
+	{
+		for (Entry<String, String> paramEntry : additionalParams.entrySet())
+		{
+			String paramName = paramEntry.getKey();
+			addProposalIfMatch(proposals, matchString, paramName, paramName, offset, length,
+				paramName + " - " + paramEntry.getValue());
+		}
 	}
 
 	public static void searchJavaType(String matchString, IJavaSearchScope scope,
@@ -582,6 +599,20 @@ public class ProposalComputorHelper
 		{
 			this.relevance = relevance;
 			return this;
+		}
+	}
+
+	private static void addProposalIfMatch(final List<ICompletionProposal> proposals,
+		final String matchString, String targetStr, String replacementStr, final int offset,
+		final int length, String displayStr)
+	{
+		if (targetStr == null || targetStr.length() == 0)
+			return;
+		if (matchString.length() == 0
+			|| CharOperation.camelCaseMatch(matchString.toCharArray(), targetStr.toCharArray()))
+		{
+			proposals.add(new CompletionProposal(replacementStr, offset, length,
+				replacementStr.length(), Activator.getIcon(), displayStr, null, null));
 		}
 	}
 

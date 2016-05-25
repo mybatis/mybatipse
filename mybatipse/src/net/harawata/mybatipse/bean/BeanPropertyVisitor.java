@@ -174,22 +174,12 @@ public class BeanPropertyVisitor extends ASTVisitor
 
 	private String getQualifiedNameFromType(Type type)
 	{
-		String qualifiedName = null;
 		ITypeBinding binding = type.resolveBinding();
 		if (binding != null)
 		{
-			if (binding.isParameterizedType())
-			{
-				ITypeBinding[] arguments = binding.getTypeArguments();
-				// length = 1 -> List, length > 1 -> Map
-				qualifiedName = arguments[arguments.length > 1 ? 1 : 0].getQualifiedName();
-			}
-			else
-			{
-				qualifiedName = binding.getQualifiedName();
-			}
+			return binding.getQualifiedName();
 		}
-		return qualifiedName;
+		return null;
 	}
 
 	public static boolean isGetter(String methodName, int parameterCount)

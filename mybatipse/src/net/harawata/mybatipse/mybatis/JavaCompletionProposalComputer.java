@@ -119,7 +119,7 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 		{
 			IJavaProject project = javaContext.getProject();
 			String mapperFqn = primaryType.getFullyQualifiedName();
-			final MethodParametersStore methodStore = new MethodParametersStore();
+			final MethodParametersStore methodStore = new MethodParametersStore(project);
 			JavaMapperUtil.findMapperMethod(methodStore, project, mapperFqn,
 				new MethodNameMatcher(method.getElementName(), true));
 			if (!methodStore.isEmpty())
@@ -276,14 +276,14 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				if (primaryType == null || !primaryType.isInterface())
 					return Collections.emptyList();
 
-				final MethodParametersStore methodStore = new MethodParametersStore();
+				final MethodParametersStore methodStore = new MethodParametersStore(project);
 				String mapperFqn = primaryType.getFullyQualifiedName();
 				JavaMapperUtil.findMapperMethod(methodStore, project, mapperFqn,
 					new MethodNameMatcher(method.getElementName(), true));
 				if (!methodStore.isEmpty())
 				{
 					return ProposalComputorHelper.proposeParameters(project, offset, length,
-						methodStore.getParamMap(), true, matchString);
+						methodStore.getParamMap(), null, true, matchString);
 				}
 			}
 			else if ("jdbcType".equals(proposalTarget))

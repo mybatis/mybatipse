@@ -42,6 +42,20 @@ public class NameUtil
 		return typeFqn.toString();
 	}
 
+	public static boolean isArray(String src)
+	{
+		return src.endsWith("[]");
+	}
+
+	public static String extractArrayComponentType(String src)
+	{
+		if (!isArray(src))
+		{
+			return src;
+		}
+		return src.substring(0, src.length() - 1);
+	}
+
 	public static String stripTypeArguments(String src)
 	{
 		int idx = src.indexOf('<');
