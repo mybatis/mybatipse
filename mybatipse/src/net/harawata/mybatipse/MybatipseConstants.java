@@ -67,6 +67,10 @@ public class MybatipseConstants
 
 	public static final String TYPE_OBJECT_WRAPPER_FACTORY = "org.apache.ibatis.reflection.wrapper.ObjectWrapperFactory";
 
+	public static final String TYPE_VFS = "org.apache.ibatis.io.VFS";
+
+	public static final String TYPE_LANGUAGE_DRIVER = "org.apache.ibatis.scripting.LanguageDriver";
+
 	public static final IContentType mapperContentType;
 
 	public static final IContentType configContentType;

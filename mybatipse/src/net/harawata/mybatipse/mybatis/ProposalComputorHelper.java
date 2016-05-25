@@ -14,6 +14,7 @@ package net.harawata.mybatipse.mybatis;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -72,13 +73,39 @@ public class ProposalComputorHelper
 		"TINYINT", "UNDEFINED", "VARBINARY", "VARCHAR"
 	};
 
-	public static String[] settingNames = {
-		"autoMappingBehavior", "cacheEnabled", "proxyFactory", "lazyLoadingEnabled",
-		"aggressiveLazyLoading", "multipleResultSetsEnabled", "useColumnLabel", "useGeneratedKeys",
-		"defaultExecutorType", "defaultStatementTimeout", "mapUnderscoreToCamelCase",
-		"safeRowBoundsEnabled", "localCacheScope", "jdbcTypeForNull", "lazyLoadTriggerMethods",
-		"safeResultHandlerEnabled", "defaultScriptingLanguage", "callSettersOnNulls", "logPrefix",
-		"logImpl", "configurationFactory", "vfsImpl"
+	public static Map<String, List<String>> settings = new HashMap<String, List<String>>()
+	{
+		{
+			List<String> empty = Collections.emptyList();
+			put("autoMappingBehavior", Arrays.asList("NONE", "FULL", "PARTIAL"));
+			put("autoMappingUnknownColumnBehavior", Arrays.asList("WARNING", "FAILING", "NONE"));
+			put("cacheEnabled", Arrays.asList("false", "true"));
+			put("proxyFactory", Arrays.asList("CGLIB", "JAVASSIST"));
+			put("lazyLoadingEnabled", Arrays.asList("true", "false"));
+			put("aggressiveLazyLoading", Arrays.asList("false", "true"));
+			put("multipleResultSetsEnabled", Arrays.asList("false", "true"));
+			put("useColumnLabel", Arrays.asList("false", "true"));
+			put("useGeneratedKeys", Arrays.asList("true", "false"));
+			put("defaultExecutorType", Arrays.asList("REUSE", "BATCH", "SIMPLE"));
+			put("defaultStatementTimeout", empty);
+			put("defaultFetchSize", empty);
+			put("mapUnderscoreToCamelCase", Arrays.asList("true", "false"));
+			put("localCacheScope", Arrays.asList("STATEMENT", "SESSION"));
+			put("jdbcTypeForNull", Arrays.asList("NULL", "VARCHAR", "OTHER"));
+			put("lazyLoadTriggerMethods", Arrays.asList("equals,clone,hashCode,toString"));
+			put("safeRowBoundsEnabled", Arrays.asList("false", "true"));
+			put("safeResultHandlerEnabled", Arrays.asList("false", "true"));
+			put("defaultScriptingLanguage", empty);
+			put("callSettersOnNulls", Arrays.asList("true", "false"));
+			put("useActualParamName", Arrays.asList("false", "true"));
+			put("logPrefix", empty);
+			put("logImpl", Arrays.asList("SLF4J", "LOG4J", "LOG4J2", "JDK_LOGGING", "COMMONS_LOGGING",
+				"STDOUT_LOGGING", "NO_LOGGING"));
+			put("configurationFactory", empty);
+			put("vfsImpl", empty);
+		}
+
+		private static final long serialVersionUID = 1L;
 	};
 
 	public static List<ICompletionProposal> proposeReference(IJavaProject project,
@@ -319,10 +346,32 @@ public class ProposalComputorHelper
 		String matchString)
 	{
 		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-		for (String settingName : settingNames)
+		for (String settingName : settings.keySet())
 		{
 			addProposalIfMatch(proposals, matchString, settingName, settingName, offset, length,
 				settingName);
+		}
+		return proposals;
+	}
+
+	public static List<ICompletionProposal> proposeSettingValue(IJavaProject project,
+		String settingName, int offset, int length, String matchString)
+	{
+		List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+		List<String> values = settings.get(settingName);
+		for (String value : values)
+		{
+			addProposalIfMatch(proposals, matchString, value, value, offset, length, value);
+		}
+		if ("vfsImpl".equals(settingName))
+		{
+			proposals.addAll(proposeImplementation(project, offset, length, matchString,
+				MybatipseConstants.TYPE_VFS));
+		}
+		else if ("defaultScriptingLanguage".equals(settingName))
+		{
+			proposals.addAll(proposeImplementation(project, offset, length, matchString,
+				MybatipseConstants.TYPE_LANGUAGE_DRIVER));
 		}
 		return proposals;
 	}

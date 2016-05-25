@@ -94,7 +94,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		ParamPropertyPartial,
 		ObjectFactory,
 		ObjectWrapperFactory,
-		SettingName
+		SettingName,
+		SettingValue
 	}
 
 	@Override
@@ -510,6 +511,11 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					addProposals(contentAssistRequest,
 						ProposalComputorHelper.proposeSettingName(start, length, matchString));
 					break;
+				case SettingValue:
+					String settingName = XpathUtil.xpathString(node, "@name");
+					addProposals(contentAssistRequest, ProposalComputorHelper.proposeSettingValue(project,
+						settingName, start, length, matchString));
+					break;
 				case ObjectFactory:
 					addProposals(contentAssistRequest,
 						ProposalComputorHelper.proposeObjectFactory(project, start, length, matchString));
@@ -688,6 +694,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			return ProposalType.CacheType;
 		else if ("name".equals(attr) && "setting".equals(tag))
 			return ProposalType.SettingName;
+		else if ("value".equals(attr) && "setting".equals(tag))
+			return ProposalType.SettingValue;
 		else if ("type".equals(attr) && "objectFactory".equals(tag))
 			return ProposalType.ObjectFactory;
 		else if ("type".equals(attr) && "objectWrapperFactory".equals(tag))
