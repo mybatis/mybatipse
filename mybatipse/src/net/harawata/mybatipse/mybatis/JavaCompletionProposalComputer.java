@@ -310,7 +310,8 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				return ProposalComputorHelper.proposeJavaType(project, offset, length, true,
 					matchString);
 			else if ("typeHandler".equals(proposalTarget))
-				return ProposalComputorHelper.proposeTypeHandler(project, offset, length, matchString);
+				return ProposalComputorHelper.proposeAssignable(project, offset, length, matchString,
+					MybatipseConstants.TYPE_TYPE_HANDLER);
 		}
 		return Collections.emptyList();
 	}

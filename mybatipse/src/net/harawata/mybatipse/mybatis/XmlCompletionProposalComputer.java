@@ -62,6 +62,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.MybatipseConstants;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.BeanPropertyInfo;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameStore;
@@ -95,6 +96,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		ParamPropertyPartial,
 		ObjectFactory,
 		ObjectWrapperFactory,
+		ReflectorFactory,
 		SettingName,
 		SettingValue
 	}
@@ -178,8 +180,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				addProposals(contentAssistRequest,
 					ProposalComputorHelper.proposeJavaType(project, offset, length, true, matchString));
 			else if ("typeHandler".equals(proposalTarget))
-				addProposals(contentAssistRequest,
-					ProposalComputorHelper.proposeTypeHandler(project, offset, length, matchString));
+				addProposals(contentAssistRequest, ProposalComputorHelper.proposeAssignable(project,
+					offset, length, matchString, MybatipseConstants.TYPE_TYPE_HANDLER));
 		}
 	}
 
@@ -510,12 +512,12 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					proposeProperty(contentAssistRequest, matchString, start, length, node);
 					break;
 				case TypeHandlerType:
-					addProposals(contentAssistRequest,
-						ProposalComputorHelper.proposeTypeHandler(project, start, length, matchString));
+					addProposals(contentAssistRequest, ProposalComputorHelper.proposeAssignable(project,
+						start, length, matchString, MybatipseConstants.TYPE_TYPE_HANDLER));
 					break;
 				case CacheType:
-					addProposals(contentAssistRequest,
-						ProposalComputorHelper.proposeCacheType(project, start, length, matchString));
+					addProposals(contentAssistRequest, ProposalComputorHelper.proposeAssignable(project,
+						start, length, matchString, MybatipseConstants.TYPE_CACHE));
 					break;
 				case SettingName:
 					addProposals(contentAssistRequest,
@@ -527,12 +529,16 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 						settingName, start, length, matchString));
 					break;
 				case ObjectFactory:
-					addProposals(contentAssistRequest,
-						ProposalComputorHelper.proposeObjectFactory(project, start, length, matchString));
+					addProposals(contentAssistRequest, ProposalComputorHelper.proposeAssignable(project,
+						start, length, matchString, MybatipseConstants.TYPE_OBJECT_FACTORY));
 					break;
 				case ObjectWrapperFactory:
-					addProposals(contentAssistRequest, ProposalComputorHelper
-						.proposeObjectWrapperFactory(project, start, length, matchString));
+					addProposals(contentAssistRequest, ProposalComputorHelper.proposeAssignable(project,
+						start, length, matchString, MybatipseConstants.TYPE_OBJECT_WRAPPER_FACTORY));
+					break;
+				case ReflectorFactory:
+					addProposals(contentAssistRequest, ProposalComputorHelper.proposeAssignable(project,
+						start, length, matchString, MybatipseConstants.TYPE_REFLECTOR_FACTORY));
 					break;
 				case StatementId:
 					proposeStatementId(contentAssistRequest, project, matchString, start, length, node);
@@ -710,6 +716,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			return ProposalType.ObjectFactory;
 		else if ("type".equals(attr) && "objectWrapperFactory".equals(tag))
 			return ProposalType.ObjectWrapperFactory;
+		else if ("type".equals(attr) && "reflectorFactory".equals(tag))
+			return ProposalType.ReflectorFactory;
 		else if ("type".equals(attr) || "resultType".equals(attr) || "parameterType".equals(attr)
 			|| "ofType".equals(attr) || "javaType".equals(attr))
 			return ProposalType.ResultType;

@@ -545,32 +545,10 @@ public class ProposalComputorHelper
 			IJavaSearchConstants.WAIT_UNTIL_READY_TO_SEARCH, null);
 	}
 
-	public static List<ICompletionProposal> proposeTypeHandler(IJavaProject project,
-		final int start, final int length, String matchString)
+	public static List<ICompletionProposal> proposeAssignable(IJavaProject project,
+		final int start, final int length, String matchString, String supertypeFqn)
 	{
-		String interfaceFqn = MybatipseConstants.TYPE_TYPE_HANDLER;
-		return proposeImplementation(project, start, length, matchString, interfaceFqn);
-	}
-
-	public static List<ICompletionProposal> proposeCacheType(IJavaProject project,
-		final int start, final int length, String matchString)
-	{
-		String interfaceFqn = MybatipseConstants.TYPE_CACHE;
-		return proposeImplementation(project, start, length, matchString, interfaceFqn);
-	}
-
-	public static List<ICompletionProposal> proposeObjectFactory(IJavaProject project,
-		final int start, final int length, String matchString)
-	{
-		String interfaceFqn = MybatipseConstants.TYPE_OBJECT_FACTORY;
-		return proposeImplementation(project, start, length, matchString, interfaceFqn);
-	}
-
-	public static List<ICompletionProposal> proposeObjectWrapperFactory(IJavaProject project,
-		final int start, final int length, String matchString)
-	{
-		String interfaceFqn = MybatipseConstants.TYPE_OBJECT_WRAPPER_FACTORY;
-		return proposeImplementation(project, start, length, matchString, interfaceFqn);
+		return proposeImplementation(project, start, length, matchString, supertypeFqn);
 	}
 
 	private static List<ICompletionProposal> proposeImplementation(IJavaProject project,
