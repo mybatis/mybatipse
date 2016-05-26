@@ -119,7 +119,7 @@ public class ProposalComputorHelper
 			mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
 		}
 		return ProposalComputorHelper.proposeReference(project, mapperDoc, currentNamespace,
-			matchString, start, length, targetElement, null);
+			matchString, start, length, targetElement, idToExclude);
 	}
 
 	public static List<ICompletionProposal> proposeReference(IJavaProject project,
@@ -127,7 +127,7 @@ public class ProposalComputorHelper
 		String idToExclude)
 	{
 		return ProposalComputorHelper.proposeReference(project, domDoc, null, matchString, start,
-			length, targetElement, null);
+			length, targetElement, idToExclude);
 	}
 
 	private static List<ICompletionProposal> proposeReference(IJavaProject project,
@@ -150,7 +150,8 @@ public class ProposalComputorHelper
 			}
 
 			final String exclude = idToExclude != null && idToExclude.length() > 0
-				&& namespacePart.equals(currentNamespace) ? idToExclude : null;
+				&& (namespacePart.length() == 0 || namespacePart.equals(currentNamespace)) ? idToExclude
+					: null;
 
 			final Document xmlMapper;
 			if (namespacePart.length() > 0)
@@ -181,7 +182,7 @@ public class ProposalComputorHelper
 			{
 				proposeJavaSelect(results, project,
 					namespacePart.length() > 0 ? namespacePart : currentNamespace, matchStr,
-					replacementStart, replacementLength);
+					replacementStart, replacementLength, exclude);
 			}
 			else if ("resultMap".equals(targetElement))
 			{
@@ -243,15 +244,18 @@ public class ProposalComputorHelper
 	}
 
 	private static void proposeJavaSelect(List<ICompletionProposal> results, IJavaProject project,
-		String namespace, String matchString, int start, int length)
+		String namespace, String matchString, int start, int length, String idToExclude)
 	{
 		MethodNameStore methodStore = new MethodNameStore();
 		JavaMapperUtil.findMapperMethod(methodStore, project, namespace,
 			new HasSelectAnnotation(matchString, false));
 		for (String methodName : methodStore.getMethodNames())
 		{
-			results.add(new JavaCompletionProposal(methodName, start, length, methodName.length(),
-				Activator.getIcon(), methodName, null, null, 200));
+			if (idToExclude == null || idToExclude.length() == 0 || !idToExclude.equals(methodName))
+			{
+				results.add(new JavaCompletionProposal(methodName, start, length, methodName.length(),
+					Activator.getIcon(), methodName, null, null, 200));
+			}
 		}
 	}
 
