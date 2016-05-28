@@ -24,7 +24,10 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 - javaType, jdbcType, typeHandler in #{}  
 ![autocomplete jdbcType](screen/ac-jdbc-type.png)
 - Result elements in resultMap/collection/association : Generates <result /> elements for the parent java class properties.  
-![autocomplete results 1](screen/ac-results1.png) ![autocomplete results 2](screen/ac-results2.png)
+![autocomplete results](screen/ac-results.png)
+- setting name and value in XML config.  
+![autocomplete setting](screen/ac-setting-name.png) ![autocomplete setting](screen/ac-setting-value.png)
+
 
 - __[1]__ For better performance, classes in the application libraries (loaded as JARs) are listed only when at least one package segment is specified.
 - __[2]__ There is a limitation for the type alias support. Basically, if type aliases are registered using Java API, they are not automatically detected. As a workaround, you can register type aliases in MyBatipse's preference. See the _Configuration_ section.
@@ -64,9 +67,10 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 ![autocomplete return type properties in java](screen/ac-options-keyprop-java.png)  
 ![autocomplete return type properties in java](screen/ac-selkey-keyprop-java.png)  
 - javaType, jdbcType, typeHandler in #{}  : See the XML example.
-- Reference to resultMap in ```@ResultMap```  
+- Reference to resultMap in ```@ResultMap``` and resultMap attribute of ```@Arg```  
 ![autocomplete resultmap annotation](screen/ac-rmap-java.png)  
-
+- select attribute of ```@Arg```, ```@Many``` and ```@One```  
+![autocomplete select](screen/ac-select-java.png) 
 
 #### Quick Assist
 
