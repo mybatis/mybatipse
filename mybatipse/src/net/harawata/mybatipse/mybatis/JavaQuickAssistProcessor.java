@@ -11,15 +11,22 @@
 
 package net.harawata.mybatipse.mybatis;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import javax.xml.xpath.XPathExpressionException;
+
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -33,11 +40,14 @@ import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.ui.text.java.IInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
@@ -54,13 +64,23 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
+import org.eclipse.wst.sse.core.StructuredModelManager;
+import org.eclipse.wst.sse.core.internal.provisional.IStructuredModel;
+import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
+import org.eclipse.wst.xml.core.internal.provisional.document.IDOMModel;
+import org.eclipse.wst.xml.core.internal.provisional.format.FormatProcessorXML;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.util.XpathUtil;
 
 /**
  * @author Iwao AVE!
  */
+@SuppressWarnings("restriction")
 public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 {
 	public JavaQuickAssistProcessor()
@@ -81,7 +101,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		ICompilationUnit compilationUnit = context.getCompilationUnit();
 		IType primaryType = compilationUnit.findPrimaryType();
 		if (primaryType == null || !primaryType.isInterface())
-			; // return null;
+			return null;
 
 		IJavaElement[] elements = compilationUnit.codeSelect(context.getSelectionOffset(),
 			context.getSelectionLength());
@@ -91,10 +111,6 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			{
 				IMethod method = (IMethod)element;
 				if (!method.getDeclaringType().isInterface())
-					return null;
-
-				final String statementAnnotation = getStatementAnnotation(method);
-				if (method.getParameters().length == 0 && statementAnnotation == null)
 					return null;
 
 				CompilationUnit astNode = getAstNode(compilationUnit);
@@ -107,76 +123,43 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 
 				if (method.getParameters().length > 0)
 				{
-					proposals.add(new QuickAssistCompletionProposal("Add @Param to parameters")
-					{
-						private CompilationUnit astNode;
-
-						private MapperMethod method;
-
-						@SuppressWarnings("unchecked")
-						@Override
-						public void apply(IDocument document)
-						{
-							List<SingleVariableDeclaration> params = method.parameters();
-							for (SingleVariableDeclaration param : params)
-							{
-								List<IExtendedModifier> modifiers = param.modifiers();
-								if (!hasParamAnnotation(modifiers))
-								{
-									if (MybatipseConstants.TYPE_ROW_BOUNDS
-										.equals(param.resolveBinding().getType().getQualifiedName()))
-										continue;
-									AST ast = param.getAST();
-									SingleMemberAnnotation annotation = ast.newSingleMemberAnnotation();
-									annotation.setTypeName(ast.newName("Param"));
-									StringLiteral paramValue = ast.newStringLiteral();
-									paramValue.setLiteralValue(param.getName().getFullyQualifiedName());
-									annotation.setValue(paramValue);
-									param.modifiers().add(annotation);
-								}
-							}
-							TextEdit textEdit = astNode.rewrite(document, null);
-							try
-							{
-								textEdit.apply(document);
-							}
-							catch (MalformedTreeException e)
-							{
-								Activator.log(Status.ERROR, e.getMessage(), e);
-							}
-							catch (BadLocationException e)
-							{
-								Activator.log(Status.ERROR, e.getMessage(), e);
-							}
-						}
-
-						private boolean hasParamAnnotation(List<IExtendedModifier> modifiers)
-						{
-							for (IExtendedModifier modifier : modifiers)
-							{
-								if (modifier.isAnnotation() && "Param"
-									.equals(((Annotation)modifier).getTypeName().getFullyQualifiedName()))
-								{
-									return true;
-								}
-							}
-							return false;
-						}
-
-						private QuickAssistCompletionProposal init(CompilationUnit astNode,
-							MapperMethod method)
-						{
-							this.astNode = astNode;
-							this.method = method;
-							return this;
-						}
-					}.init(astNode, mapperMethod));
+					proposals.add(
+						new AddParamQuickAssist("Add @Param to parameters").init(astNode, mapperMethod));
 				}
 
 				if (mapperMethod.getStatement() != null)
 				{
+					final IAnnotation statementAnnotation = getStatementAnnotation(method);
+					final String statementType = statementAnnotation.getElementName();
+					try
+					{
+						final String mapperFqn = primaryType.getFullyQualifiedName();
+						IJavaProject project = compilationUnit.getJavaProject();
+						IFile mapperFile = MapperNamespaceCache.getInstance().get(project, mapperFqn, null);
+						if (mapperFile != null)
+						{
+							IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
+							if (mapperDocument != null)
+							{
+								Node domNode = XpathUtil.xpathNode(mapperDocument,
+									"//*[@id='" + method.getElementName() + "']");
+								if (domNode == null)
+								{
+									// only when the element does not exist
+									proposals.add(new MoveStatementToXmlQuickAssist("Move @" + statementType
+										+ " statement to <" + statementType.toLowerCase() + " />").init(mapperFile,
+											statementAnnotation, mapperMethod, astNode));
+								}
+							}
+						}
+					}
+					catch (XPathExpressionException e)
+					{
+						Activator.log(Status.ERROR, e.getMessage(), e);
+					}
+
 					proposals.add(new QuickAssistCompletionProposal(
-						"Copy @" + statementAnnotation + " statement to clipboard")
+						"Copy @" + statementType + " statement to clipboard")
 					{
 						@Override
 						public void apply(IDocument document)
@@ -197,7 +180,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		return null;
 	}
 
-	private String getStatementAnnotation(IMethod method) throws JavaModelException
+	private IAnnotation getStatementAnnotation(IMethod method) throws JavaModelException
 	{
 		IAnnotation[] annotations = method.getAnnotations();
 		for (IAnnotation annotation : annotations)
@@ -205,9 +188,228 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			String name = annotation.getElementName();
 			if ("Select".equals(name) || "Insert".equals(name) || "Update".equals(name)
 				|| "Delete".equals(name))
-				return name;
+				return annotation;
 		}
 		return null;
+	}
+
+	private CompilationUnit getAstNode(ICompilationUnit compilationUnit)
+	{
+		ASTParser parser = ASTParser.newParser(AST.JLS4);
+		parser.setSource(compilationUnit);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setResolveBindings(true);
+		return (CompilationUnit)parser.createAST(new NullProgressMonitor());
+	}
+
+	private MapperMethod getMapperMethod(ASTNode node, IMethod method)
+	{
+		if (method == null)
+			return null;
+
+		StatementVisitor visitor = new StatementVisitor(method);
+		node.accept(visitor);
+		return visitor.getMapperMethod();
+	}
+
+	private final class MoveStatementToXmlQuickAssist extends QuickAssistCompletionProposal
+	{
+		private IFile mapperFile;
+
+		private IAnnotation statementAnnotation;
+
+		private MapperMethod method;
+
+		private CompilationUnit astNode;
+
+		private MoveStatementToXmlQuickAssist(String displayString)
+		{
+			super(displayString);
+		}
+
+		@Override
+		public void apply(IDocument document)
+		{
+			try
+			{
+				// TODO: move @Results to <resultMap />
+				addXmlStatement();
+				deleteStatementAnnotation(document);
+			}
+			catch (Exception e)
+			{
+				Activator.log(Status.ERROR, e.getMessage(), e);
+			}
+		}
+
+		private void deleteStatementAnnotation(IDocument document) throws BadLocationException
+		{
+			@SuppressWarnings("unchecked")
+			List<IExtendedModifier> modifiers = method.getMethodDeclaration().modifiers();
+			Iterator<IExtendedModifier> iter = modifiers.iterator();
+			while (iter.hasNext())
+			{
+				IExtendedModifier modifier = (IExtendedModifier)iter.next();
+				if (modifier.isAnnotation())
+				{
+					Annotation annotation = (Annotation)modifier;
+					String name = annotation.getTypeName().getFullyQualifiedName();
+					if ("Select".equals(name) || "Insert".equals(name) || "Update".equals(name)
+						|| "Delete".equals(name) || "ResultMap".equals(name))
+					{
+						iter.remove();
+					}
+				}
+			}
+			TextEdit textEdit = astNode.rewrite(document, null);
+			textEdit.apply(document);
+		}
+
+		private void addXmlStatement()
+			throws IOException, CoreException, UnsupportedEncodingException
+		{
+			IStructuredModel model = StructuredModelManager.getModelManager()
+				.getModelForEdit(mapperFile);
+			if (model == null)
+			{
+				return;
+			}
+			try
+			{
+				model.beginRecording(this);
+				model.aboutToChangeModel();
+				if (model instanceof IDOMModel)
+				{
+					String delimiter = model.getStructuredDocument().getLineDelimiter();
+					IDOMDocument mapperDoc = ((IDOMModel)model).getDocument();
+					Element root = mapperDoc.getDocumentElement();
+					Element element = createStatementElement(mapperDoc, delimiter);
+					root.appendChild(element);
+					root.appendChild(mapperDoc.createTextNode(delimiter));
+					new FormatProcessorXML().formatNode(element);
+				}
+			}
+			finally
+			{
+				model.changedModel();
+				if (!model.isSharedForEdit() && model.isSaveNeeded())
+				{
+					model.save();
+				}
+				model.endRecording(this);
+				model.releaseFromEdit();
+			}
+		}
+
+		private Element createStatementElement(IDOMDocument mapperDoc, String delimiter)
+		{
+			String statement = statementAnnotation.getElementName().toLowerCase();
+			Element element = mapperDoc.createElement(statement);
+			element.setAttribute("id", method.getMethodDeclaration().getName().toString());
+			if (method.isSelect())
+			{
+				if (method.getResultMap() != null)
+				{
+					element.setAttribute("resultMap", method.getResultMap());
+				}
+				else
+				{
+					String returnType = method.getReturnType();
+					if (MybatipseXmlUtil.isDefaultTypeAlias("_" + returnType))
+					{
+						// primitive type
+						element.setAttribute("resultType", "_" + returnType);
+					}
+					else
+					{
+						// TODO: type alias, list, map, @MapKey...zzz...
+						element.setAttribute("resultType", returnType);
+					}
+				}
+			}
+			Text sqlText = mapperDoc.createTextNode(delimiter + method.getStatement() + delimiter);
+			element.appendChild(sqlText);
+			return element;
+		}
+
+		private MoveStatementToXmlQuickAssist init(IFile mapperFile, IAnnotation statementAnno,
+			MapperMethod method, CompilationUnit astNode)
+		{
+			this.mapperFile = mapperFile;
+			this.statementAnnotation = statementAnno;
+			this.method = method;
+			this.astNode = astNode;
+			return this;
+		}
+	}
+
+	private final class AddParamQuickAssist extends QuickAssistCompletionProposal
+	{
+		private CompilationUnit astNode;
+
+		private MapperMethod method;
+
+		private AddParamQuickAssist(String displayString)
+		{
+			super(displayString);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void apply(IDocument document)
+		{
+			List<SingleVariableDeclaration> params = method.parameters();
+			for (SingleVariableDeclaration param : params)
+			{
+				List<IExtendedModifier> modifiers = param.modifiers();
+				if (!hasParamAnnotation(modifiers))
+				{
+					if (MybatipseConstants.TYPE_ROW_BOUNDS
+						.equals(param.resolveBinding().getType().getQualifiedName()))
+						continue;
+					AST ast = param.getAST();
+					SingleMemberAnnotation annotation = ast.newSingleMemberAnnotation();
+					annotation.setTypeName(ast.newName("Param"));
+					StringLiteral paramValue = ast.newStringLiteral();
+					paramValue.setLiteralValue(param.getName().getFullyQualifiedName());
+					annotation.setValue(paramValue);
+					param.modifiers().add(annotation);
+				}
+			}
+			TextEdit textEdit = astNode.rewrite(document, null);
+			try
+			{
+				textEdit.apply(document);
+			}
+			catch (MalformedTreeException e)
+			{
+				Activator.log(Status.ERROR, e.getMessage(), e);
+			}
+			catch (BadLocationException e)
+			{
+				Activator.log(Status.ERROR, e.getMessage(), e);
+			}
+		}
+
+		private boolean hasParamAnnotation(List<IExtendedModifier> modifiers)
+		{
+			for (IExtendedModifier modifier : modifiers)
+			{
+				if (modifier.isAnnotation()
+					&& "Param".equals(((Annotation)modifier).getTypeName().getFullyQualifiedName()))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private QuickAssistCompletionProposal init(CompilationUnit astNode, MapperMethod method)
+		{
+			this.astNode = astNode;
+			this.method = method;
+			return this;
+		}
 	}
 
 	static abstract class QuickAssistCompletionProposal implements IJavaCompletionProposal
@@ -257,25 +459,6 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		}
 	}
 
-	private CompilationUnit getAstNode(ICompilationUnit compilationUnit)
-	{
-		ASTParser parser = ASTParser.newParser(AST.JLS4);
-		parser.setSource(compilationUnit);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setResolveBindings(true);
-		return (CompilationUnit)parser.createAST(new NullProgressMonitor());
-	}
-
-	private MapperMethod getMapperMethod(ASTNode node, IMethod method)
-	{
-		if (method == null)
-			return null;
-
-		StatementVisitor visitor = new StatementVisitor(method);
-		node.accept(visitor);
-		return visitor.getMapperMethod();
-	}
-
 	class StatementVisitor extends ASTVisitor
 	{
 		private IMethod targetMethod;
@@ -321,10 +504,31 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 				{
 					mapperMethod = new MapperMethod();
 					mapperMethod.setMethodDeclaration(node);
+					Type returnType = node.getReturnType2();
+					if (returnType != null && !isVoid(returnType))
+					{
+						mapperMethod.setReturnType(getQualifiedNameFromType(returnType));
+					}
 					return true;
 				}
 			}
 			return false;
+		}
+
+		private boolean isVoid(Type type)
+		{
+			return type.isPrimitiveType()
+				&& PrimitiveType.VOID.equals(((PrimitiveType)type).getPrimitiveTypeCode());
+		}
+
+		private String getQualifiedNameFromType(Type type)
+		{
+			ITypeBinding binding = type.resolveBinding();
+			if (binding != null)
+			{
+				return binding.getQualifiedName();
+			}
+			return null;
 		}
 
 		@Override
@@ -333,13 +537,14 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			if (nestLevel != 1)
 				return false;
 			String typeFqn = node.resolveTypeBinding().getQualifiedName();
+			Expression value = node.getValue();
+			int valueType = value.getNodeType();
 			if (MybatipseConstants.ANNOTATION_SELECT.equals(typeFqn)
 				|| MybatipseConstants.ANNOTATION_UPDATE.equals(typeFqn)
 				|| MybatipseConstants.ANNOTATION_INSERT.equals(typeFqn)
 				|| MybatipseConstants.ANNOTATION_DELETE.equals(typeFqn))
 			{
-				Expression value = node.getValue();
-				int valueType = value.getNodeType();
+				mapperMethod.setSelect(MybatipseConstants.ANNOTATION_SELECT.equals(typeFqn));
 				if (valueType == ASTNode.STRING_LITERAL)
 				{
 					mapperMethod.setStatement(((StringLiteral)value).getLiteralValue());
@@ -371,6 +576,35 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 					mapperMethod.setStatement(parseInfixExpression((InfixExpression)value));
 				}
 			}
+			else if (MybatipseConstants.ANNOTATION_RESULT_MAP.equals(typeFqn))
+			{
+				if (value.getNodeType() == ASTNode.STRING_LITERAL)
+				{
+					mapperMethod.setResultMap(((StringLiteral)value).getLiteralValue());
+				}
+				else if (valueType == ASTNode.ARRAY_INITIALIZER)
+				{
+					StringBuilder buffer = new StringBuilder();
+					@SuppressWarnings("unchecked")
+					List<Expression> expressions = (List<Expression>)((ArrayInitializer)value)
+						.expressions();
+					for (Expression expression : expressions)
+					{
+						int expressionType = expression.getNodeType();
+						if (expressionType == ASTNode.STRING_LITERAL)
+						{
+							if (buffer.length() > 0)
+								buffer.append(',');
+							buffer.append(((StringLiteral)expression).getLiteralValue());
+						}
+						else if (expressionType == ASTNode.INFIX_EXPRESSION)
+						{
+							buffer.append(parseInfixExpression((InfixExpression)expression));
+						}
+						mapperMethod.setResultMap(buffer.toString());
+					}
+				}
+			}
 			return false;
 		}
 
@@ -398,6 +632,12 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 
 		private String statement;
 
+		private boolean select;
+
+		private String resultMap;
+
+		private String returnType;
+
 		public MethodDeclaration getMethodDeclaration()
 		{
 			return methodDeclaration;
@@ -408,6 +648,16 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			this.methodDeclaration = methodDeclaration;
 		}
 
+		public boolean isSelect()
+		{
+			return select;
+		}
+
+		public void setSelect(boolean select)
+		{
+			this.select = select;
+		}
+
 		public String getStatement()
 		{
 			return statement;
@@ -416,6 +666,26 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		public void setStatement(String statement)
 		{
 			this.statement = statement;
+		}
+
+		public String getResultMap()
+		{
+			return resultMap;
+		}
+
+		public void setResultMap(String resultMap)
+		{
+			this.resultMap = resultMap;
+		}
+
+		public String getReturnType()
+		{
+			return returnType;
+		}
+
+		public void setReturnType(String returnType)
+		{
+			this.returnType = returnType;
 		}
 
 		@SuppressWarnings("rawtypes")

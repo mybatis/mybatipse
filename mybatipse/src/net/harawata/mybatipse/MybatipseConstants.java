@@ -51,6 +51,8 @@ public class MybatipseConstants
 
 	public static final String ANNOTATION_PARAM = "org.apache.ibatis.annotations.Param";
 
+	public static final String ANNOTATION_RESULT_MAP = "org.apache.ibatis.annotations.ResultMap";
+
 	public static final List<String> STATEMENT_ANNOTATIONS = Arrays.asList(ANNOTATION_SELECT,
 		ANNOTATION_INSERT, ANNOTATION_UPDATE, ANNOTATION_DELETE, ANNOTATION_SELECT_PROVIDER,
 		"org.apache.ibatis.annotations.InsertProvider",
