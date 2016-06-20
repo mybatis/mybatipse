@@ -389,4 +389,16 @@
          </description>
       </colorDefinition>
    </extension>
+   <extension
+         point="org.eclipse.ui.newWizards">
+      <category
+            id="net.harawata.mybatipse.wizard.mybatisCategory"
+            name="MyBatis" />
+      <wizard
+            category="net.harawata.mybatipse.wizard.mybatisCategory"
+            class="net.harawata.mybatipse.wizard.NewXmlMapperWizard"
+            icon="icons/mybatis.png"
+            id="net.harawata.mybatipse.wizard.NewXmlMapperWizard"
+            name="MyBatis XML Mapper" />
+   </extension>
 </plugin>
