@@ -81,6 +81,16 @@ Put the cursor on the statement method name and press cmd + 1 (or ctrl + 1) to t
 ![param-annotation2](screen/qa-add-param2.png)  
 - You can copy annotation statement into the clipboard. 
 ![param-annotation1](screen/qa-copy-statement.png)  
+- You can move annotation statement to XML mapper.  
+![move-statement](screen/qa-move-statement.png)  
+
+
+### Miscellaneous
+
+- Wizard to create a new XML mapper file.  
+![wizard-xml-mapper](screen/wizard-xml-mapper.png)  
+- Smart-copy menu in Console View to copy SQL statement in an executable form.  
+![smart-copy-console](screen/smart-copy-console.png)  
 
 
 ## Configuration
