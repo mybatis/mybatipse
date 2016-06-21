@@ -231,6 +231,10 @@
    </extension>
    <extension
          point="org.eclipse.ui.commands">
+      <category
+          id="net.harawata.mybatipse.commandCategory"
+          name="MyBatipse">
+      </category>
       <command
             defaultHandler="net.harawata.mybatipse.nature.ToggleNatureCommand"
             id="net.harawata.mybatipse.ToggleNature"
@@ -240,6 +244,13 @@
                name="On"
                optional="false">
          </commandParameter>
+      </command>
+      <command
+            defaultHandler="net.harawata.mybatipse.console.CopyLogStatementHandler"
+            id="net.harawata.mybatipse.CopyLogStatement"
+            name="Copy MyBatis Statement"
+            description="Copy MyBatis statement in the Console View as an executable SQL statement."
+            categoryId="net.harawata.mybatipse.commandCategory">
       </command>
    </extension>
    <extension
@@ -302,6 +313,22 @@
             </visibleWhen>
          </command>
       </menuContribution>
+      <menuContribution
+            locationURI="popup:org.eclipse.debug.ui.ProcessConsoleType.#ContextMenu?after=additions">
+         <command
+               id="net.harawata.mybatipse.CopyLogStatement"
+               icon="icons/mybatis.png"
+               commandId="net.harawata.mybatipse.CopyLogStatement">
+         </command>
+      </menuContribution>
+   </extension>
+   <extension point="org.eclipse.ui.bindings">
+      <key
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            commandId="net.harawata.mybatipse.CopyLogStatement"
+            contextId="org.eclipse.ui.contexts.window"
+            sequence="M1+M2+C">
+      </key>
    </extension>
    <extension
          point="org.eclipse.jdt.ui.quickAssistProcessors">
