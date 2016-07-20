@@ -29,6 +29,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -37,12 +38,14 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
+import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -75,6 +78,7 @@ import org.w3c.dom.Text;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.util.NameUtil;
 import net.harawata.mybatipse.util.XpathUtil;
 
 /**
@@ -147,8 +151,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 								{
 									// only when the element does not exist
 									proposals.add(new MoveStatementToXmlQuickAssist("Move @" + statementType
-										+ " statement to <" + statementType.toLowerCase() + " />").init(mapperFile,
-											statementAnnotation, mapperMethod, astNode));
+										+ " statement to <" + statementType.toLowerCase() + " />").init(project,
+											mapperFile, statementAnnotation, mapperMethod, astNode));
 								}
 							}
 						}
@@ -214,6 +218,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 
 	private final class MoveStatementToXmlQuickAssist extends QuickAssistCompletionProposal
 	{
+		private IJavaProject project;
+
 		private IFile mapperFile;
 
 		private IAnnotation statementAnnotation;
@@ -305,7 +311,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		{
 			String statement = statementAnnotation.getElementName().toLowerCase();
 			Element element = mapperDoc.createElement(statement);
-			element.setAttribute("id", method.getMethodDeclaration().getName().toString());
+			MethodDeclaration methodDeclaration = method.getMethodDeclaration();
+			element.setAttribute("id", methodDeclaration.getName().toString());
 			if (method.isSelect())
 			{
 				if (method.getResultMap() != null)
@@ -314,16 +321,65 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 				}
 				else
 				{
-					String returnType = method.getReturnType();
-					if (MybatipseXmlUtil.isDefaultTypeAlias("_" + returnType))
+					Type returnType2 = methodDeclaration.getReturnType2();
+					if (returnType2.isPrimitiveType())
 					{
-						// primitive type
-						element.setAttribute("resultType", "_" + returnType);
+						element.setAttribute("resultType", "_" + returnType2.toString());
 					}
-					else
+					else if (returnType2.isArrayType())
 					{
-						// TODO: type alias, list, map, @MapKey...zzz...
-						element.setAttribute("resultType", returnType);
+						Type componentType = ((ArrayType)returnType2).getElementType();
+						if (componentType.isPrimitiveType())
+						{
+							element.setAttribute("resultType", "_" + returnType2.toString());
+						}
+						else
+						{
+							element.setAttribute("resultType",
+								NameUtil.stripTypeArguments(componentType.resolveBinding().getQualifiedName()));
+						}
+					}
+					else if (returnType2.isParameterizedType())
+					{
+						try
+						{
+							ParameterizedType parameterizedType = (ParameterizedType)returnType2;
+							String qualifiedName = parameterizedType.getType()
+								.resolveBinding()
+								.getQualifiedName();
+							IType type = project.findType(NameUtil.stripTypeArguments(qualifiedName));
+							ITypeHierarchy supertypeHierarchy = type
+								.newSupertypeHierarchy(new NullProgressMonitor());
+							if (supertypeHierarchy.contains(project.findType("java.util.Collection")))
+							{
+								List<String> typeParams = NameUtil.extractTypeParams(qualifiedName);
+								if (typeParams.size() == 1)
+								{
+									element.setAttribute("resultType",
+										NameUtil.stripTypeArguments(typeParams.get(0)));
+								}
+							}
+							else if (supertypeHierarchy.contains(project.findType("java.util.Map")))
+							{
+								if (method.isHasMapKey())
+								{
+									List<String> typeParams = NameUtil.extractTypeParams(qualifiedName);
+									if (typeParams.size() == 2)
+									{
+										element.setAttribute("resultType",
+											NameUtil.stripTypeArguments(typeParams.get(1)));
+									}
+								}
+								else
+								{
+									element.setAttribute("resultType", type.getFullyQualifiedName());
+								}
+							}
+						}
+						catch (JavaModelException e)
+						{
+							Activator.log(Status.ERROR, e.getMessage(), e);
+						}
 					}
 				}
 			}
@@ -332,9 +388,10 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			return element;
 		}
 
-		private MoveStatementToXmlQuickAssist init(IFile mapperFile, IAnnotation statementAnno,
-			MapperMethod method, CompilationUnit astNode)
+		private MoveStatementToXmlQuickAssist init(IJavaProject project, IFile mapperFile,
+			IAnnotation statementAnno, MapperMethod method, CompilationUnit astNode)
 		{
+			this.project = project;
 			this.mapperFile = mapperFile;
 			this.statementAnnotation = statementAnno;
 			this.method = method;
@@ -605,6 +662,10 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 					}
 				}
 			}
+			else if (MybatipseConstants.ANNOTATION_MAP_KEY.equals(typeFqn))
+			{
+				mapperMethod.setHasMapKey(true);
+			}
 			return false;
 		}
 
@@ -637,6 +698,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		private String resultMap;
 
 		private String returnType;
+
+		private boolean hasMapKey;
 
 		public MethodDeclaration getMethodDeclaration()
 		{
@@ -686,6 +749,16 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		public void setReturnType(String returnType)
 		{
 			this.returnType = returnType;
+		}
+
+		public boolean isHasMapKey()
+		{
+			return hasMapKey;
+		}
+
+		public void setHasMapKey(boolean hasMapKey)
+		{
+			this.hasMapKey = hasMapKey;
 		}
 
 		@SuppressWarnings("rawtypes")
