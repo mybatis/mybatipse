@@ -63,56 +63,63 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 		if (context instanceof JavaContentAssistInvocationContext)
 		{
 			JavaContentAssistInvocationContext javaContext = (JavaContentAssistInvocationContext)context;
-			ICompilationUnit unit = javaContext.getCompilationUnit();
-			try
+			final int offset = javaContext.getInvocationOffset();
+			final ICompilationUnit unit = javaContext.getCompilationUnit();
+			return computeJavaProposals(unit, offset);
+		}
+		return Collections.emptyList();
+	}
+
+	protected List<ICompletionProposal> computeJavaProposals(final ICompilationUnit unit,
+		final int offset)
+	{
+		try
+		{
+			if (unit == null || !unit.isStructureKnown())
+				return Collections.emptyList();
+			IType primaryType = unit.findPrimaryType();
+			if (primaryType == null || !primaryType.isInterface())
+				return Collections.emptyList();
+
+			IJavaElement element = unit.getElementAt(offset);
+			if (element == null || !(element instanceof IMethod))
+				return Collections.emptyList();
+
+			IAnnotation annotation = getAnnotationAt((IAnnotatable)element, offset);
+			if (annotation == null)
+				return Collections.emptyList();
+
+			final IJavaProject project = unit.getJavaProject();
+			final String mapperFqn = primaryType.getFullyQualifiedName();
+			final IMethod method = (IMethod)element;
+			if (isInlineStatementAnnotation(annotation))
 			{
-				if (unit == null || !unit.isStructureKnown())
-					return Collections.emptyList();
-				IType primaryType = unit.findPrimaryType();
-				if (primaryType == null || !primaryType.isInterface())
-					return Collections.emptyList();
-
-				int offset = javaContext.getInvocationOffset();
-				IJavaElement element = unit.getElementAt(offset);
-				if (element == null || !(element instanceof IMethod))
-					return Collections.emptyList();
-
-				IAnnotation annotation = getAnnotationAt((IAnnotatable)element, offset);
-				if (annotation == null)
-					return Collections.emptyList();
-
-				final IJavaProject project = javaContext.getProject();
-				final String mapperFqn = primaryType.getFullyQualifiedName();
-				final IMethod method = (IMethod)element;
-				if (isInlineStatementAnnotation(annotation))
+				return proposeStatementText(project, unit, offset, annotation, method);
+			}
+			else
+			{
+				String elementName = annotation.getElementName();
+				if ("ResultMap".equals(elementName))
 				{
-					return proposeStatementText(project, unit, offset, annotation, method);
+					return proposeResultMap(project, mapperFqn, offset, annotation);
 				}
-				else
+				else if ("Results".equals(elementName))
 				{
-					String elementName = annotation.getElementName();
-					if ("ResultMap".equals(elementName))
-					{
-						return proposeResultMap(project, mapperFqn, offset, annotation);
-					}
-					else if ("Results".equals(elementName))
-					{
-						return proposeResults(project, mapperFqn, offset, annotation, method);
-					}
-					else if ("ConstructorArgs".equals(elementName))
-					{
-						return proposeConstructorArgs(project, mapperFqn, offset, annotation, method);
-					}
-					else if ("Options".equals(elementName) || "SelectKey".equals(elementName))
-					{
-						return proposeKeyProperty(project, mapperFqn, offset, annotation, method);
-					}
+					return proposeResults(project, mapperFqn, offset, annotation, method);
+				}
+				else if ("ConstructorArgs".equals(elementName))
+				{
+					return proposeConstructorArgs(project, mapperFqn, offset, annotation, method);
+				}
+				else if ("Options".equals(elementName) || "SelectKey".equals(elementName))
+				{
+					return proposeKeyProperty(project, mapperFqn, offset, annotation, method);
 				}
 			}
-			catch (JavaModelException e)
-			{
-				Activator.log(Status.ERROR, "Something went wrong.", e);
-			}
+		}
+		catch (JavaModelException e)
+		{
+			Activator.log(Status.ERROR, "Something went wrong.", e);
 		}
 		return Collections.emptyList();
 	}

@@ -39,7 +39,6 @@ import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.TypeNameRequestor;
-import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -642,8 +641,8 @@ public class ProposalComputorHelper
 		if (matchString.length() == 0
 			|| CharOperation.camelCaseMatch(matchString.toCharArray(), targetStr.toCharArray()))
 		{
-			proposals.add(new CompletionProposal(replacementStr, offset, length,
-				replacementStr.length(), Activator.getIcon(), displayStr, null, null));
+			proposals.add(new JavaCompletionProposal(replacementStr, offset, length,
+				replacementStr.length(), Activator.getIcon(), displayStr, null, null, 0));
 		}
 	}
 

@@ -428,4 +428,13 @@
             id="net.harawata.mybatipse.wizard.NewXmlMapperWizard"
             name="MyBatis XML Mapper" />
    </extension>
+   <extension
+         point="org.codehaus.groovy.eclipse.codeassist.completion.completionProposalProvider">
+      <proposalProvider
+            proposalProvider="net.harawata.mybatipse.groovy.GroovyProposalProvider">
+         <appliesTo
+               projectNature="org.eclipse.jdt.groovy.core.groovyNature">
+         </appliesTo>
+      </proposalProvider>
+   </extension>
 </plugin>

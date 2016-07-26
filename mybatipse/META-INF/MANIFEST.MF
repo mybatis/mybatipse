@@ -17,6 +17,9 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jdt.core,
  org.eclipse.jdt.ui,
  org.eclipse.ui.workbench.texteditor,
- org.eclipse.wst.validation
+ org.eclipse.wst.validation,
+ org.codehaus.groovy.eclipse.codeassist.completion;resolution:=optional,
+ org.codehaus.groovy;resolution:=optional,
+ org.eclipse.jdt.groovy.core;resolution:=optional
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
