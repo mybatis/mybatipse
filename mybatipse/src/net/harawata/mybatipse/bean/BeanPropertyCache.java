@@ -219,9 +219,29 @@ public class BeanPropertyCache
 		parseBinaryMethods(type, actualTypeParams, typeParams, readableFields, writableFields);
 
 		String superclassFqn = Signature.toString(type.getSuperclassTypeSignature());
-		if (Object.class.getName().equals(superclassFqn))
-			return;
+		String currentClassFqn = type.getFullyQualifiedName();
+		if (!Object.class.getName().equals(superclassFqn))
+		{
+			parseSuper(project, superclassFqn, currentClassFqn, typeParams, actualTypeParams,
+				readableFields, writableFields, subclassMap);
+		}
 
+		String[] superInterfaceTypes = type.getSuperInterfaceTypeSignatures();
+		for (String superInterfaceType : superInterfaceTypes)
+		{
+			if (!superInterfaceType.startsWith("java") && !superInterfaceType.startsWith("javax."))
+			{
+				parseSuper(project, superInterfaceType, currentClassFqn, typeParams, actualTypeParams,
+					readableFields, writableFields, subclassMap);
+			}
+		}
+	}
+
+	protected static void parseSuper(IJavaProject project, String superclassFqn,
+		String currentClassFqn, final List<String> typeParams, List<String> actualTypeParams,
+		final Map<String, String> readableFields, final Map<String, String> writableFields,
+		final Map<String, Set<String>> subclassMap)
+	{
 		String rawSuperclass = superclassFqn;
 		if (superclassFqn.indexOf('<') > -1)
 		{
@@ -245,7 +265,7 @@ public class BeanPropertyCache
 			subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 			subclassMap.put(superclassFqn, subclasses);
 		}
-		subclasses.add(type.getFullyQualifiedName());
+		subclasses.add(currentClassFqn);
 		parseBean(project, superclassFqn, readableFields, writableFields, subclassMap);
 	}
 

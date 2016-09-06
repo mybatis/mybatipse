@@ -210,37 +210,51 @@ public class BeanPropertyVisitor extends ASTVisitor
 				ITypeBinding binding = superclassType.resolveBinding();
 				if (binding != null)
 				{
-					String superclassFqn = binding.getQualifiedName();
-					String superclassGenericFqn = superclassFqn;
-					if (binding.isParameterizedType())
-					{
-						superclassGenericFqn = NameUtil.stripTypeArguments(superclassFqn);
-						StringBuilder superclassFqnBuilder = new StringBuilder(superclassGenericFqn)
-							.append('<');
-						List<String> superclassTypeParams = NameUtil.extractTypeParams(superclassFqn);
-						for (int i = 0; i < superclassTypeParams.size(); i++)
-						{
-							if (i > 0)
-								superclassFqnBuilder.append(',');
-							superclassFqnBuilder.append(NameUtil.resolveTypeParam(actualTypeParams,
-								typeParams, superclassTypeParams.get(i)));
-						}
-						superclassFqnBuilder.append('>');
-						superclassFqn = superclassFqnBuilder.toString();
-					}
-					Set<String> subclasses = subclassMap.get(superclassGenericFqn);
-					if (subclasses == null)
-					{
-						subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-						subclassMap.put(superclassGenericFqn, subclasses);
-					}
-					subclasses.add(qualifiedName);
-					BeanPropertyCache.parseBean(project, superclassFqn, readableFields, writableFields,
-						subclassMap);
+					parseSuper(binding.getQualifiedName(), binding);
+				}
+			}
+			@SuppressWarnings("unchecked")
+			List<Type> superInterfaces = node.superInterfaceTypes();
+			for (Type superInterface : superInterfaces)
+			{
+				ITypeBinding binding = superInterface.resolveBinding();
+				String fqn = binding.getQualifiedName();
+				if (binding != null && fqn.indexOf("java.") != 0 && fqn.indexOf("javax.") != 0)
+				{
+					parseSuper(fqn, binding);
 				}
 			}
 		}
 		nestLevel--;
+	}
+
+	private void parseSuper(String superclassFqn, ITypeBinding superclassBinding)
+	{
+		String superclassErasureFqn = superclassFqn;
+		if (superclassBinding.isParameterizedType())
+		{
+			superclassErasureFqn = NameUtil.stripTypeArguments(superclassFqn);
+			StringBuilder superclassFqnBuilder = new StringBuilder(superclassErasureFqn).append('<');
+			List<String> superclassTypeParams = NameUtil.extractTypeParams(superclassFqn);
+			for (int i = 0; i < superclassTypeParams.size(); i++)
+			{
+				if (i > 0)
+					superclassFqnBuilder.append(',');
+				superclassFqnBuilder.append(
+					NameUtil.resolveTypeParam(actualTypeParams, typeParams, superclassTypeParams.get(i)));
+			}
+			superclassFqnBuilder.append('>');
+			superclassFqn = superclassFqnBuilder.toString();
+		}
+		Set<String> subclasses = subclassMap.get(superclassErasureFqn);
+		if (subclasses == null)
+		{
+			subclasses = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+			subclassMap.put(superclassErasureFqn, subclasses);
+		}
+		subclasses.add(qualifiedName);
+		BeanPropertyCache.parseBean(project, superclassFqn, readableFields, writableFields,
+			subclassMap);
 	}
 
 	public static String getFieldNameFromAccessor(String methodName)
