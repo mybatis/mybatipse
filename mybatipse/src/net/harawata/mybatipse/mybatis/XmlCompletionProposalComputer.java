@@ -49,7 +49,6 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocumentRegion;
 import org.eclipse.wst.sse.core.internal.provisional.text.ITextRegion;
 import org.eclipse.wst.sse.core.internal.provisional.text.ITextRegionList;
-import org.eclipse.wst.sse.core.utils.StringUtils;
 import org.eclipse.wst.sse.ui.contentassist.CompletionProposalInvocationContext;
 import org.eclipse.wst.sse.ui.internal.contentassist.ContentAssistUtils;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
@@ -469,28 +468,50 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		}
 
 		String currentValue = null;
-		if (contentAssistRequest.getRegion().getType() == DOMRegionContext.XML_TAG_ATTRIBUTE_VALUE)
-			currentValue = contentAssistRequest.getText();
-		else
-			currentValue = "";
-
-		String matchString = null;
-		int matchStrLen = contentAssistRequest.getMatchString().length();
+		String matchString = contentAssistRequest.getMatchString();
 		int start = contentAssistRequest.getReplacementBeginPosition();
-		int length = contentAssistRequest.getReplacementLength();
-		if (currentValue.length() > StringUtils.strip(currentValue).length()
-			&& (currentValue.startsWith("\"") || currentValue.startsWith("'")) && matchStrLen > 0)
+		if (contentAssistRequest.getRegion().getType() == DOMRegionContext.XML_TAG_ATTRIBUTE_VALUE)
 		{
-			// Value is surrounded by (double) quotes.
-			matchString = currentValue.substring(1, matchStrLen);
-			start++;
-			length = currentValue.length() - 2;
-			currentValue = currentValue.substring(1, length + 1);
+			currentValue = contentAssistRequest.getText();
+			int valueStart = 0;
+			int valueEnd = currentValue.length();
+			// Avoid deleting the next line when there is no closing quote.
+			int newLine = currentValue.indexOf('\r');
+			if (newLine == -1)
+			{
+				newLine = currentValue.indexOf('\n');
+			}
+			if (newLine > -1)
+			{
+				// No end quote: attr="value[cursor]>
+				valueEnd = currentValue.lastIndexOf('>', newLine);
+				if (valueEnd == -1)
+					valueEnd = newLine;
+			}
+			char firstChar = currentValue.charAt(0);
+			if (firstChar == '"' || firstChar == '\'')
+			{
+				valueStart = 1;
+				matchString = matchString.substring(1, matchString.length());
+				start++;
+			}
+			char lastChar = currentValue.charAt(valueEnd - 1);
+			if (valueStart == 1 && valueStart < valueEnd && firstChar == lastChar)
+			{
+				valueEnd--;
+			}
+			currentValue = currentValue.substring(valueStart, valueEnd);
+			if (matchString.length() > currentValue.length())
+			{
+				// Cursor after the end quote: attr="value"[cursor]>
+				return;
+			}
 		}
 		else
 		{
-			matchString = currentValue.substring(0, matchStrLen);
+			currentValue = "";
 		}
+		int length = currentValue.length();
 
 		IJavaProject project = getJavaProject(contentAssistRequest);
 		try
