@@ -19,6 +19,11 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.workbench.texteditor,
  org.eclipse.wst.validation,
  org.eclipse.jdt.apt.core,
- org.eclipse.jdt.apt.pluggable.core
+ org.eclipse.jdt.apt.pluggable.core,
+ org.eclipse.ltk.core.refactoring,
+ org.eclipse.ltk.ui.refactoring,
+ org.eclipse.search,
+ org.eclipse.jdt.core.manipulation,
+ org.eclipse.core.expressions
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy

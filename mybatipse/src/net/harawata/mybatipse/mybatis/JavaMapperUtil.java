@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.preferences.ConfigurationScope;
 import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -30,6 +31,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
@@ -59,12 +61,34 @@ import net.harawata.mybatipse.util.NameUtil;
  */
 public class JavaMapperUtil
 {
+	public static IAnnotation getAnnotationAt(IAnnotatable annotatable, int offset)
+		throws JavaModelException
+	{
+		IAnnotation[] annotations = annotatable.getAnnotations();
+		for (IAnnotation annotation : annotations)
+		{
+			ISourceRange sourceRange = annotation.getSourceRange();
+			if (isInRange(sourceRange, offset))
+			{
+				return annotation;
+			}
+		}
+		return null;
+	}
+
+	private static boolean isInRange(ISourceRange sourceRange, int offset)
+	{
+		int start = sourceRange.getOffset();
+		int end = start + sourceRange.getLength();
+		return start <= offset && offset <= end;
+	}
+
 	public static void findMapperMethod(MapperMethodStore store, IJavaProject project,
 		String mapperFqn, MethodMatcher annotationFilter)
 	{
 		try
 		{
-			IType mapperType = project.findType(mapperFqn);
+			IType mapperType = project.findType(mapperFqn.replace('$', '.'));
 			if (mapperType == null || !mapperType.isInterface())
 				return;
 			if (mapperType.isBinary())
@@ -137,7 +161,7 @@ public class JavaMapperUtil
 			if (binding == null)
 				return false;
 
-			if (mapperFqn.equals(binding.getQualifiedName()))
+			if (mapperFqn.equals(binding.getBinaryName()))
 				nestLevel = 1;
 			else if (nestLevel > 0)
 				nestLevel++;

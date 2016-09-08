@@ -252,6 +252,20 @@
             description="Copy MyBatis statement in the Console View as an executable SQL statement."
             categoryId="net.harawata.mybatipse.commandCategory">
       </command>
+      <command
+            defaultHandler="net.harawata.mybatipse.refactoring.handler.XmlElementRenameHandler"
+            id="net.harawata.mybatipse.refactoring.RenameXmlElement"
+            name="Rename MyBatis element"
+            description="Rename MyBatis statement/resultMap ID in XML mapper."
+            categoryId="org.eclipse.ui.category.edit">
+      </command>
+      <command
+            defaultHandler="net.harawata.mybatipse.refactoring.handler.JavaElementRenameHandler"
+            id="net.harawata.mybatipse.refactoring.RenameJavaElement"
+            name="Rename MyBatis element"
+            description="Rename MyBatis statement/resultMap ID in Java mapper."
+            categoryId="org.eclipse.ui.category.edit">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -303,10 +317,10 @@
                         ifEmpty="false">
                      <adapt
                            type="org.eclipse.core.resources.IProject">
-	                      <test
-	                         property="org.eclipse.core.resources.projectNature"
-	                         value="net.harawata.mybatipse.MyBatisNature">
-	                      </test>
+                        <test
+                           property="org.eclipse.core.resources.projectNature"
+                           value="net.harawata.mybatipse.MyBatisNature">
+                        </test>
                      </adapt>
                   </iterate>
                </with>
@@ -321,6 +335,45 @@
                commandId="net.harawata.mybatipse.CopyLogStatement">
          </command>
       </menuContribution>
+      <menuContribution locationURI="popup:refactorPopupMenuId">
+         <command
+               commandId="net.harawata.mybatipse.refactoring.RenameXmlElement"
+               label="Rename MyBatis element">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeMenuSelection">
+                  <iterate
+                        ifEmpty="false">
+                     <adapt
+                           type="org.eclipse.core.resources.IResource">
+                        <test
+                           property="org.eclipse.core.resources.contentTypeId"
+                           value="net.harawata.mybatipse.mapper" />
+                     </adapt>
+                  </iterate>
+               </with>
+            </visibleWhen>
+         </command>
+      </menuContribution>
+      <menuContribution
+            locationURI="popup:#CompilationUnitEditorContext?after=org.eclipse.jdt.ui.refactoring.menu">
+         <menu label="MyBatis Refactor">
+            <command
+                  commandId="net.harawata.mybatipse.refactoring.RenameJavaElement"
+                  label="Rename MyBatis element">
+               <visibleWhen
+                     checkEnabled="false">
+                  <with
+                        variable="activeEditor">
+                     <test
+                           forcePluginActivation="true"
+                           property="net.harawata.mybatipse.isMyBatisProject" />
+                  </with>
+               </visibleWhen>
+            </command>
+         </menu>
+      </menuContribution>
    </extension>
    <extension point="org.eclipse.ui.bindings">
       <key
@@ -328,6 +381,18 @@
             commandId="net.harawata.mybatipse.CopyLogStatement"
             contextId="org.eclipse.ui.contexts.window"
             sequence="M1+M2+C">
+      </key>
+      <key
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            commandId="net.harawata.mybatipse.refactoring.RenameXmlElement"
+            contextId="org.eclipse.wst.sse.ui.structuredTextEditorScope"
+            sequence="M1+M2+M3+R">
+      </key>
+      <key
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            commandId="net.harawata.mybatipse.refactoring.RenameJavaElement"
+            contextId="org.eclipse.jdt.ui.javaEditorScope"
+            sequence="M1+M2+M3+R">
       </key>
    </extension>
    <extension
@@ -436,5 +501,32 @@
                class="net.harawata.mybatipse.apt.MybatipseAnnotationProcessorFactory">
          </java6processor>
       </java6processors>
+   </extension>
+   <extension
+         point="org.eclipse.ltk.core.refactoring.renameParticipants">
+      <renameParticipant name="MyBatis Java mapper rename participant"
+            class="net.harawata.mybatipse.refactoring.MapperMethodRenameParticipant"
+            id="net.harawata.mybatipse.refactoring.MapperMethodRenameParticipant">
+            <enablement>
+              <with variable="affectedNatures">
+                <iterate operator="or">
+                  <equals value="net.harawata.mybatipse.MyBatisNature"/>
+                </iterate>
+              </with>
+              <with variable="element">
+                <instanceof value="org.eclipse.jdt.core.IMethod"/>
+              </with>
+            </enablement>
+      </renameParticipant>
+   </extension>
+   <extension
+         point="org.eclipse.core.expressions.propertyTesters">
+      <propertyTester
+            class="net.harawata.mybatipse.refactoring.JavaRefactoringPropertyTester"
+            id="net.harawata.mybatipse.mybatisNaturePropertyTester"
+            namespace="net.harawata.mybatipse"
+            properties="isMyBatisProject"
+            type="org.eclipse.ui.texteditor.ITextEditor">
+      </propertyTester>
    </extension>
 </plugin>

@@ -56,32 +56,33 @@ public class MybatipseXmlUtil
 	private static final List<String> defaultTypeAliases = Arrays.asList("string", "map",
 		"hashmap", "list", "arraylist", "collection", "iterator", "resultset",
 
-	"_byte", "_long", "_short", "_int", "_integer", "_double", "_float", "_boolean",
+		"_byte", "_long", "_short", "_int", "_integer", "_double", "_float", "_boolean",
 
-	"_byte[]", "_long[]", "_short[]", "_int[]", "_integer[]", "_double[]", "_float[]",
+		"_byte[]", "_long[]", "_short[]", "_int[]", "_integer[]", "_double[]", "_float[]",
 		"_boolean[]",
 
-	"byte", "long", "short", "int", "integer", "double", "float", "boolean",
+		"byte", "long", "short", "int", "integer", "double", "float", "boolean",
 
-	"byte[]", "long[]", "short[]", "int[]", "integer[]", "double[]", "float[]", "boolean[]",
+		"byte[]", "long[]", "short[]", "int[]", "integer[]", "double[]", "float[]", "boolean[]",
 
-	"date", "decimal", "bigdecimal", "biginteger", "object",
+		"date", "decimal", "bigdecimal", "biginteger", "object",
 
-	"date[]", "decimal[]", "bigdecimal[]", "biginteger[]", "object[]",
+		"date[]", "decimal[]", "bigdecimal[]", "biginteger[]", "object[]",
 
-	"jdbc", "managed",
+		"jdbc", "managed",
 
-	"jndi", "pooled", "unpooled",
+		"jndi", "pooled", "unpooled",
 
-	"perpetual", "fifo", "lru", "soft", "weak",
+		"perpetual", "fifo", "lru", "soft", "weak",
 
-	"db_vendor",
+		"db_vendor",
 
-	"xml", "raw",
+		"xml", "raw",
 
-	"slf4j", "commons_logging", "log4j", "log4j2", "jdk_logging", "stdout_logging", "no_logging",
+		"slf4j", "commons_logging", "log4j", "log4j2", "jdk_logging", "stdout_logging",
+		"no_logging",
 
-	"cglib", "javassist");
+		"cglib", "javassist");
 
 	public static boolean isDefaultTypeAlias(String type)
 	{
@@ -127,9 +128,17 @@ public class MybatipseXmlUtil
 		return result;
 	}
 
-	public static String getNamespace(Document document) throws XPathExpressionException
+	public static String getNamespace(Document document)
 	{
-		return XpathUtil.xpathString(document, "//mapper/@namespace");
+		try
+		{
+			return XpathUtil.xpathString(document, "//mapper/@namespace");
+		}
+		catch (XPathExpressionException e)
+		{
+			Activator.log(Status.ERROR, "Invalid xpath (unexpected)", e);
+		}
+		return null;
 	}
 
 	public static String getNamespaceFromActiveEditor(IJavaProject project)

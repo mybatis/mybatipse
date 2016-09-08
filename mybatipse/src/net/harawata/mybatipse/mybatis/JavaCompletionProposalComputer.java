@@ -77,13 +77,13 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				if (element == null || !(element instanceof IMethod))
 					return Collections.emptyList();
 
-				IAnnotation annotation = getAnnotationAt((IAnnotatable)element, offset);
+				IAnnotation annotation = JavaMapperUtil.getAnnotationAt((IAnnotatable)element, offset);
 				if (annotation == null)
 					return Collections.emptyList();
 
 				final IJavaProject project = javaContext.getProject();
-				final String mapperFqn = primaryType.getFullyQualifiedName();
 				final IMethod method = (IMethod)element;
+				final String mapperFqn = method.getDeclaringType().getFullyQualifiedName();
 				if (isInlineStatementAnnotation(annotation))
 				{
 					return proposeStatementText(project, unit, offset, annotation, method);
@@ -300,34 +300,6 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 	{
 		String annotationName = annotation.getElementName();
 		return inlineStatementAnnotations.contains(annotationName);
-	}
-
-	private IAnnotation getAnnotationAt(IAnnotatable annotatable, int offset)
-	{
-		try
-		{
-			IAnnotation[] annotations = annotatable.getAnnotations();
-			for (IAnnotation annotation : annotations)
-			{
-				ISourceRange sourceRange = annotation.getSourceRange();
-				if (isInRange(sourceRange, offset))
-				{
-					return annotation;
-				}
-			}
-		}
-		catch (JavaModelException e)
-		{
-			Activator.log(Status.ERROR, e.getMessage(), e);
-		}
-		return null;
-	}
-
-	private boolean isInRange(ISourceRange sourceRange, int offset)
-	{
-		int start = sourceRange.getOffset();
-		int end = start + sourceRange.getLength();
-		return start <= offset && offset <= end;
 	}
 
 	public List<IContextInformation> computeContextInformation(

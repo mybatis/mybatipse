@@ -55,6 +55,10 @@ public class MybatipseConstants
 
 	public static final String ANNOTATION_RESULT_MAP = "org.apache.ibatis.annotations.ResultMap";
 
+	public static final String ANNOTATION_ONE = "org.apache.ibatis.annotations.One";
+
+	public static final String ANNOTATION_MANY = "org.apache.ibatis.annotations.Many";
+
 	public static final String ANNOTATION_MAP_KEY = "org.apache.ibatis.annotations.MapKey";
 
 	public static final List<String> STATEMENT_ANNOTATIONS = Arrays.asList(ANNOTATION_SELECT,
