@@ -34,6 +34,7 @@ import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -300,7 +301,7 @@ public class ProposalComputorHelper
 			}
 
 			@Override
-			public void add(IMethodBinding method)
+			public void add(IMethodBinding method, List<SingleVariableDeclaration> params)
 			{
 				for (IAnnotationBinding annotation : method.getAnnotations())
 				{

@@ -31,6 +31,7 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.sse.core.internal.provisional.IStructuredModel;
 import org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocument;
@@ -381,7 +382,7 @@ public class XmlValidator extends AbstractValidator
 			}
 
 			@Override
-			public void add(IMethodBinding method)
+			public void add(IMethodBinding method, List<SingleVariableDeclaration> params)
 			{
 				found = true;
 			}

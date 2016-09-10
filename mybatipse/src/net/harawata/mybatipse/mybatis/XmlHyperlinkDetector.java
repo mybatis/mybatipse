@@ -13,6 +13,7 @@ package net.harawata.mybatipse.mybatis;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.List;
 
 import javax.xml.xpath.XPathExpressionException;
 
@@ -25,6 +26,7 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextViewer;
@@ -375,7 +377,7 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 		}
 
 		@Override
-		public void add(IMethodBinding method)
+		public void add(IMethodBinding method, List<SingleVariableDeclaration> params)
 		{
 			this.method = (IMethod)method.getJavaElement();
 		}

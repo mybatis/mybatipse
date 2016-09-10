@@ -16,8 +16,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.preferences.ConfigurationScope;
+import org.eclipse.core.runtime.preferences.DefaultScope;
+import org.eclipse.core.runtime.preferences.IScopeContext;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -27,7 +32,9 @@ import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -39,6 +46,7 @@ import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
@@ -162,7 +170,9 @@ public class JavaMapperUtil
 			{
 				if (methodMatcher.matches(method))
 				{
-					methodStore.add(method);
+					@SuppressWarnings("unchecked")
+					List<SingleVariableDeclaration> params = node.parameters();
+					methodStore.add(method, params);
 				}
 			}
 			catch (JavaModelException e)
@@ -224,7 +234,7 @@ public class JavaMapperUtil
 		/**
 		 * Called when adding source method.
 		 */
-		void add(IMethodBinding method);
+		void add(IMethodBinding method, List<SingleVariableDeclaration> params);
 
 		boolean isEmpty();
 	}
@@ -245,7 +255,7 @@ public class JavaMapperUtil
 		}
 
 		@Override
-		public void add(IMethodBinding method)
+		public void add(IMethodBinding method, List<SingleVariableDeclaration> params)
 		{
 			methodNames.add(method.getName());
 		}
@@ -283,7 +293,7 @@ public class JavaMapperUtil
 		}
 
 		@Override
-		public void add(IMethodBinding method)
+		public void add(IMethodBinding method, List<SingleVariableDeclaration> params)
 		{
 			ITypeBinding binding = method.getReturnType();
 			returnType = binding.getQualifiedName();
@@ -316,14 +326,11 @@ public class JavaMapperUtil
 			try
 			{
 				ILocalVariable[] parameters = method.getParameters();
-				if (parameters.length == 1)
-				{
-					putSoleParam(parameters[0].getElementName());
-					return;
-				}
+				boolean foundParamAnnotation = false;
 				for (int i = 0; i < parameters.length; i++)
 				{
-					String paramFqn = parameters[i].getElementName();
+					String paramFqn = Signature.toString(parameters[i].getTypeSignature());
+					foundParamAnnotation = false;
 					for (IAnnotation annotation : parameters[i].getAnnotations())
 					{
 						if (MybatipseConstants.ANNOTATION_PARAM.equals(annotation.getElementName()))
@@ -334,10 +341,21 @@ public class JavaMapperUtil
 								IMemberValuePair valuePair = valuePairs[0];
 								String paramValue = (String)valuePair.getValue();
 								paramMap.put(paramValue, paramFqn);
+								foundParamAnnotation = true;
 							}
 						}
 					}
+					if (!foundParamAnnotation && isParamAttrGenerated())
+					{
+						paramMap.put(parameters[i].getElementName(), paramFqn);
+					}
 					paramMap.put("param" + (i + 1), paramFqn);
+				}
+				if (parameters.length == 1 && !foundParamAnnotation)
+				{
+					// Statement has a sole unnamed parameter
+					paramMap.clear();
+					putSoleParam(Signature.toString(parameters[0].getTypeSignature()));
 				}
 			}
 			catch (JavaModelException e)
@@ -350,13 +368,15 @@ public class JavaMapperUtil
 		}
 
 		@Override
-		public void add(IMethodBinding method)
+		public void add(IMethodBinding method, List<SingleVariableDeclaration> params)
 		{
 			found = true;
-			ITypeBinding[] parameters = method.getParameterTypes();
-			for (int i = 0; i < parameters.length; i++)
+			ITypeBinding[] paramTypes = method.getParameterTypes();
+			boolean foundParamAnnotation = false;
+			for (int i = 0; i < paramTypes.length; i++)
 			{
-				String paramFqn = parameters[i].getQualifiedName();
+				String paramFqn = paramTypes[i].getQualifiedName();
+				foundParamAnnotation = false;
 				if (MybatipseConstants.TYPE_ROW_BOUNDS.equals(paramFqn))
 					continue;
 
@@ -372,17 +392,53 @@ public class JavaMapperUtil
 							IMemberValuePairBinding valuePairBinding = valuePairs[0];
 							String paramValue = (String)valuePairBinding.getValue();
 							paramMap.put(paramValue, paramFqn);
+							foundParamAnnotation = true;
 						}
 					}
 				}
+				if (!foundParamAnnotation && isParamAttrGenerated())
+				{
+					SingleVariableDeclaration param = params.get(i);
+					paramMap.put(param.getName().toString(), paramFqn);
+				}
 				paramMap.put("param" + (i + 1), paramFqn);
 			}
-			if (paramMap.size() == 1)
+			if (paramTypes.length == 1 && !foundParamAnnotation)
 			{
-				// statement has a sole param without @Param
+				// Statement has a sole unnamed parameter
 				paramMap.clear();
-				putSoleParam(parameters[0].getQualifiedName());
+				putSoleParam(paramTypes[0].getQualifiedName());
 			}
+		}
+
+		private boolean isParamAttrGenerated()
+		{
+			IScopeContext[] contexts;
+			if (project != null)
+			{
+				contexts = new IScopeContext[]{
+					new ProjectScope(project.getProject()), InstanceScope.INSTANCE,
+					ConfigurationScope.INSTANCE, DefaultScope.INSTANCE
+				};
+			}
+			else
+			{
+				contexts = new IScopeContext[]{
+					InstanceScope.INSTANCE, ConfigurationScope.INSTANCE, DefaultScope.INSTANCE
+				};
+			}
+			for (int j = 0; j < contexts.length; ++j)
+			{
+				String value = contexts[j].getNode(JavaCore.PLUGIN_ID)
+					.get(JavaCore.COMPILER_CODEGEN_METHOD_PARAMETERS_ATTR, null);
+				if (value != null)
+				{
+					value = value.trim();
+					if (!value.isEmpty())
+						return "generate".equals(value.trim());
+				}
+			}
+			return false;
 		}
 
 		private void putSoleParam(String paramFqn)
