@@ -428,4 +428,13 @@
             id="net.harawata.mybatipse.wizard.NewXmlMapperWizard"
             name="MyBatis XML Mapper" />
    </extension>
+   <extension
+         point="org.eclipse.jdt.apt.core.annotationProcessorFactory">
+      <java6processors
+            enableDefault="true">
+         <java6processor
+               class="net.harawata.mybatipse.apt.MybatipseAnnotationProcessorFactory">
+         </java6processor>
+      </java6processors>
+   </extension>
 </plugin>

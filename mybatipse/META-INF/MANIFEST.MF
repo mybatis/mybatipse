@@ -17,6 +17,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.jdt.core,
  org.eclipse.jdt.ui,
  org.eclipse.ui.workbench.texteditor,
- org.eclipse.wst.validation
+ org.eclipse.wst.validation,
+ org.eclipse.jdt.apt.core,
+ org.eclipse.jdt.apt.pluggable.core
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy

@@ -49,6 +49,8 @@ public class MybatipseConstants
 
 	public static final String ANNOTATION_RESULTS = "org.apache.ibatis.annotations.Results";
 
+	public static final String ANNOTATION_RESULT = "org.apache.ibatis.annotations.Result";
+
 	public static final String ANNOTATION_PARAM = "org.apache.ibatis.annotations.Param";
 
 	public static final String ANNOTATION_RESULT_MAP = "org.apache.ibatis.annotations.ResultMap";

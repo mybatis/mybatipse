@@ -15,6 +15,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
+import org.eclipse.jdt.core.JavaModelException;
+
+import net.harawata.mybatipse.Activator;
+
 /**
  * @author Iwao AVE!
  */
@@ -54,6 +63,41 @@ public class NameUtil
 			return src;
 		}
 		return src.substring(0, src.length() - 1);
+	}
+
+	public static String manageableReturnType(IJavaProject project, String declaredReturnType)
+	{
+		if ("void".equals(declaredReturnType))
+		{
+			return null;
+		}
+		else if (declaredReturnType.indexOf('<') == -1)
+		{
+			return declaredReturnType;
+		}
+		else
+		{
+			try
+			{
+				IType rawType = project.findType(NameUtil.stripTypeArguments(declaredReturnType));
+				final ITypeHierarchy supertypes = rawType
+					.newSupertypeHierarchy(new NullProgressMonitor());
+				IType collectionType = project.findType("java.util.Collection");
+				if (supertypes.contains(collectionType))
+				{
+					List<String> typeParams = NameUtil.extractTypeParams(declaredReturnType);
+					if (typeParams.size() == 1)
+					{
+						return typeParams.get(0);
+					}
+				}
+			}
+			catch (JavaModelException e)
+			{
+				Activator.log(Status.ERROR, e.getMessage(), e);
+			}
+		}
+		return null;
 	}
 
 	public static String stripTypeArguments(String src)

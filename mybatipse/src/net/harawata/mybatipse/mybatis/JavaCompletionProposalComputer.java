@@ -223,33 +223,13 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 			new MethodNameMatcher(method.getElementName(), true));
 		if (!methodStore.isEmpty())
 		{
-			String actualReturnType = null;
-			String returnType = methodStore.getReturnType();
-			if (returnType.indexOf('<') == -1)
-			{
-				actualReturnType = returnType;
-			}
-			else
-			{
-				IType rawType = project.findType(NameUtil.stripTypeArguments(returnType));
-				final ITypeHierarchy supertypes = rawType
-					.newSupertypeHierarchy(new NullProgressMonitor());
-				IType collectionType = project.findType("java.util.Collection");
-				if (supertypes.contains(collectionType))
-				{
-					List<String> typeParams = NameUtil.extractTypeParams(returnType);
-					if (typeParams.size() == 1)
-					{
-						actualReturnType = typeParams.get(0);
-					}
-				}
-			}
-			if (actualReturnType != null)
+			String returnType = NameUtil.manageableReturnType(project, methodStore.getReturnType());
+			if (returnType != null)
 			{
 				String matchString = String.valueOf(parser.getValue());
 				proposals.addAll(
 					ProposalComputorHelper.proposePropertyFor(project, offset - matchString.length(),
-						parser.getValueLength(), actualReturnType, false, -1, matchString));
+						parser.getValueLength(), returnType, false, -1, matchString));
 			}
 		}
 	}

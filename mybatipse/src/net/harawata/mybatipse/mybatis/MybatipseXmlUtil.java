@@ -160,6 +160,16 @@ public class MybatipseXmlUtil
 		return null;
 	}
 
+	public static IDOMDocument getMapperDocument(IJavaProject project, String namespace)
+	{
+		IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
+		if (mapperFile != null)
+		{
+			return MybatipseXmlUtil.getMapperDocument(mapperFile);
+		}
+		return null;
+	}
+
 	public static IDOMDocument getMapperDocument(IFile mapperXmlFile)
 	{
 		if (mapperXmlFile == null)

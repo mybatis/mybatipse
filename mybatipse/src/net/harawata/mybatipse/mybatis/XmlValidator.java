@@ -25,13 +25,10 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.sse.core.internal.provisional.IStructuredModel;
 import org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocument;
@@ -50,12 +47,7 @@ import org.w3c.dom.NodeList;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.MapperMethodStore;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.ResultsAnnotationWithId;
-import net.harawata.mybatipse.util.XpathUtil;
 
 /**
  * @author Iwao AVE!
@@ -235,7 +227,7 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateResultMapId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
-		throws JavaModelException
+		throws JavaModelException, XPathExpressionException
 	{
 		if (attrValue.indexOf(',') == -1)
 		{
@@ -257,93 +249,28 @@ public class XmlValidator extends AbstractValidator
 
 	private void validateSelectId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
-		throws JavaModelException
+		throws JavaModelException, XPathExpressionException
 	{
 		validateReference(project, file, doc, result, attr, attrValue, "select", reporter);
 	}
 
 	private void validateSqlId(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, IReporter reporter)
-		throws JavaModelException
+		throws JavaModelException, XPathExpressionException
 	{
 		validateReference(project, file, doc, result, attr, attrValue, "sql", reporter);
 	}
 
 	private void validateReference(IJavaProject project, IFile file, IDOMDocument doc,
 		ValidationResult result, IDOMAttr attr, String attrValue, String targetElement,
-		IReporter reporter) throws JavaModelException
+		IReporter reporter) throws JavaModelException, XPathExpressionException
 	{
-		try
+		if (!ValidatorHelper.isReferenceValid(project, MybatipseXmlUtil.getNamespace(doc), doc,
+			attrValue, targetElement))
 		{
-			if (attrValue.indexOf('$') > -1)
-				return;
-
-			if (attrValue.indexOf('.') == -1)
-			{
-				// Internal reference
-				String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
-				if ("select".equals(targetElement))
-				{
-					if (mapperMethodExists(project, qualifiedName,
-						new HasSelectAnnotation(attrValue, true)))
-					{
-						return;
-					}
-				}
-				if ("resultMap".equals(targetElement))
-				{
-					if (mapperMethodExists(project, qualifiedName,
-						new ResultsAnnotationWithId(attrValue, true)))
-					{
-						return;
-					}
-				}
-				String xpath = "count(//" + targetElement + "[@id='" + attrValue + "']) > 0";
-				if (!XpathUtil.xpathBool(doc, xpath))
-				{
-					addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_SQL,
-						IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
-						targetElement + " with id='" + attrValue + "' not found.");
-				}
-			}
-			else
-			{
-				// External reference
-				int lastDot = attrValue.lastIndexOf('.');
-				String namespace = attrValue.substring(0, lastDot);
-				String statementId = attrValue.substring(lastDot + 1);
-				if ("select".equals(targetElement)
-					&& mapperMethodExists(project, namespace, new HasSelectAnnotation(statementId, true)))
-				{
-					return;
-				}
-				else if ("resultMap".equals(targetElement) && mapperMethodExists(project, namespace,
-					new ResultsAnnotationWithId(statementId, true)))
-				{
-					return;
-				}
-				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, reporter);
-				if (mapperFile == null)
-				{
-					addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_NAMESPACE,
-						IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
-						"Namespace='" + namespace + "' not found.");
-				}
-				else
-				{
-					String xpath = "count(//" + targetElement + "[@id='" + statementId + "']) > 0";
-					if (!isElementExists(mapperFile, xpath))
-					{
-						addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_SQL,
-							IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
-							targetElement + " with id='" + attrValue + "' not found.");
-					}
-				}
-			}
-		}
-		catch (XPathExpressionException e)
-		{
-			Activator.log(Status.ERROR, "Error while searching sql with id = " + attrValue, e);
+			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_SQL,
+				IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
+				targetElement + " with id='" + attrValue + "' not found.");
 		}
 	}
 
@@ -358,7 +285,7 @@ public class XmlValidator extends AbstractValidator
 
 		String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
 		IType mapperType = project.findType(qualifiedName);
-		if (mapperType != null && !mapperMethodExists(project, qualifiedName,
+		if (mapperType != null && !ValidatorHelper.mapperMethodExists(project, qualifiedName,
 			new RejectStatementAnnotation(attrValue, true)))
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_STATEMENT_METHOD,
@@ -366,35 +293,6 @@ public class XmlValidator extends AbstractValidator
 				"Method '" + attrValue + "' not found or there is an overload method"
 					+ " (same name with different parameters) in mapper interface " + qualifiedName);
 		}
-	}
-
-	private boolean mapperMethodExists(IJavaProject project, String qualifiedName,
-		MethodMatcher methodMatcher) throws JavaModelException
-	{
-		MapperMethodStore methodStore = new MapperMethodStore()
-		{
-			boolean found;
-
-			@Override
-			public void add(IMethod method)
-			{
-				found = true;
-			}
-
-			@Override
-			public void add(IMethodBinding method, List<SingleVariableDeclaration> params)
-			{
-				found = true;
-			}
-
-			@Override
-			public boolean isEmpty()
-			{
-				return !found;
-			}
-		};
-		JavaMapperUtil.findMapperMethod(methodStore, project, qualifiedName, methodMatcher);
-		return !methodStore.isEmpty();
 	}
 
 	private void validateProperty(IDOMElement element, IFile file, IDOMDocument doc,
@@ -487,29 +385,4 @@ public class XmlValidator extends AbstractValidator
 		result.add(marker);
 	}
 
-	private boolean isElementExists(IFile file, String xpath)
-	{
-		IStructuredModel model = null;
-		try
-		{
-			model = StructuredModelManager.getModelManager().getModelForRead(file);
-			IDOMModel domModel = (IDOMModel)model;
-			IDOMDocument domDoc = domModel.getDocument();
-
-			return XpathUtil.xpathBool(domDoc, xpath);
-		}
-		catch (Exception e)
-		{
-			Activator.log(Status.ERROR, "Error occurred during parsing mapper:" + file.getFullPath(),
-				e);
-		}
-		finally
-		{
-			if (model != null)
-			{
-				model.releaseFromRead();
-			}
-		}
-		return false;
-	}
 }
