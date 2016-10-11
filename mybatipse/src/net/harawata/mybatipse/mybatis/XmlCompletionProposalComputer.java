@@ -89,6 +89,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		Include,
 		Package,
 		TypeAlias,
+		JdbcType,
 		SelectId,
 		KeyProperty,
 		ForEachCollection,
@@ -529,6 +530,10 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					addProposals(contentAssistRequest,
 						ProposalComputorHelper.proposeJavaType(project, start, length, true, matchString));
 					break;
+				case JdbcType:
+					addProposals(contentAssistRequest,
+						ProposalComputorHelper.proposeJdbcType(start, length, matchString));
+					break;
 				case ResultProperty:
 					proposeProperty(contentAssistRequest, matchString, start, length, node);
 					break;
@@ -742,6 +747,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		else if ("type".equals(attr) || "resultType".equals(attr) || "parameterType".equals(attr)
 			|| "ofType".equals(attr) || "javaType".equals(attr))
 			return ProposalType.ResultType;
+		else if ("jdbcType".equals(attr))
+			return ProposalType.JdbcType;
 		else if ("property".equals(attr))
 			return ProposalType.ResultProperty;
 		else if ("package".equals(tag) && "name".equals(attr))
