@@ -88,6 +88,8 @@ public class MybatipseAnnotationProcessorFactory extends AbstractProcessor
 			return;
 
 		AnnotationValue resultsAnno = getAnnotationValueByKey(annotationMirror, "value");
+		if (resultsAnno == null)
+			return;
 		@SuppressWarnings("unchecked")
 		List<AnnotationValue> resultAnnos = (List<AnnotationValue>)resultsAnno.getValue();
 		for (AnnotationValue resultAnno : resultAnnos)
