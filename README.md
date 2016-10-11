@@ -55,7 +55,6 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 ![sqlview xml](screen/sqlview-xml.png)
 ![sqlview](screen/sqlview.png)
 
-
 ### Java Editor Enhancements
 
 #### Auto-completion
@@ -83,6 +82,20 @@ Put the cursor on the statement method name and press cmd + 1 (or ctrl + 1) to t
 ![param-annotation1](screen/qa-copy-statement.png)  
 - You can move annotation statement to XML mapper.  
 ![move-statement](screen/qa-move-statement.png)  
+
+#### Validation
+
+- `@ResultMap` : invalid resultMap ID.
+- `select` attribute of `@One` or `@Many` : invalid statement ID.
+
+### Rename Refactoring
+
+- Renaming resultMap/statement/sql ID updates its references in Java and XML mappers. 
+- In XML mapper, right click -> Refactor -> Rename MyBatis element.
+![param-annotation1](screen/refactor-rename-xml.png)
+- In Java mapper, right click -> MyBatis Refactor -> Rename MyBatis element.
+![param-annotation1](screen/refactor-rename-java.png)
+- Renaming a Java mapper method also updates its references.
 
 
 ### Miscellaneous
@@ -116,6 +129,12 @@ For example, with the above settings:
   - The second entry registers the single class ```domain.Person```.  
   - The third entry registers the single class ```domain.SomeLongNamedBean``` under the alias ```SomeBean```.
   - Note that, in any case, MyBatipse respects ```@Alias``` annotation if it exists.
+
+### Java 8 `-parameters` compiler option support
+
+- If 'Store information about method parameters' option is enabled in the Java Compiler -> Classfile Generation setting, MyBatipse proposes the declared method parameter names.  
+![xml proposal order](screen/actual-parameters.png)  
+
 
 ## Tips
 - To move MyBatis proposals to the top of the XML proposal list, quit Eclipse and open the following file in the workspace: ```.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.wst.xml.ui.prefs``` Find the line started with ```xml_content_assist_default_page_sort_order=``` and insert ```net.harawata.mybatis.proposalCategory.xml\u0000``` right after the equal sign.  
