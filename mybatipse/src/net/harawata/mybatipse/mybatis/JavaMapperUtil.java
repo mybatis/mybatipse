@@ -263,6 +263,34 @@ public class JavaMapperUtil
 		boolean isEmpty();
 	}
 
+	public static class SingleMethodStore implements MapperMethodStore
+	{
+		private IMethod method;
+
+		public IMethod getMethod()
+		{
+			return this.method;
+		}
+
+		@Override
+		public void add(IMethod method)
+		{
+			this.method = method;
+		}
+
+		@Override
+		public void add(IMethodBinding method, List<SingleVariableDeclaration> params)
+		{
+			this.method = (IMethod)method.getJavaElement();
+		}
+
+		@Override
+		public boolean isEmpty()
+		{
+			return method == null;
+		}
+	}
+
 	public static class MethodNameStore implements MapperMethodStore
 	{
 		private List<String> methodNames = new ArrayList<String>();

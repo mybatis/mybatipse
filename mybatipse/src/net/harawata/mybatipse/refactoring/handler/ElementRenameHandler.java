@@ -25,7 +25,7 @@ import org.eclipse.ui.PlatformUI;
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameMatcher;
-import net.harawata.mybatipse.mybatis.XmlHyperlinkDetector.SingleMethodStore;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil.SingleMethodStore;
 import net.harawata.mybatipse.refactoring.ElementRenameInfo;
 import net.harawata.mybatipse.refactoring.ElementRenameRefactoring;
 import net.harawata.mybatipse.refactoring.wizard.ElementRenameWizard;

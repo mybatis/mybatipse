@@ -50,14 +50,14 @@
          point="org.eclipse.ui.workbench.texteditor.hyperlinkDetectors">
       <hyperlinkDetector
             activate="true"
-            class="net.harawata.mybatipse.mybatis.XmlHyperlinkDetector"
+            class="net.harawata.mybatipse.hyperlink.XmlHyperlinkDetector"
             id="net.harawata.mybatipse.XmlMapperHyperlinkDetector"
             name="MyBatis XML Mapper Hyperlink Detector"
             targetId="org.eclipse.core.runtime.xml">
       </hyperlinkDetector>
       <hyperlinkDetector
             activate="true"
-            class="net.harawata.mybatipse.mybatis.JavaHyperlinkDetector"
+            class="net.harawata.mybatipse.hyperlink.JavaHyperlinkDetector"
             id="net.harawata.mybatipse.JavaMapperHyperlinkDetector"
             name="MyBatis Java Mapper Hyperlink Detector"
             targetId="org.eclipse.jdt.ui.javaCode">
