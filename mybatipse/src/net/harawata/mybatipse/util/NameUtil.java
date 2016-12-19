@@ -142,7 +142,8 @@ public class NameUtil
 		String typeParam)
 	{
 		int typeParamIdx = typeParams.indexOf(typeParam);
-		return typeParamIdx == -1 ? typeParam : actualTypeParams.get(typeParamIdx);
+		return typeParamIdx == -1 || actualTypeParams.isEmpty() ? typeParam
+			: actualTypeParams.get(typeParamIdx);
 	}
 
 	private NameUtil()
