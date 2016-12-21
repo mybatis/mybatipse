@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
@@ -29,7 +28,6 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.text.java.ContentAssistInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposalComputer;
@@ -39,6 +37,7 @@ import org.eclipse.jface.text.contentassist.IContextInformation;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodParametersStore;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodReturnTypeStore;
@@ -170,10 +169,7 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 				else
 				{
 					IType rawType = project.findType(NameUtil.stripTypeArguments(paramType));
-					final ITypeHierarchy supertypes = rawType
-						.newSupertypeHierarchy(new NullProgressMonitor());
-					IType collectionType = project.findType("java.util.Collection");
-					if (supertypes.contains(collectionType))
+					if (SupertypeHierarchyCache.getInstance().isCollection(rawType))
 					{
 						List<String> typeParams = NameUtil.extractTypeParams(paramType);
 						if (typeParams.size() == 1)

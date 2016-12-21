@@ -34,7 +34,6 @@ import javax.xml.xpath.XPathExpressionException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.content.IContentType;
@@ -44,7 +43,6 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.CharOperation;
@@ -75,6 +73,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
 
 import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
 import net.harawata.mybatipse.mybatis.TypeAliasMap.TypeAliasInfo;
 import net.harawata.mybatipse.util.NameUtil;
 import net.harawata.mybatipse.util.XpathUtil;
@@ -87,12 +87,9 @@ public class TypeAliasCache
 {
 	private static final TypeAliasCache INSTANCE = new TypeAliasCache();
 
-	private static final String GUICE_MODULE_FQN = "org.mybatis.guice.MyBatisModule";
-
-	private static final String SPRING_BEAN_FQN = "org.mybatis.spring.SqlSessionFactoryBean";
-
-	private static final List<String> declaredTypes = Arrays.asList(GUICE_MODULE_FQN,
-		SPRING_BEAN_FQN);
+	private static final List<String> declaredTypes = Arrays.asList(
+		MybatipseConstants.GUICE_MYBATIS_MODULE,
+		MybatipseConstants.SPRING_SQL_SESSION_FACTORY_BEAN);
 
 	private final Map<String, TypeAliasMap> projectCache = new ConcurrentHashMap<String, TypeAliasMap>();
 
@@ -300,7 +297,7 @@ public class TypeAliasCache
 			final Set<ITypeRoot> typeRoots = new HashSet<ITypeRoot>();
 
 			// Collect classes that contain mybatis-guice calls.
-			IType mybatisModuleType = project.findType(GUICE_MODULE_FQN);
+			IType mybatisModuleType = project.findType(MybatipseConstants.GUICE_MYBATIS_MODULE);
 			if (mybatisModuleType == null || !mybatisModuleType.exists())
 				return;
 
@@ -527,7 +524,7 @@ public class TypeAliasCache
 			{
 				for (IType superType : superTypeSet)
 				{
-					if (isAssignable(foundType, superType))
+					if (SupertypeHierarchyCache.getInstance().isSubtype(foundType, superType))
 					{
 						return true;
 					}
@@ -607,13 +604,6 @@ public class TypeAliasCache
 		}
 	}
 
-	private boolean isAssignable(final IType type, final IType targetType)
-		throws JavaModelException
-	{
-		final ITypeHierarchy supertypes = type.newSupertypeHierarchy(new NullProgressMonitor());
-		return supertypes.contains(targetType);
-	}
-
 	public static TypeAliasCache getInstance()
 	{
 		return INSTANCE;
@@ -642,7 +632,7 @@ public class TypeAliasCache
 			String invokedMethod = node.getName().getIdentifier();
 			if ("addSimpleAlias".equals(invokedMethod))
 			{
-				if (!declaredIn(node, GUICE_MODULE_FQN))
+				if (!declaredIn(node, MybatipseConstants.GUICE_MYBATIS_MODULE))
 					return false;
 
 				@SuppressWarnings("rawtypes")
@@ -664,7 +654,7 @@ public class TypeAliasCache
 			}
 			else if ("addSimpleAliases".equals(invokedMethod))
 			{
-				if (!declaredIn(node, GUICE_MODULE_FQN))
+				if (!declaredIn(node, MybatipseConstants.GUICE_MYBATIS_MODULE))
 					return false;
 
 				@SuppressWarnings("rawtypes")
@@ -686,8 +676,8 @@ public class TypeAliasCache
 								+ " Only a literal parameter is supported for addSimpleAliases(String).");
 						}
 					}
-					else
-						if ("java.util.Collection<java.lang.Class<?>>".equals(argType.getQualifiedName()))
+					else if ("java.util.Collection<java.lang.Class<?>>"
+						.equals(argType.getQualifiedName()))
 					{
 						Activator.log(Status.INFO, "TypeAlias detection failed. "
 							+ "addSimpleAliases(Collection<Class<?>>) is not supported.");

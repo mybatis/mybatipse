@@ -83,6 +83,10 @@ public class MybatipseConstants
 
 	public static final String TYPE_LANGUAGE_DRIVER = "org.apache.ibatis.scripting.LanguageDriver";
 
+	public static final String GUICE_MYBATIS_MODULE = "org.mybatis.guice.MyBatisModule";
+
+	public static final String SPRING_SQL_SESSION_FACTORY_BEAN = "org.mybatis.spring.SqlSessionFactoryBean";
+
 	public static final IContentType mapperContentType;
 
 	public static final IContentType configContentType;

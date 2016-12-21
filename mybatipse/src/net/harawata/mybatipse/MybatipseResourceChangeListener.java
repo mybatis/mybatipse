@@ -32,6 +32,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 
 import net.harawata.mybatipse.bean.BeanPropertyCache;
+import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
 import net.harawata.mybatipse.mybatis.ConfigRegistry;
 import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
 import net.harawata.mybatipse.mybatis.TypeAliasCache;
@@ -121,17 +122,8 @@ public class MybatipseResourceChangeListener implements IResourceChangeListener
 
 				BeanPropertyCache.clearBeanPropertyCache(project, qualifiedName);
 
-				String superType = null;
-				try
-				{
-					if (type.exists())
-						superType = type.getSuperclassName();
-				}
-				catch (JavaModelException e)
-				{
-					Activator.log(Status.ERROR, e.getMessage(), e);
-				}
-				if (superType != null && "MyBatisModule".equals(superType))
+				if (SupertypeHierarchyCache.getInstance().isSubtype(type,
+					MybatipseConstants.GUICE_MYBATIS_MODULE))
 				{
 					TypeAliasCache.getInstance().remove(project);
 				}

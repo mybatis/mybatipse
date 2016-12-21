@@ -27,11 +27,9 @@ import java.util.Set;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
@@ -64,6 +62,7 @@ import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.BeanPropertyInfo;
+import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameStore;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodParametersStore;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
@@ -341,10 +340,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			return;
 		}
 		IType rawType = project.findType(rawTypeFqn);
-		ITypeHierarchy supertypeHierarchy = rawType
-			.newSupertypeHierarchy(new NullProgressMonitor());
-		IType collectionType = project.findType("java.util.Collection");
-		if (supertypeHierarchy.contains(collectionType))
+		if (SupertypeHierarchyCache.getInstance().isCollection(rawType))
 		{
 			List<String> typeParams = NameUtil.extractTypeParams(collectionFqn);
 			if (typeParams.size() == 1)
@@ -355,11 +351,9 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				String typeParamRawTypeFqn = NameUtil.stripTypeArguments(typeParam);
 				if (!typeParamRawTypeFqn.equals(typeParam))
 				{
-					IType entryType = project.findType("java.util.Map.Entry");
 					IType typeParamRawType = project.findType(typeParamRawTypeFqn);
-					ITypeHierarchy typeParamRawTypeSupertypeHierarchy = typeParamRawType
-						.newSupertypeHierarchy(new NullProgressMonitor());
-					if (typeParamRawTypeSupertypeHierarchy.contains(entryType))
+					if (SupertypeHierarchyCache.getInstance().isSubtype(typeParamRawType,
+						"java.util.Map.Entry"))
 					{
 						putMapItemAndIndex(foreachParams, item, index,
 							NameUtil.extractTypeParams(typeParam));
@@ -371,8 +365,7 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				return;
 			}
 		}
-		IType mapType = project.findType("java.util.Map");
-		if (supertypeHierarchy.contains(mapType))
+		if (SupertypeHierarchyCache.getInstance().isMap(rawType))
 		{
 			putMapItemAndIndex(foreachParams, item, index, NameUtil.extractTypeParams(collectionFqn));
 		}

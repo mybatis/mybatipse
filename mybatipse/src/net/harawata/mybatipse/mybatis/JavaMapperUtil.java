@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.ProjectScope;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.ConfigurationScope;
 import org.eclipse.core.runtime.preferences.DefaultScope;
@@ -33,7 +32,6 @@ import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
@@ -54,6 +52,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
 import net.harawata.mybatipse.util.NameUtil;
 
 /**
@@ -509,20 +508,13 @@ public class JavaMapperUtil
 					{
 						// Parameterized type.
 						final IType rawType = project.findType(rawTypeFqn);
-						final ITypeHierarchy supertypes = rawType
-							.newSupertypeHierarchy(new NullProgressMonitor());
-						final IType mapType = project.findType("java.util.Map");
-						if (supertypes.contains(mapType))
-						{
+						if (SupertypeHierarchyCache.getInstance().isMap(rawType))
 							return;
-						}
-						final IType listType = project.findType("java.util.List");
-						final IType collectionType = project.findType("java.util.Collection");
-						if (supertypes.contains(listType))
-						{
+
+						if (SupertypeHierarchyCache.getInstance().isList(rawType))
 							paramMap.put("list", paramFqn);
-						}
-						if (supertypes.contains(collectionType))
+
+						if (SupertypeHierarchyCache.getInstance().isCollection(rawType))
 						{
 							paramMap.put("collection", paramFqn);
 							return;

@@ -21,12 +21,10 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.wst.sse.core.StructuredModelManager;
@@ -47,6 +45,7 @@ import org.w3c.dom.NodeList;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
+import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
 
 /**
@@ -330,14 +329,7 @@ public class XmlValidator extends AbstractValidator
 	private boolean isValidatable(IJavaProject project, IType type) throws JavaModelException
 	{
 		// Subclass of Map is not validatable.
-		IType map = project.findType("java.util.Map");
-		return !isAssignable(type, map);
-	}
-
-	private boolean isAssignable(IType type, IType targetType) throws JavaModelException
-	{
-		final ITypeHierarchy supertypes = type.newSupertypeHierarchy(new NullProgressMonitor());
-		return supertypes.contains(targetType);
+		return !SupertypeHierarchyCache.getInstance().isMap(type);
 	}
 
 	private void validateJavaType(IJavaProject project, IFile file, IDOMDocument doc,

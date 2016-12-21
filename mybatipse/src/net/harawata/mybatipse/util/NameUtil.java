@@ -15,14 +15,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 
 import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
 
 /**
  * @author Iwao AVE!
@@ -80,10 +79,7 @@ public class NameUtil
 			try
 			{
 				IType rawType = project.findType(NameUtil.stripTypeArguments(declaredReturnType));
-				final ITypeHierarchy supertypes = rawType
-					.newSupertypeHierarchy(new NullProgressMonitor());
-				IType collectionType = project.findType("java.util.Collection");
-				if (supertypes.contains(collectionType))
+				if (SupertypeHierarchyCache.getInstance().isCollection(rawType))
 				{
 					List<String> typeParams = NameUtil.extractTypeParams(declaredReturnType);
 					if (typeParams.size() == 1)

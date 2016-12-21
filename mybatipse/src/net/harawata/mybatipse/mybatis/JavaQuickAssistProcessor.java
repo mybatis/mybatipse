@@ -29,7 +29,6 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -78,6 +77,7 @@ import org.w3c.dom.Text;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
 import net.harawata.mybatipse.util.NameUtil;
 import net.harawata.mybatipse.util.XpathUtil;
 
@@ -348,9 +348,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 								.resolveBinding()
 								.getQualifiedName();
 							IType type = project.findType(NameUtil.stripTypeArguments(qualifiedName));
-							ITypeHierarchy supertypeHierarchy = type
-								.newSupertypeHierarchy(new NullProgressMonitor());
-							if (supertypeHierarchy.contains(project.findType("java.util.Collection")))
+							if (SupertypeHierarchyCache.getInstance().isCollection(type))
 							{
 								List<String> typeParams = NameUtil.extractTypeParams(qualifiedName);
 								if (typeParams.size() == 1)
@@ -359,7 +357,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 										NameUtil.stripTypeArguments(typeParams.get(0)));
 								}
 							}
-							else if (supertypeHierarchy.contains(project.findType("java.util.Map")))
+							else if (SupertypeHierarchyCache.getInstance().isMap(type))
 							{
 								if (method.isHasMapKey())
 								{
