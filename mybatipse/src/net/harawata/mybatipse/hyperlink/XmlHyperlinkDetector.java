@@ -247,7 +247,7 @@ public class XmlHyperlinkDetector extends HyperlinkDetector
 		}
 		if (javaType != null)
 		{
-			new ToJavaHyperlink(javaType, linkRegion, javaLinkLabel("class"));
+			return new ToJavaHyperlink(javaType, linkRegion, javaLinkLabel("class"));
 		}
 		return null;
 	}
