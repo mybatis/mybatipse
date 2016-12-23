@@ -12,8 +12,8 @@
 package net.harawata.mybatipse.preference;
 
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
-import org.eclipse.jface.preference.ListEditor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -22,20 +22,21 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.PlatformUI;
 
 /**
  * @author Iwao AVE!
  */
-public class CustomTypeAliasListEditor extends ListEditor
+public class CustomTypeAliasListEditor extends EntryModifiableListEditor
 {
-	protected CustomTypeAliasListEditor()
-	{
-	}
+	private static final String TYPE_ALIAS_DIALOG_TITLE = "Specify package or fully qualified class name.";
+
+	private static final String TYPE_ALIAS_DIALOG_MSG = "A package (e.g. pkg1.pkg2, com.company.*.domain) or "
+		+ "a fully qualified class name optionally with a custom alias (e.g. pkg.Person, pkg.Company:cmp)";
 
 	public CustomTypeAliasListEditor(String name, String labelText, Composite parent)
 	{
-		init(name, labelText);
-		createControl(parent);
+		super(name, labelText, parent);
 	}
 
 	@Override
@@ -64,6 +65,19 @@ public class CustomTypeAliasListEditor extends ListEditor
 	protected String[] parseString(String stringList)
 	{
 		return stringList.split("\t");
+	}
+
+	@Override
+	protected String getModifiedEntry(String original)
+	{
+		InputDialog entryDialog = new InputDialog(
+			PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), TYPE_ALIAS_DIALOG_TITLE,
+			TYPE_ALIAS_DIALOG_MSG, original, null);
+		if (entryDialog.open() == InputDialog.OK)
+		{
+			return entryDialog.getValue();
+		}
+		return null;
 	}
 
 	public void setItemsAsString(String str)
@@ -97,9 +111,8 @@ public class CustomTypeAliasListEditor extends ListEditor
 			container.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 			container.setLayout(layout);
 			createTypeAliasEntry(container);
-			setTitle("Enter fully qualified name of a package or a class.");
-			setMessage("To assign a custom alias for a class, append the alias name with prefix ':'\n"
-				+ " (e.g. com.domain.PersonBean:Person).");
+			setTitle(TYPE_ALIAS_DIALOG_TITLE);
+			setMessage(TYPE_ALIAS_DIALOG_MSG);
 			return area;
 		}
 
