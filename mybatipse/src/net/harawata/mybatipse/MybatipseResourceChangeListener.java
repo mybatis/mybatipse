@@ -27,12 +27,13 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.content.IContentDescription;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.JavaModelException;
 
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
+import net.harawata.mybatipse.cache.JavaMapperCache;
 import net.harawata.mybatipse.mybatis.ConfigRegistry;
 import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
 import net.harawata.mybatipse.mybatis.TypeAliasCache;
@@ -53,6 +54,7 @@ public class MybatipseResourceChangeListener implements IResourceChangeListener
 				ConfigRegistry.getInstance().clear();
 				MapperNamespaceCache.getInstance().clear();
 				BeanPropertyCache.clearBeanPropertyCache();
+				JavaMapperCache.getInstance().clear();
 			}
 			else if (source instanceof IProject)
 			{
@@ -60,6 +62,7 @@ public class MybatipseResourceChangeListener implements IResourceChangeListener
 				ConfigRegistry.getInstance().remove(project);
 				MapperNamespaceCache.getInstance().remove(project);
 				BeanPropertyCache.clearBeanPropertyCache(project);
+				JavaMapperCache.getInstance().remove(project.getName());
 			}
 		}
 		else if (event.getType() != IResourceChangeEvent.POST_CHANGE)
@@ -118,9 +121,15 @@ public class MybatipseResourceChangeListener implements IResourceChangeListener
 				String elementName = compilationUnit.getElementName();
 				String simpleTypeName = elementName.substring(0, elementName.length() - 5);
 				IType type = compilationUnit.getType(simpleTypeName);
+				IJavaProject javaProject = type.getJavaProject();
+				if (javaProject == null)
+				{
+					return;
+				}
 				String qualifiedName = type.getFullyQualifiedName();
 
 				BeanPropertyCache.clearBeanPropertyCache(project, qualifiedName);
+				JavaMapperCache.getInstance().remove(javaProject, qualifiedName);
 
 				if (SupertypeHierarchyCache.getInstance().isSubtype(type,
 					MybatipseConstants.GUICE_MYBATIS_MODULE))

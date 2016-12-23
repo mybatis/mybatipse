@@ -46,7 +46,7 @@ import org.w3c.dom.NodeList;
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
-import net.harawata.mybatipse.mybatis.JavaMapperUtil.RejectStatementAnnotation;
+import net.harawata.mybatipse.cache.JavaMapperCache;
 
 /**
  * @author Iwao AVE!
@@ -284,8 +284,8 @@ public class XmlValidator extends AbstractValidator
 
 		String qualifiedName = MybatipseXmlUtil.getNamespace(doc);
 		IType mapperType = project.findType(qualifiedName);
-		if (mapperType != null && !ValidatorHelper.mapperMethodExists(project, qualifiedName,
-			new RejectStatementAnnotation(attrValue, true)))
+		if (mapperType != null
+			&& !JavaMapperCache.getInstance().methodExists(project, qualifiedName, attrValue))
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_STATEMENT_METHOD,
 				IMarker.SEVERITY_WARNING, IMarker.PRIORITY_HIGH,

@@ -51,8 +51,12 @@ public class MybatipseIncrementalBuilder extends IncrementalProjectBuilder
 	protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor)
 		throws CoreException
 	{
-		// Mybatipse needs to validate all the mapper files, basically.
-		validateAllMappers(monitor);
+		// On full build, validation will be performed by validation builder.
+		if (kind != FULL_BUILD)
+		{
+			// Mybatipse needs to validate all the mapper files, basically.
+			validateAllMappers(monitor);
+		}
 		return null;
 	}
 
