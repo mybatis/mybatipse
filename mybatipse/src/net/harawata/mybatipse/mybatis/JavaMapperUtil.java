@@ -60,6 +60,26 @@ import net.harawata.mybatipse.util.NameUtil;
  */
 public class JavaMapperUtil
 {
+	public static String getAnnotationMemberValue(IAnnotation annotation, String memberName)
+	{
+		try
+		{
+			IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
+			for (IMemberValuePair valuePair : valuePairs)
+			{
+				if (memberName.equals(valuePair.getMemberName()))
+				{
+					return (String)valuePair.getValue();
+				}
+			}
+		}
+		catch (JavaModelException e)
+		{
+			Activator.log(Status.ERROR, "Failed to get member value pairs.", e);
+		}
+		return null;
+	}
+
 	public static IAnnotation getAnnotationAt(IAnnotatable annotatable, int offset)
 		throws JavaModelException
 	{

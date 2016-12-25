@@ -43,6 +43,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.mybatis.JavaMapperUtil;
 
 /**
  * @author Iwao AVE!
@@ -197,26 +198,6 @@ public class JavaMapperCache
 		}
 	}
 
-	private static String getAnnotationMemberValue(IAnnotation annotation, String memberName)
-	{
-		try
-		{
-			IMemberValuePair[] valuePairs = annotation.getMemberValuePairs();
-			for (IMemberValuePair valuePair : valuePairs)
-			{
-				if (memberName.equals(valuePair.getMemberName()))
-				{
-					return (String)valuePair.getValue();
-				}
-			}
-		}
-		catch (JavaModelException e)
-		{
-			Activator.log(Status.ERROR, "Failed to get member value pairs.", e);
-		}
-		return null;
-	}
-
 	private static void parseSourceMapper(final IJavaProject project, final IType mapperType,
 		final MapperInfo mapperInfo) throws JavaModelException
 	{
@@ -273,8 +254,8 @@ public class JavaMapperCache
 					}
 					else if (MybatipseConstants.ANNOTATION_RESULTS.equals(annotationName))
 					{
-						String resultsId = getAnnotationMemberValue(
-							(IAnnotation)annotation.getJavaElement(), "id");
+						String resultsId = JavaMapperUtil
+							.getAnnotationMemberValue((IAnnotation)annotation.getJavaElement(), "id");
 						if (resultsId != null)
 							mapperInfo.addResultMap(resultsId, (IMethod)method.getJavaElement());
 					}

@@ -21,11 +21,15 @@ import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 import org.osgi.framework.BundleContext;
@@ -136,5 +140,11 @@ public class Activator extends AbstractUIPlugin
 	public static void log(int severity, int code, String message, Throwable t)
 	{
 		log(new Status(severity, PLUGIN_ID, code, message, t));
+	}
+
+	public static boolean openDialog(int kind, String title, String message)
+	{
+		Shell shell = Display.getDefault().getActiveShell();
+		return MessageDialog.open(kind, shell, title, message, SWT.SHEET);
 	}
 }

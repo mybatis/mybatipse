@@ -398,7 +398,7 @@
    <extension
          point="org.eclipse.jdt.ui.quickAssistProcessors">
       <quickAssistProcessor
-            class="net.harawata.mybatipse.mybatis.JavaQuickAssistProcessor"
+            class="net.harawata.mybatipse.quickassist.JavaQuickAssistProcessor"
             id="net.harawata.mybatipse.MapperQuickAssistProcessor"
             name="net.harawata.mybatipse.MapperQuickAssistProcessor">
       </quickAssistProcessor>
