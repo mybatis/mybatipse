@@ -69,6 +69,9 @@ public class JavaMapperCache
 			return;
 
 		Map<String, MapperInfo> map = cache.get(project.getElementName());
+		if (map == null)
+			return;
+
 		for (Iterator<Entry<String, MapperInfo>> iter = map.entrySet().iterator(); iter.hasNext();)
 		{
 			Entry<String, MapperInfo> entry = iter.next();

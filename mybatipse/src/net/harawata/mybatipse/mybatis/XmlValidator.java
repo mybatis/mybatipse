@@ -299,7 +299,7 @@ public class XmlValidator extends AbstractValidator
 		IReporter reporter) throws JavaModelException
 	{
 		String qualifiedName = MybatipseXmlUtil.findEnclosingType(element);
-		if (MybatipseXmlUtil.isDefaultTypeAlias(qualifiedName))
+		if (qualifiedName == null || MybatipseXmlUtil.isDefaultTypeAlias(qualifiedName))
 		{
 			return;
 		}
