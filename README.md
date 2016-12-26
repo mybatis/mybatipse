@@ -41,6 +41,7 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 ![link to xml statement](screen/hl-xml-statement.png)  
 - From XML statement id to Java mapper method.  
 ![link to java method](screen/hl-java-method.png)
+- Result map id or select statement id specified in Java annotation.
 
 
 #### Validation
@@ -82,6 +83,8 @@ Put the cursor on the statement method name and press cmd + 1 (or ctrl + 1) to t
 ![param-annotation1](screen/qa-copy-statement.png)  
 - You can move annotation statement to XML mapper.  
 ![move-statement](screen/qa-move-statement.png)  
+- You can move `@Results` annotation to `<resultMap />` in XML mapper.  
+![move-resultmap](screen/qa-move-resultmap.png)  
 
 #### Validation
 
@@ -125,7 +128,7 @@ To add the nature, right click the project in the package explorer and choose __
 If you register type aliases in Java code, MyBatipse cannot detect them. As a workaround, you can register custom type aliases in the project setting (Open __Project__ -> __Properties__ menu and select __MyBatipse__ from the left column).  
 ![type aliases](screen/pref-alias.png)   
 For example, with the above settings: 
-  - The first entry registers all the classes in ```com.example.domain``` package as type aliases.  
+  - The first entry registers all the classes in ```com.example.domain``` package as type aliases. You can use wildcard to specify multiple packages (e.g. `com.example.*.domain`).  
   - The second entry registers the single class ```domain.Person```.  
   - The third entry registers the single class ```domain.SomeLongNamedBean``` under the alias ```SomeBean```.
   - Note that, in any case, MyBatipse respects ```@Alias``` annotation if it exists.
