@@ -171,7 +171,7 @@ public class ResultMapRenameEditCollector extends RenameEditCollector
 		if (compilationUnit == null)
 			return;
 
-		final ASTParser parser = ASTParser.newParser(AST.JLS4);
+		final ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(compilationUnit);
 		parser.setResolveBindings(true);

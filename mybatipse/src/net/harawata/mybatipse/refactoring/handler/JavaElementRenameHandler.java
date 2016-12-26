@@ -69,7 +69,7 @@ public class JavaElementRenameHandler extends ElementRenameHandler
 		final ITextEditor textEditor = editor.getAdapter(ITextEditor.class);
 		final int offset = ((ITextSelection)textEditor.getSelectionProvider().getSelection())
 			.getOffset();
-		final ASTParser parser = ASTParser.newParser(AST.JLS4);
+		final ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(compilationUnit);
 		parser.setResolveBindings(true);

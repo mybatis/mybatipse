@@ -97,7 +97,7 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 			{
 				// Annotation value?
 				final ICompilationUnit compilationUnit = element.getAdapter(ICompilationUnit.class);
-				final ASTParser parser = ASTParser.newParser(AST.JLS4);
+				final ASTParser parser = ASTParser.newParser(AST.JLS8);
 				parser.setKind(ASTParser.K_COMPILATION_UNIT);
 				parser.setSource(compilationUnit);
 				parser.setResolveBindings(true);
