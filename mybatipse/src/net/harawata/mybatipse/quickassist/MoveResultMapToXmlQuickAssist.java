@@ -21,9 +21,14 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jface.dialogs.IInputValidator;
+import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.window.Window;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.wst.sse.core.StructuredModelManager;
 import org.eclipse.wst.sse.core.internal.provisional.IStructuredModel;
@@ -53,12 +58,6 @@ final class MoveResultMapToXmlQuickAssist extends QuickAssistCompletionProposal
 	@Override
 	public void apply(IDocument document)
 	{
-		if (method.getResultsId() == null)
-		{
-			Activator.openDialog(MessageDialog.ERROR, "Cannot move result map to XML mapper",
-				"You must specify 'id' in @Results.");
-			return;
-		}
 		IFile xmlMapperFile = MapperNamespaceCache.getInstance().get(project, mapperFqn, null);
 		if (xmlMapperFile == null)
 		{
@@ -81,66 +80,120 @@ final class MoveResultMapToXmlQuickAssist extends QuickAssistCompletionProposal
 
 	private void deleteResultsAnnotation(IDocument document) throws BadLocationException
 	{
-		method.getResultsAnno().delete();
+		if (method.getResultsAnno() != null)
+		{
+			method.getResultsAnno().delete();
+		}
+		if (method.getConstructorArgsAnno() != null)
+		{
+			method.getConstructorArgsAnno().delete();
+		}
 		TextEdit textEdit = astNode.rewrite(document, null);
 		textEdit.apply(document);
 	}
 
-	private boolean addXmlResultMap(IFile xmlMapperFile)
+	private boolean addXmlResultMap(final IFile xmlMapperFile)
 		throws IOException, CoreException, UnsupportedEncodingException, XPathExpressionException
 	{
-		IStructuredModel model = StructuredModelManager.getModelManager()
+		final IStructuredModel model = StructuredModelManager.getModelManager()
 			.getModelForEdit(xmlMapperFile);
-		if (model == null)
+		if (model == null || !(model instanceof IDOMModel))
 		{
 			Activator.openDialog(MessageDialog.ERROR, "Cannot move result map to XML mapper",
 				"Failed to create a model for the XML mapper "
 					+ xmlMapperFile.getProjectRelativePath().toString());
 			return false;
 		}
-
 		try
 		{
+			final IDOMDocument mapperDoc = ((IDOMModel)model).getDocument();
+			String id = method.getResultsId();
+			if (id == null)
+			{
+				Shell shell = Display.getDefault().getActiveShell();
+				InputDialog dialog = new InputDialog(shell, "Enter result map id",
+					"Specify id of the resultMap element", "", new IInputValidator()
+					{
+						@Override
+						public String isValid(String newText)
+						{
+							if (newText.length() == 0)
+							{
+								return "Please enter result map id.";
+							}
+							try
+							{
+								Node domNode = XpathUtil.xpathNode(mapperDoc,
+									"//resultMap[@id='" + newText + "']");
+								if (domNode != null)
+								{
+									return "A resultMap with id '" + newText
+										+ "' is already defined. Id must be unique.";
+								}
+							}
+							catch (XPathExpressionException e)
+							{
+								return "Error occurred while looking for a resultMap with the same id. "
+									+ "Did you use some unusual characters or something?";
+							}
+							return null;
+						}
+					});
+				if (dialog.open() == Window.OK)
+					id = dialog.getValue();
+				else
+					return false;
+			}
+
 			model.beginRecording(this);
 			model.aboutToChangeModel();
-			if (model instanceof IDOMModel)
-			{
-				String delimiter = model.getStructuredDocument().getLineDelimiter();
-				IDOMDocument mapperDoc = ((IDOMModel)model).getDocument();
-				String id = method.getResultsId();
-				Node domNode = XpathUtil.xpathNode(mapperDoc, "//resultMap[@id='" + id + "']");
-				if (domNode != null)
-				{
-					Activator.openDialog(MessageDialog.ERROR, "Cannot move result map to XML mapper",
-						"A resultMap with id '" + id + "' is already defined in "
-							+ xmlMapperFile.getProjectRelativePath().toString());
-					return false;
-				}
-				Element root = mapperDoc.getDocumentElement();
-				Element element = createResultMapElement(mapperDoc, delimiter);
-				root.appendChild(element);
-				root.appendChild(mapperDoc.createTextNode(delimiter));
-				new FormatProcessorXML().formatNode(element);
-			}
+			Element root = mapperDoc.getDocumentElement();
+			Element element = createResultMapElement(mapperDoc, id);
+			root.appendChild(element);
+			String delimiter = model.getStructuredDocument().getLineDelimiter();
+			root.appendChild(mapperDoc.createTextNode(delimiter));
+			new FormatProcessorXML().formatNode(element);
 		}
 		finally
 		{
-			model.changedModel();
-			if (!model.isSharedForEdit() && model.isSaveNeeded())
+			if (model != null)
 			{
-				model.save();
+				model.changedModel();
+				if (!model.isSharedForEdit() && model.isSaveNeeded())
+				{
+					model.save();
+				}
+				model.endRecording(this);
+				model.releaseFromEdit();
 			}
-			model.endRecording(this);
-			model.releaseFromEdit();
 		}
 		return true;
 	}
 
-	private Element createResultMapElement(IDOMDocument mapperDoc, String delimiter)
+	private Element createResultMapElement(IDOMDocument mapperDoc, String id)
 	{
 		Element resultMap = mapperDoc.createElement("resultMap");
-		resultMap.setAttribute("id", method.getResultsId());
+		resultMap.setAttribute("id", id);
 		resultMap.setAttribute("type", method.getReturnTypeStr());
+		if (!method.getConstructorArgs().isEmpty())
+		{
+			Element constructor = mapperDoc.createElement("constructor");
+			for (ResultAnno result : method.getConstructorArgs())
+			{
+				Element element;
+				if (result.isId())
+				{
+					element = mapperDoc.createElement("idArg");
+				}
+				else
+				{
+					element = mapperDoc.createElement("arg");
+				}
+				setResultAttrs(result, element);
+				constructor.appendChild(element);
+			}
+			resultMap.appendChild(constructor);
+		}
 		for (ResultAnno result : method.getResultAnnos())
 		{
 			Element element;
@@ -160,16 +213,22 @@ final class MoveResultMapToXmlQuickAssist extends QuickAssistCompletionProposal
 			{
 				element = mapperDoc.createElement("result");
 			}
-			setAttr(element, "property", result.getProperty());
-			setAttr(element, "column", result.getColumn());
-			setAttr(element, "select", result.getSelectId());
-			setAttr(element, "javaType", result.getJavaType());
-			setAttr(element, "jdbcType", result.getJdbcType());
-			setAttr(element, "fetchType", result.getFetchType());
-			setAttr(element, "typeHandler", result.getTypeHandler());
+			setResultAttrs(result, element);
 			resultMap.appendChild(element);
 		}
 		return resultMap;
+	}
+
+	protected void setResultAttrs(ResultAnno result, Element element)
+	{
+		setAttr(element, "property", result.getProperty());
+		setAttr(element, "column", result.getColumn());
+		setAttr(element, "select", result.getSelectId());
+		setAttr(element, "javaType", result.getJavaType());
+		setAttr(element, "jdbcType", result.getJdbcType());
+		setAttr(element, "fetchType", result.getFetchType());
+		setAttr(element, "typeHandler", result.getTypeHandler());
+		setAttr(element, "resultMap", result.getResultMap());
 	}
 
 	private void setAttr(Element element, String name, String value)

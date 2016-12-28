@@ -139,7 +139,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 						"Move @" + annoName + " statement to <" + annoName.toLowerCase() + " />", project,
 						mapperFqn, mapperMethod, astNode));
 				}
-				if (mapperMethod.getResultsAnno() != null)
+				if (mapperMethod.getResultsAnno() != null
+					|| mapperMethod.getConstructorArgsAnno() != null)
 				{
 					proposals.add(new MoveResultMapToXmlQuickAssist("Move @Results to <resultMap />",
 						project, mapperFqn, mapperMethod, astNode));
@@ -246,7 +247,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		private void pushAnno(Annotation annotation)
 		{
 			String annoName = getAnnotationName(annotation);
-			if ("Result".equals(annoName))
+			if ("Result".equals(annoName) || "Arg".equals(annoName))
 			{
 				resultAnno = new ResultAnno();
 			}
@@ -290,6 +291,10 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			{
 				mapperMethod.setHasMapKey(true);
 			}
+			else if ("ConstructorArgs".equals(annoName))
+			{
+				mapperMethod.setConstructorArgsAnno(annotation);
+			}
 			else if ("Results".equals(annoName))
 			{
 				mapperMethod.setResultsAnno(annotation);
@@ -298,7 +303,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 					mapperMethod.setResultsId(((StringLiteral)memberValue).getLiteralValue());
 				}
 			}
-			else if ("Result".equals(annoName))
+			else if ("Result".equals(annoName) || "Arg".equals(annoName))
 			{
 				if ("id".equals(memberName))
 				{
@@ -335,6 +340,10 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 					// Class<E>
 					ITypeBinding binding = ((TypeLiteral)memberValue).resolveTypeBinding();
 					resultAnno.setTypeHandler(binding.getTypeArguments()[0].getQualifiedName());
+				}
+				else if ("resultMap".equals(memberName))
+				{
+					resultAnno.setResultMap(((StringLiteral)memberValue).getLiteralValue());
 				}
 			}
 			else if ("One".equals(annoName) || "Many".equals(annoName))
@@ -417,6 +426,11 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 				mapperMethod.getResultAnnos().add(resultAnno);
 				resultAnno = null;
 			}
+			else if ("Arg".equals(annoName))
+			{
+				mapperMethod.getConstructorArgs().add(resultAnno);
+				resultAnno = null;
+			}
 		}
 
 		@Override
@@ -446,6 +460,10 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		private Annotation resultsAnno;
 
 		private String resultsId;
+
+		private Annotation constructorArgsAnno;
+
+		private List<ResultAnno> constructorArgs = new ArrayList<ResultAnno>();
 
 		private List<ResultAnno> resultAnnos = new ArrayList<ResultAnno>();
 
@@ -517,6 +535,26 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		public void setResultsId(String resultsId)
 		{
 			this.resultsId = resultsId;
+		}
+
+		public Annotation getConstructorArgsAnno()
+		{
+			return constructorArgsAnno;
+		}
+
+		public void setConstructorArgsAnno(Annotation constructorArgsAnno)
+		{
+			this.constructorArgsAnno = constructorArgsAnno;
+		}
+
+		public List<ResultAnno> getConstructorArgs()
+		{
+			return constructorArgs;
+		}
+
+		public void setConstructorArgs(List<ResultAnno> constructorArgs)
+		{
+			this.constructorArgs = constructorArgs;
 		}
 
 		public List<ResultAnno> getResultAnnos()
@@ -622,6 +660,8 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 
 		private String fetchType;
 
+		private String resultMap;
+
 		public boolean isId()
 		{
 			return id;
@@ -720,6 +760,16 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		public void setFetchType(String fetchType)
 		{
 			this.fetchType = fetchType;
+		}
+
+		public String getResultMap()
+		{
+			return resultMap;
+		}
+
+		public void setResultMap(String resultMap)
+		{
+			this.resultMap = resultMap;
 		}
 	}
 }
