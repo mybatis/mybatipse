@@ -26,6 +26,15 @@ import org.w3c.dom.NodeList;
  */
 public class XpathUtil
 {
+	private static final ThreadLocal<XPathFactory> XPATH_FACTORY = new ThreadLocal<XPathFactory>()
+	{
+		@Override
+		protected XPathFactory initialValue()
+		{
+			return XPathFactory.newInstance();
+		}
+	};
+
 	public static boolean xpathBool(Node node, String expression) throws XPathExpressionException
 	{
 		return ((Boolean)evaluateXpath(expression, node, XPathConstants.BOOLEAN, null))
@@ -57,14 +66,11 @@ public class XpathUtil
 	public static Object evaluateXpath(String expression, Object node, QName returnType,
 		NamespaceContext nsContext) throws XPathExpressionException
 	{
-		XPathFactory xpathFactory = XPathFactory.newInstance();
-		XPath xpath = xpathFactory.newXPath();
+		XPath xpath = XPATH_FACTORY.get().newXPath();
 		if (nsContext != null)
 		{
 			xpath.setNamespaceContext(nsContext);
 		}
 		return xpath.evaluate(expression, node, returnType);
-		// XPathExpression xpathExpr = xpath.compile(expression);
-		// return xpathExpr.evaluate(node, returnType);
 	}
 }
