@@ -95,7 +95,7 @@ public class TypeAliasCache
 
 	private final Map<String, Set<String>> packageCache = new ConcurrentHashMap<String, Set<String>>();
 
-	private final Map<String, Set<String>> superTypeCache = new ConcurrentHashMap<String, Set<String>>();
+	private final Map<String, Set<IType>> superTypeCache = new ConcurrentHashMap<String, Set<IType>>();
 
 	public String resolveAlias(IJavaProject javaProject, String alias, IReporter reporter)
 	{
@@ -123,19 +123,15 @@ public class TypeAliasCache
 
 	public void put(String projectName, IType type, String simpleTypeName)
 	{
-		String qualifiedName = type.getFullyQualifiedName();
+		String qualifiedName = type.getFullyQualifiedName('.');
 		removeType(projectName, qualifiedName);
 		try
 		{
 			TypeAliasMap aliasMap = projectCache.get(projectName);
 			if (aliasMap == null)
 				return;
-			String alias = getAliasAnnotationValue(type);
-			if (alias == null)
-			{
-				alias = simpleTypeName;
-			}
-			aliasMap.put(alias, qualifiedName);
+			Set<IType> superTypes = superTypeCache.get(projectName);
+			putAlias(aliasMap, type, superTypes, type.getFlags());
 		}
 		catch (JavaModelException e)
 		{
@@ -201,7 +197,7 @@ public class TypeAliasCache
 			superTypeCache.remove(projectName);
 			Set<String> packages = new TreeSet<String>();
 			packageCache.put(projectName, packages);
-			Set<String> superTypes = new HashSet<String>();
+			Set<IType> superTypes = new HashSet<IType>();
 			superTypeCache.put(projectName, superTypes);
 
 			// Lookup the settings.
@@ -366,7 +362,7 @@ public class TypeAliasCache
 	}
 
 	private void parseConfigFiles(IJavaProject project, IFile configFile, IContentType configType,
-		final TypeAliasMap aliasMap, Set<String> packages, Set<String> superTypeList,
+		final TypeAliasMap aliasMap, Set<String> packages, Set<IType> superTypeList,
 		IReporter reporter)
 	{
 		IStructuredModel model = null;
@@ -403,7 +399,7 @@ public class TypeAliasCache
 					throw new OperationCanceledException();
 				}
 
-				parseTypeAliasesSuperType(superTypeList, domDoc);
+				parseTypeAliasesSuperType(project, superTypeList, domDoc);
 			}
 		}
 		catch (XPathExpressionException e)
@@ -450,8 +446,8 @@ public class TypeAliasCache
 		}
 	}
 
-	private void parseTypeAliasesSuperType(Set<String> superTypes, IDOMDocument domDoc)
-		throws XPathExpressionException
+	private void parseTypeAliasesSuperType(IJavaProject project, Set<IType> superTypes,
+		IDOMDocument domDoc) throws XPathExpressionException
 	{
 		// There can be multiple SqlSessionFactoryBeans.
 		NodeList nodes = XpathUtil.xpathNodes(domDoc,
@@ -463,26 +459,20 @@ public class TypeAliasCache
 		for (int i = 0; i < nodes.getLength(); i++)
 		{
 			String value = nodes.item(i).getNodeValue();
-			superTypes.add(value.trim());
+			try
+			{
+				superTypes.add(project.findType(value.trim()));
+			}
+			catch (JavaModelException e)
+			{
+				Activator.log(Status.ERROR, e.getMessage(), e);
+			}
 		}
 	}
 
 	private void collectTypesInPackages(final IJavaProject project, Set<String> packages,
-		final TypeAliasMap aliasMap, Set<String> superTypes, IReporter reporter)
+		final TypeAliasMap aliasMap, final Set<IType> superTypes, IReporter reporter)
 	{
-		final Set<IType> superTypeSet = new HashSet<IType>();
-		try
-		{
-			for (String supType : superTypes)
-			{
-				superTypeSet.add(project.findType(supType));
-			}
-		}
-		catch (JavaModelException e)
-		{
-			Activator.log(Status.ERROR, e.getMessage(), e);
-		}
-
 		int includeMask = IJavaSearchScope.SOURCES | IJavaSearchScope.REFERENCED_PROJECTS
 			| IJavaSearchScope.APPLICATION_LIBRARIES | IJavaSearchScope.SYSTEM_LIBRARIES;
 		IJavaSearchScope scope = SearchEngine.createJavaSearchScope(new IJavaProject[]{
@@ -494,8 +484,7 @@ public class TypeAliasCache
 			public void acceptType(int modifiers, char[] packageName, char[] simpleTypeName,
 				char[][] enclosingTypeNames, String path)
 			{
-				// Ignore abstract classes.
-				if (Flags.isAbstract(modifiers))
+				if (Flags.isAbstract(modifiers) || Flags.isAnnotation(modifiers))
 					return;
 
 				String qualifiedName = NameUtil.buildQualifiedName(packageName, simpleTypeName,
@@ -503,33 +492,12 @@ public class TypeAliasCache
 				try
 				{
 					IType foundType = project.findType(qualifiedName);
-					if (superTypeSet.isEmpty() || isSuperTypeMatched(foundType, superTypeSet))
-					{
-						String alias = getAliasAnnotationValue(foundType);
-						if (alias == null)
-						{
-							alias = new String(simpleTypeName);
-						}
-						aliasMap.put(alias, qualifiedName);
-					}
+					putAlias(aliasMap, foundType, superTypes, modifiers);
 				}
 				catch (JavaModelException e)
 				{
 					Activator.log(Status.WARNING, "Error occurred while searching type alias.", e);
 				}
-			}
-
-			private boolean isSuperTypeMatched(IType foundType, Set<IType> superTypeSet)
-				throws JavaModelException
-			{
-				for (IType superType : superTypeSet)
-				{
-					if (SupertypeHierarchyCache.getInstance().isSubtype(foundType, superType))
-					{
-						return true;
-					}
-				}
-				return false;
 			}
 		};
 
@@ -545,7 +513,7 @@ public class TypeAliasCache
 				int pkgMatchRule = pkg.indexOf('*') > -1 ? SearchPattern.R_PATTERN_MATCH
 					: SearchPattern.R_PREFIX_MATCH;
 				searchEngine.searchAllTypeNames(pkg.toCharArray(), pkgMatchRule, null,
-					SearchPattern.R_CAMELCASE_MATCH, IJavaSearchConstants.CLASS, scope, requestor,
+					SearchPattern.R_CAMELCASE_MATCH, IJavaSearchConstants.TYPE, scope, requestor,
 					IJavaSearchConstants.WAIT_UNTIL_READY_TO_SEARCH, null);
 			}
 			catch (JavaModelException e)
@@ -553,6 +521,36 @@ public class TypeAliasCache
 				Activator.log(Status.ERROR, e.getMessage(), e);
 			}
 		}
+	}
+
+	private void putAlias(TypeAliasMap aliasMap, IType foundType, Set<IType> superTypes,
+		int modifiers) throws JavaModelException
+	{
+		if (Flags.isAbstract(modifiers) || Flags.isAnnotation(modifiers))
+			return;
+
+		if (superTypes.isEmpty() || isSuperTypeMatched(foundType, superTypes))
+		{
+			String alias = getAliasAnnotationValue(foundType);
+			if (alias == null)
+			{
+				alias = foundType.getElementName();
+			}
+			aliasMap.put(alias, foundType.getFullyQualifiedName('.'));
+		}
+	}
+
+	private boolean isSuperTypeMatched(IType foundType, Set<IType> superTypeSet)
+		throws JavaModelException
+	{
+		for (IType superType : superTypeSet)
+		{
+			if (SupertypeHierarchyCache.getInstance().isSubtype(foundType, superType))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private String getAliasAnnotationValue(IType foundType) throws JavaModelException
