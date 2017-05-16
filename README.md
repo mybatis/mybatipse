@@ -156,3 +156,5 @@ Please use the [issue tracker](https://github.com/harawata/mybatipse/issues).
 
 ## License
 MyBatipse is licensed under [__Eclipse Public License 1.0__](http://www.eclipse.org/legal/epl-v10.html).
+
+<a href="http://with-eclipse.github.io/" target="_blank"><img alt="with-Eclipse logo" src="http://with-eclipse.github.io/with-eclipse-1.jpg" /></a>
