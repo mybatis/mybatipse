@@ -90,7 +90,8 @@ public abstract class MybatisLogBinder
 		if (terminatorPos == -1)
 		{
 			throw new IllegalArgumentException(
-				"Couldn't find the end of the parameters line: '" + TERMINATOR + "'");
+				"Failed to parse the parameters. Be sure to include the string '" + TERMINATOR
+					+ "' in the selection.");
 		}
 		int paramsEnd = src.lastIndexOf('\n', terminatorPos);
 		return src.substring(paramsStart, paramsEnd).trim();
