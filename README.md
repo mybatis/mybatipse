@@ -107,11 +107,12 @@ Put the cursor on the statement method name and press cmd + 1 (or ctrl + 1) to t
 ![wizard-xml-mapper](screen/wizard-xml-mapper.png)  
 - Smart-copy menu in Console View to copy SQL statement in an executable form. For example, if you select and copy the following debug output ...  
 ![smart-copy-console](screen/smart-copy-console.png)  
-... and the following statement is copied to the clipboard (be sure to include the first `==>` and `<==` in the selection as the image above).  
+... and the following statement is copied to the clipboard (be sure to include the first `==>` and `<==` in the selection as the image above).
 
   ```sql
-insert into users values(2, 'User2')
-```
+  insert into users values(2, 'User2')
+  ```
+
 
 ## Configuration
 
