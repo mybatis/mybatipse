@@ -20,11 +20,11 @@ import java.util.List;
  */
 public abstract class MybatisLogBinder
 {
-	private static final String PREFIX_SQL = "==>  Preparing: ";
+	private static final String PREFIX_SQL = "==>  Preparing:";
 
-	private static final String PREFIX_PARAMS = "==> Parameters: ";
+	private static final String PREFIX_PARAMS = "==> Parameters:";
 
-	private static final String TERMINATOR = "<== ";
+	private static final String TERMINATOR = "<==";
 
 	private static final List<String> nonQuotedTypes = Arrays.asList("Integer", "Long", "Double",
 		"Float", "Boolean");
@@ -86,8 +86,14 @@ public abstract class MybatisLogBinder
 				"Couldn't find the prefix of parameters line: '" + PREFIX_PARAMS + "'");
 		}
 		int paramsStart = paramsPrefixStart + PREFIX_SQL.length();
+		// Nested selects.
+		int nextSqlStartPos = src.indexOf(PREFIX_SQL, paramsStart);
 		int terminatorPos = src.indexOf(TERMINATOR, paramsStart);
-		if (terminatorPos == -1)
+		if (nextSqlStartPos > -1 && (nextSqlStartPos < terminatorPos || terminatorPos == -1))
+		{
+			terminatorPos = nextSqlStartPos;
+		}
+		else if (terminatorPos == -1)
 		{
 			throw new IllegalArgumentException(
 				"Failed to parse the parameters. Be sure to include the string '" + TERMINATOR
