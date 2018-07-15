@@ -18,7 +18,6 @@ import javax.xml.xpath.XPathExpressionException;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
@@ -96,15 +95,14 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 			else if (srcElements.length == 0)
 			{
 				// Annotation value?
-				final ICompilationUnit compilationUnit = element.getAdapter(ICompilationUnit.class);
 				final ASTParser parser = ASTParser.newParser(AST.JLS8);
 				parser.setKind(ASTParser.K_COMPILATION_UNIT);
-				parser.setSource(compilationUnit);
+				parser.setSource(typeRoot);
 				parser.setResolveBindings(true);
 				parser.setIgnoreMethodBodies(true);
 				final CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
-				AnnotationValueVisitor visitor = new AnnotationValueVisitor(
-					compilationUnit.getJavaProject(), region.getOffset());
+				AnnotationValueVisitor visitor = new AnnotationValueVisitor(typeRoot.getJavaProject(),
+					region.getOffset());
 				astUnit.accept(visitor);
 				if (visitor.getHyperlink() != null)
 				{
@@ -129,8 +127,8 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 			IJavaProject project = type.getJavaProject();
 			if (project != null)
 			{
-				IFile mapperFile = MapperNamespaceCache.getInstance().get(project,
-					type.getFullyQualifiedName(), null);
+				IFile mapperFile = MapperNamespaceCache.getInstance()
+					.get(project, type.getFullyQualifiedName(), null);
 				if (mapperFile != null)
 				{
 					IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
