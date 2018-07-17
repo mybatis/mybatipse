@@ -124,6 +124,10 @@ Put the cursor on the statement method name and press cmd + 1 (or ctrl + 1) to t
 To add the nature, right click the project in the package explorer and choose __Configure__ -> __Add MyBatis Nature__ from the menu.   
 ![nature](screen/nature.png)
 
+### Annotation Processing
+
+- To validate annotation value, you need to enable __annotation processing__. Open __Project__ -> __Properties__ and select __Java Compiler__ -> __Annotation Processing__ in the left column. Check both __Enable annotation processing__ and __Enable processing in editor__.
+
 ### Type Alias
 - Type alias are automatically detected _if_ they are registered using XML config file (both mybatis and mybatis-spring config is supported).  
 If you register type aliases in Java code, MyBatipse cannot detect them. As a workaround, you can register custom type aliases in the project setting (Open __Project__ -> __Properties__ menu and select __MyBatipse__ from the left column).  
