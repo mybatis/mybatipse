@@ -19,7 +19,6 @@ import javax.xml.xpath.XPathExpressionException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -36,16 +35,13 @@ import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
 import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
 import net.harawata.mybatipse.quickassist.JavaQuickAssistProcessor.MapperMethod;
 import net.harawata.mybatipse.util.XpathUtil;
 
 @SuppressWarnings("restriction")
 final class MoveStatementToXmlQuickAssist extends QuickAssistCompletionProposal
 {
-	private IJavaProject project;
-
-	private String mapperFqn;
+	private IFile xmlMapperFile;
 
 	private MapperMethod method;
 
@@ -58,13 +54,6 @@ final class MoveStatementToXmlQuickAssist extends QuickAssistCompletionProposal
 		{
 			Activator.openDialog(MessageDialog.ERROR, "Cannot move result map to XML mapper",
 				"You must specify 'id' in @Results before moving the statement.");
-			return;
-		}
-		IFile xmlMapperFile = MapperNamespaceCache.getInstance().get(project, mapperFqn, null);
-		if (xmlMapperFile == null)
-		{
-			Activator.openDialog(MessageDialog.ERROR, "Cannot move statement to XML mapper",
-				"You must create a corresponding XML mapper file first.");
 			return;
 		}
 		try
@@ -165,14 +154,12 @@ final class MoveStatementToXmlQuickAssist extends QuickAssistCompletionProposal
 
 	MoveStatementToXmlQuickAssist(
 		String displayString,
-		IJavaProject project,
-		String mapperFqn,
+		IFile xmlMapperFile,
 		MapperMethod method,
 		CompilationUnit astNode)
 	{
 		super(displayString);
-		this.project = project;
-		this.mapperFqn = mapperFqn;
+		this.xmlMapperFile = xmlMapperFile;
 		this.method = method;
 		this.astNode = astNode;
 	}

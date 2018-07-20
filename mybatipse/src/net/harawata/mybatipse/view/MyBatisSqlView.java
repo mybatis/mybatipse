@@ -230,10 +230,15 @@ public class MyBatisSqlView extends ViewPart
 						.getJavaProject(includeElement.getStructuredDocument());
 					String namespace = refId.substring(0, lastDot);
 					String sqlId = refId.substring(lastDot + 1);
-					IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
-
-					IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
-					return (ElementImpl)XpathUtil.xpathNode(mapperDocument, "//sql[@id='" + sqlId + "']");
+					for (IFile mapperFile : MapperNamespaceCache.getInstance()
+						.get(project, namespace, null))
+					{
+						IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
+						ElementImpl element = (ElementImpl)XpathUtil.xpathNode(mapperDocument,
+							"//sql[@id='" + sqlId + "']");
+						if (element != null)
+							return element;
+					}
 				}
 			}
 			catch (XPathExpressionException e)

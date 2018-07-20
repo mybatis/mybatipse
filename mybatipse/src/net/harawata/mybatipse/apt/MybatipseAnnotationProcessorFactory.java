@@ -114,7 +114,7 @@ public class MybatipseAnnotationProcessorFactory extends AbstractProcessor
 			{
 				String selectId = selectAnnoValue.getValue().toString();
 				if (!ValidatorHelper.isReferenceValid(project, mapper.getQualifiedName().toString(),
-					null, selectId, "select"))
+					selectId, "select"))
 				{
 					messager.printMessage(Kind.ERROR, "Select with id='" + selectId + "' not found.",
 						element, oneAnnoMirror, selectAnnoValue);
@@ -155,8 +155,8 @@ public class MybatipseAnnotationProcessorFactory extends AbstractProcessor
 			for (AnnotationValue value : values)
 			{
 				String resultMapId = value.getValue().toString();
-				if (!ValidatorHelper.isReferenceValid(project, getQualifiedName(mapper), null,
-					resultMapId, "resultMap"))
+				if (!ValidatorHelper.isReferenceValid(project, getQualifiedName(mapper), resultMapId,
+					"resultMap"))
 				{
 					messager.printMessage(Kind.ERROR,
 						"Result map with id='" + resultMapId + "' not found.", element, annotationMirror,
@@ -183,7 +183,8 @@ public class MybatipseAnnotationProcessorFactory extends AbstractProcessor
 		String key)
 	{
 		for (Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationMirror
-			.getElementValues().entrySet())
+			.getElementValues()
+			.entrySet())
 		{
 			ExecutableElement executableElement = entry.getKey();
 			if (key.equals(executableElement.getSimpleName().toString()))

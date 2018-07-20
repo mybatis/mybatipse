@@ -13,9 +13,11 @@ package net.harawata.mybatipse.mybatis;
 
 import static net.harawata.mybatipse.MybatipseConstants.*;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.core.resources.IContainer;
@@ -52,12 +54,13 @@ public class MapperNamespaceCache
 	private IContentType mapperContentType = Platform.getContentTypeManager()
 		.getContentType(CONTENT_TYPE_MAPPER);
 
-	private final Map<String, Map<String, IFile>> cache = new ConcurrentHashMap<String, Map<String, IFile>>();
+	private final Map<String, Map<String, Set<IFile>>> cache = new ConcurrentHashMap<String, Map<String, Set<IFile>>>();
 
-	public IFile get(IJavaProject javaProject, String namespace, IReporter reporter)
+	public Set<IFile> get(IJavaProject javaProject, String namespace, IReporter reporter)
 	{
-		Map<String, IFile> map = getCacheMap(javaProject, reporter);
-		return map.get(namespace);
+		Map<String, Set<IFile>> map = getCacheMap(javaProject, reporter);
+		Set<IFile> xmlMapperFiles = map.get(namespace);
+		return xmlMapperFiles == null ? Collections.<IFile> emptySet() : xmlMapperFiles;
 	}
 
 	public void clear()
@@ -72,14 +75,23 @@ public class MapperNamespaceCache
 
 	public void remove(String projectName, IFile file)
 	{
-		Map<String, IFile> map = cache.get(projectName);
+		String namespace = extractNamespace(file);
+		remove(projectName, namespace, file);
+	}
+
+	protected void remove(String projectName, String namespace, IFile file)
+	{
+		Map<String, Set<IFile>> map = cache.get(projectName);
 		if (map == null)
 			return;
-		Iterator<Entry<String, IFile>> iterator = map.entrySet().iterator();
+		Set<IFile> files = map.get(namespace);
+		if (files == null)
+			return;
+		Iterator<IFile> iterator = files.iterator();
 		while (iterator.hasNext())
 		{
-			Entry<String, IFile> entry = iterator.next();
-			if (file.equals(entry.getValue()))
+			IFile cachedFile = iterator.next();
+			if (cachedFile.getFullPath().equals(file.getFullPath()))
 			{
 				iterator.remove();
 			}
@@ -88,33 +100,38 @@ public class MapperNamespaceCache
 
 	public void put(String projectName, IFile file)
 	{
-		remove(projectName, file);
-
-		Map<String, IFile> map = cache.get(projectName);
+		Map<String, Set<IFile>> map = cache.get(projectName);
 		if (map == null)
 			return;
 
 		String namespace = extractNamespace(file);
 		if (namespace != null)
 		{
-			map.put(namespace, file);
+			remove(projectName, namespace, file);
+			Set<IFile> set = map.get(namespace);
+			if (set == null)
+			{
+				set = new HashSet<>();
+				map.put(namespace, set);
+			}
+			set.add(file);
 		}
 	}
 
-	public Map<String, IFile> getCacheMap(IJavaProject javaProject, IReporter reporter)
+	public Map<String, Set<IFile>> getCacheMap(IJavaProject javaProject, IReporter reporter)
 	{
 		String projectName = javaProject.getElementName();
-		Map<String, IFile> map = cache.get(projectName);
+		Map<String, Set<IFile>> map = cache.get(projectName);
 		if (map == null)
 		{
-			map = new ConcurrentHashMap<String, IFile>();
+			map = new ConcurrentHashMap<String, Set<IFile>>();
 			cache.put(projectName, map);
 			collectMappers(javaProject, map, reporter);
 		}
 		return map;
 	}
 
-	private void collectMappers(IJavaProject project, final Map<String, IFile> map,
+	private void collectMappers(IJavaProject project, final Map<String, Set<IFile>> map,
 		final IReporter reporter)
 	{
 		try
@@ -144,7 +161,13 @@ public class MapperNamespaceCache
 									String namespace = extractNamespace(file);
 									if (namespace != null)
 									{
-										map.put(namespace, file);
+										Set<IFile> set = map.get(namespace);
+										if (set == null)
+										{
+											set = new HashSet<>();
+											map.put(namespace, set);
+										}
+										set.add(file);
 									}
 									return false;
 								}

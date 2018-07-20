@@ -96,35 +96,35 @@ public class StatementRenameEditCollector extends RenameEditCollector
 
 	protected void editXmlLocal(RefactoringStatus result) throws XPathExpressionException
 	{
-		final IFile mapperXml = MapperNamespaceCache.getInstance().get(info.getProject(),
-			info.getNamespace(), null);
-		if (mapperXml == null)
-			return;
-		final IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperXml);
-		if (mapperDocument == null)
-			return;
-		List<ReplaceEdit> edits = getEdits(mapperXml);
-		Node node = XpathUtil.xpathNode(mapperDocument,
-			"//select[@id='" + info.getOldId() + "']/@id|//insert[@id='" + info.getOldId()
-				+ "']/@id|//update[@id='" + info.getOldId() + "']/@id|//delete[@id='" + info.getOldId()
-				+ "']/@id");
-		if (node instanceof AttrImpl)
+		for (IFile mapperXml : MapperNamespaceCache.getInstance()
+			.get(info.getProject(), info.getNamespace(), null))
 		{
-			AttrImpl attrImpl = (AttrImpl)node;
-			isSelect |= "select".equals(attrImpl.getOwnerElement().getNodeName());
-			edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
-				attrImpl.getValueRegion().getTextLength(), "\"" + info.getNewId() + "\""));
-		}
-		if (isSelect)
-		{
-			// Local references in XML mapper
-			NodeList attrNodes = XpathUtil.xpathNodes(mapperDocument,
-				"//*[@select='" + info.getOldId() + "']/@select");
-			for (int i = 0; i < attrNodes.getLength(); i++)
+			final IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperXml);
+			if (mapperDocument == null)
+				return;
+			List<ReplaceEdit> edits = getEdits(mapperXml);
+			Node node = XpathUtil.xpathNode(mapperDocument,
+				"//select[@id='" + info.getOldId() + "']/@id|//insert[@id='" + info.getOldId()
+					+ "']/@id|//update[@id='" + info.getOldId() + "']/@id|//delete[@id='"
+					+ info.getOldId() + "']/@id");
+			if (node instanceof AttrImpl)
 			{
-				AttrImpl attrImpl = (AttrImpl)attrNodes.item(i);
+				AttrImpl attrImpl = (AttrImpl)node;
+				isSelect |= "select".equals(attrImpl.getOwnerElement().getNodeName());
 				edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
 					attrImpl.getValueRegion().getTextLength(), "\"" + info.getNewId() + "\""));
+			}
+			if (isSelect)
+			{
+				// Local references in XML mapper
+				NodeList attrNodes = XpathUtil.xpathNodes(mapperDocument,
+					"//*[@select='" + info.getOldId() + "']/@select");
+				for (int i = 0; i < attrNodes.getLength(); i++)
+				{
+					AttrImpl attrImpl = (AttrImpl)attrNodes.item(i);
+					edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
+						attrImpl.getValueRegion().getTextLength(), "\"" + info.getNewId() + "\""));
+				}
 			}
 		}
 	}

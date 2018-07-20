@@ -19,7 +19,6 @@ import javax.xml.xpath.XPathExpressionException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
@@ -39,7 +38,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import net.harawata.mybatipse.Activator;
-import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
 import net.harawata.mybatipse.quickassist.JavaQuickAssistProcessor.MapperMethod;
 import net.harawata.mybatipse.quickassist.JavaQuickAssistProcessor.ResultAnno;
 import net.harawata.mybatipse.util.XpathUtil;
@@ -47,9 +45,7 @@ import net.harawata.mybatipse.util.XpathUtil;
 @SuppressWarnings("restriction")
 final class MoveResultMapToXmlQuickAssist extends QuickAssistCompletionProposal
 {
-	private IJavaProject project;
-
-	private String mapperFqn;
+	private IFile xmlMapperFile;
 
 	private MapperMethod method;
 
@@ -58,13 +54,6 @@ final class MoveResultMapToXmlQuickAssist extends QuickAssistCompletionProposal
 	@Override
 	public void apply(IDocument document)
 	{
-		IFile xmlMapperFile = MapperNamespaceCache.getInstance().get(project, mapperFqn, null);
-		if (xmlMapperFile == null)
-		{
-			Activator.openDialog(MessageDialog.ERROR, "Cannot move result map to XML mapper",
-				"You must create a corresponding XML mapper file first.");
-			return;
-		}
 		try
 		{
 			if (addXmlResultMap(xmlMapperFile))
@@ -239,14 +228,12 @@ final class MoveResultMapToXmlQuickAssist extends QuickAssistCompletionProposal
 
 	MoveResultMapToXmlQuickAssist(
 		String displayString,
-		IJavaProject project,
-		String mapperFqn,
+		IFile xmlMapperFile,
 		MapperMethod method,
 		CompilationUnit astNode)
 	{
 		super(displayString);
-		this.project = project;
-		this.mapperFqn = mapperFqn;
+		this.xmlMapperFile = xmlMapperFile;
 		this.method = method;
 		this.astNode = astNode;
 	}

@@ -100,64 +100,64 @@ public class ResultMapRenameEditCollector extends RenameEditCollector
 
 	private void editXmlLocal(RefactoringStatus result) throws XPathExpressionException
 	{
-		IFile sourceXmlFile = MapperNamespaceCache.getInstance().get(info.getProject(),
-			info.getNamespace(), null);
-		if (sourceXmlFile == null)
-			return;
-		IDOMDocument sourceXmlDoc = MybatipseXmlUtil.getMapperDocument(sourceXmlFile);
-		if (sourceXmlDoc == null)
-			return;
-		List<ReplaceEdit> edits = getEdits(sourceXmlFile);
-		// Source <resultMap /> element
-		Node node = XpathUtil.xpathNode(sourceXmlDoc,
-			"//resultMap[@id='" + info.getOldId() + "']/@id");
-		if (node instanceof AttrImpl)
+		for (IFile sourceXmlFile : MapperNamespaceCache.getInstance()
+			.get(info.getProject(), info.getNamespace(), null))
 		{
-			AttrImpl attrImpl = (AttrImpl)node;
-			edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
-				attrImpl.getValueRegion().getTextLength(), "\"" + info.getNewId() + "\""));
-		}
-		// Local resultMap references
-		NodeList references = XpathUtil.xpathNodes(sourceXmlDoc,
-			"//*[@resultMap]/@resultMap|//*[@extends]/@extends");
-		for (int i = 0; i < references.getLength(); i++)
-		{
-			AttrImpl attrImpl = (AttrImpl)references.item(i);
-			String attrValue = attrImpl.getValue();
-			int commaPos = attrValue.lastIndexOf(',');
-			String oldId = info.getOldId();
-			if (commaPos == -1)
+			IDOMDocument sourceXmlDoc = MybatipseXmlUtil.getMapperDocument(sourceXmlFile);
+			if (sourceXmlDoc == null)
+				return;
+			List<ReplaceEdit> edits = getEdits(sourceXmlFile);
+			// Source <resultMap /> element
+			Node node = XpathUtil.xpathNode(sourceXmlDoc,
+				"//resultMap[@id='" + info.getOldId() + "']/@id");
+			if (node instanceof AttrImpl)
 			{
-				if (oldId.equals(attrValue))
-				{
-					edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
-						attrImpl.getValueRegion().getTextLength(), "\"" + info.getNewId() + "\""));
-				}
+				AttrImpl attrImpl = (AttrImpl)node;
+				edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
+					attrImpl.getValueRegion().getTextLength(), "\"" + info.getNewId() + "\""));
 			}
-			else
+			// Local resultMap references
+			NodeList references = XpathUtil.xpathNodes(sourceXmlDoc,
+				"//*[@resultMap]/@resultMap|//*[@extends]/@extends");
+			for (int i = 0; i < references.getLength(); i++)
 			{
-				int valueLength = attrValue.length();
-				int end = valueLength;
-				do
+				AttrImpl attrImpl = (AttrImpl)references.item(i);
+				String attrValue = attrImpl.getValue();
+				int commaPos = attrValue.lastIndexOf(',');
+				String oldId = info.getOldId();
+				if (commaPos == -1)
 				{
-					if (oldId.equals(attrValue.substring(commaPos + 1, end).trim()))
+					if (oldId.equals(attrValue))
 					{
-						StringBuilder newValue = new StringBuilder();
-						newValue.append('"');
-						if (commaPos > 0)
-							newValue.append(attrValue.substring(0, commaPos + 1));
-						newValue.append(info.getNewId());
-						if (end < valueLength)
-							newValue.append(attrValue.substring(end, valueLength));
-						newValue.append('"');
 						edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
-							attrImpl.getValueRegion().getTextLength(), newValue.toString()));
-						break;
+							attrImpl.getValueRegion().getTextLength(), "\"" + info.getNewId() + "\""));
 					}
-					end = commaPos;
-					commaPos = attrValue.lastIndexOf(',', commaPos - 1);
 				}
-				while (end > -1);
+				else
+				{
+					int valueLength = attrValue.length();
+					int end = valueLength;
+					do
+					{
+						if (oldId.equals(attrValue.substring(commaPos + 1, end).trim()))
+						{
+							StringBuilder newValue = new StringBuilder();
+							newValue.append('"');
+							if (commaPos > 0)
+								newValue.append(attrValue.substring(0, commaPos + 1));
+							newValue.append(info.getNewId());
+							if (end < valueLength)
+								newValue.append(attrValue.substring(end, valueLength));
+							newValue.append('"');
+							edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
+								attrImpl.getValueRegion().getTextLength(), newValue.toString()));
+							break;
+						}
+						end = commaPos;
+						commaPos = attrValue.lastIndexOf(',', commaPos - 1);
+					}
+					while (end > -1);
+				}
 			}
 		}
 	}
@@ -245,16 +245,16 @@ public class ResultMapRenameEditCollector extends RenameEditCollector
 					String newId = info.getNewId();
 					if (info.getNamespace().equals(mapperFqn))
 					{
-						oldIdIdx = annotation.getSource().indexOf("\"" + info.getOldId() + "\"",
-							"@ResultMap(".length());
+						oldIdIdx = annotation.getSource()
+							.indexOf("\"" + info.getOldId() + "\"", "@ResultMap(".length());
 					}
 					// @ResultMap("resultMap1,resultMap2") : this format is not supported.
 					// @ReusltMap("resultMap1", "resultMap2") : this format is.
 					if (oldIdIdx == -1)
 					{
 						String fullyQualifiedOldId = info.getNamespace() + "." + info.getOldId();
-						oldIdIdx = annotation.getSource().indexOf("\"" + fullyQualifiedOldId + "\"",
-							"@ResultMap(".length());
+						oldIdIdx = annotation.getSource()
+							.indexOf("\"" + fullyQualifiedOldId + "\"", "@ResultMap(".length());
 						oldIdLength = fullyQualifiedOldId.length();
 						newId = info.getNamespace() + "." + info.getNewId();
 					}

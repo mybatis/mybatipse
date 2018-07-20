@@ -11,6 +11,7 @@
 
 package net.harawata.mybatipse.hyperlink;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -125,35 +126,34 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 		if (type.isInterface() && (triggerType == null || type.equals(triggerType)))
 		{
 			IJavaProject project = type.getJavaProject();
-			if (project != null)
+			if (project == null)
+				return null;
+			List<IHyperlink> hyperlinks = new ArrayList<>();
+			for (IFile mapperFile : MapperNamespaceCache.getInstance()
+				.get(project, type.getFullyQualifiedName(), null))
 			{
-				IFile mapperFile = MapperNamespaceCache.getInstance()
-					.get(project, type.getFullyQualifiedName(), null);
-				if (mapperFile != null)
+				IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
+				if (mapperDocument == null)
+					continue;
+				try
 				{
-					IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
-					if (mapperDocument != null)
+					IDOMNode domNode = (IDOMNode)XpathUtil.xpathNode(mapperDocument, expression);
+					if (domNode != null)
 					{
-						try
-						{
-							IDOMNode domNode = (IDOMNode)XpathUtil.xpathNode(mapperDocument, expression);
-							if (domNode != null)
-							{
-								Region destRegion = new Region(domNode.getStartOffset(),
-									domNode.getEndOffset() - domNode.getStartOffset());
-								String label = "Open <" + domNode.getNodeName() + "/> in XML mapper.";
-								return new IHyperlink[]{
-									new ToXmlHyperlink(mapperFile, srcRegion, label, destRegion)
-								};
-							}
-						}
-						catch (XPathExpressionException e)
-						{
-							Activator.log(Status.ERROR, e.getMessage(), e);
-						}
+						Region destRegion = new Region(domNode.getStartOffset(),
+							domNode.getEndOffset() - domNode.getStartOffset());
+						String label = "Open <" + domNode.getNodeName() + "/> in "
+							+ mapperFile.getFullPath();
+						hyperlinks.add(new ToXmlHyperlink(mapperFile, srcRegion, label, destRegion));
 					}
 				}
+				catch (XPathExpressionException e)
+				{
+					Activator.log(Status.ERROR, e.getMessage(), e);
+				}
 			}
+			return hyperlinks.isEmpty() ? null
+				: hyperlinks.toArray(new IHyperlink[hyperlinks.size()]);
 		}
 		return null;
 	}
@@ -283,26 +283,28 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 		private IHyperlink linkToXmlElement(IJavaProject project, String targetElement,
 			String namespace, String id, IRegion linkRegion, ITextViewer viewer)
 		{
-			IFile mapperXmlFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
-			if (mapperXmlFile == null)
-				return null;
-			IDOMDocument domDoc = MybatipseXmlUtil.getMapperDocument(mapperXmlFile);
-			if (domDoc == null)
-				return null;
-			try
+			for (IFile mapperXmlFile : MapperNamespaceCache.getInstance()
+				.get(project, namespace, null))
 			{
-				IDOMNode node = (IDOMNode)XpathUtil.xpathNode(domDoc,
-					"//" + targetElement + "[@id='" + id + "']");
-				if (node != null)
+				IDOMDocument domDoc = MybatipseXmlUtil.getMapperDocument(mapperXmlFile);
+				if (domDoc == null)
+					return null;
+				try
 				{
-					IRegion destRegion = new Region(node.getStartOffset(),
-						node.getEndOffset() - node.getStartOffset());
-					return new ToXmlHyperlink(mapperXmlFile, linkRegion, "Open declaration", destRegion);
+					IDOMNode node = (IDOMNode)XpathUtil.xpathNode(domDoc,
+						"//" + targetElement + "[@id='" + id + "']");
+					if (node != null)
+					{
+						IRegion destRegion = new Region(node.getStartOffset(),
+							node.getEndOffset() - node.getStartOffset());
+						return new ToXmlHyperlink(mapperXmlFile, linkRegion, "Open declaration",
+							destRegion);
+					}
 				}
-			}
-			catch (XPathExpressionException e)
-			{
-				Activator.log(Status.ERROR, e.getMessage(), e);
+				catch (XPathExpressionException e)
+				{
+					Activator.log(Status.ERROR, e.getMessage(), e);
+				}
 			}
 			return null;
 		}

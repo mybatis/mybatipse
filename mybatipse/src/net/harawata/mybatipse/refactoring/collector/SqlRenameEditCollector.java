@@ -72,31 +72,31 @@ public class SqlRenameEditCollector extends RenameEditCollector
 
 	private void editLocal(RefactoringStatus result) throws XPathExpressionException
 	{
-		IFile sourceXmlFile = MapperNamespaceCache.getInstance().get(info.getProject(),
-			info.getNamespace(), null);
-		if (sourceXmlFile == null)
-			return;
-		IDOMDocument sourceXmlDoc = MybatipseXmlUtil.getMapperDocument(sourceXmlFile);
-		if (sourceXmlDoc == null)
-			return;
-		List<ReplaceEdit> edits = getEdits(sourceXmlFile);
-		// Source <sql /> element
-		Node node = XpathUtil.xpathNode(sourceXmlDoc, "//sql[@id='" + info.getOldId() + "']/@id");
-		if (node instanceof AttrImpl)
+		for (IFile sourceXmlFile : MapperNamespaceCache.getInstance()
+			.get(info.getProject(), info.getNamespace(), null))
 		{
-			AttrImpl attrImpl = (AttrImpl)node;
-			edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
-				attrImpl.getValueRegion().getTextLength(), "\"" + info.getNewId() + "\""));
-		}
-		// Local <include /> elements
-		NodeList references = XpathUtil.xpathNodes(sourceXmlDoc,
-			"//*[@refid='" + info.getOldId() + "']/@refid");
-		for (int i = 0; i < references.getLength(); i++)
-		{
-			AttrImpl attrImpl = (AttrImpl)references.item(i);
-			ITextRegion valueRegion = attrImpl.getValueRegion();
-			edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
-				valueRegion.getTextLength(), "\"" + info.getNewId() + "\""));
+			IDOMDocument sourceXmlDoc = MybatipseXmlUtil.getMapperDocument(sourceXmlFile);
+			if (sourceXmlDoc == null)
+				return;
+			List<ReplaceEdit> edits = getEdits(sourceXmlFile);
+			// Source <sql /> element
+			Node node = XpathUtil.xpathNode(sourceXmlDoc, "//sql[@id='" + info.getOldId() + "']/@id");
+			if (node instanceof AttrImpl)
+			{
+				AttrImpl attrImpl = (AttrImpl)node;
+				edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
+					attrImpl.getValueRegion().getTextLength(), "\"" + info.getNewId() + "\""));
+			}
+			// Local <include /> elements
+			NodeList references = XpathUtil.xpathNodes(sourceXmlDoc,
+				"//*[@refid='" + info.getOldId() + "']/@refid");
+			for (int i = 0; i < references.getLength(); i++)
+			{
+				AttrImpl attrImpl = (AttrImpl)references.item(i);
+				ITextRegion valueRegion = attrImpl.getValueRegion();
+				edits.add(new ReplaceEdit(attrImpl.getValueRegionStartOffset(),
+					valueRegion.getTextLength(), "\"" + info.getNewId() + "\""));
+			}
 		}
 	}
 

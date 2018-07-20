@@ -21,7 +21,6 @@ import java.util.Map.Entry;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IAnnotation;
@@ -113,83 +112,40 @@ public class ProposalComputorHelper
 		String currentNamespace, String matchString, int start, int length, String targetElement,
 		String idToExclude)
 	{
-		Document mapperDoc = null;
-		IFile mapperFile = MapperNamespaceCache.getInstance().get(project, currentNamespace, null);
-		if (mapperFile != null)
-		{
-			mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
-		}
-		return ProposalComputorHelper.proposeReference(project, mapperDoc, currentNamespace,
-			matchString, start, length, targetElement, idToExclude);
-	}
-
-	public static List<ICompletionProposal> proposeReference(IJavaProject project,
-		Document domDoc, String matchString, int start, int length, String targetElement,
-		String idToExclude)
-	{
-		return ProposalComputorHelper.proposeReference(project, domDoc, null, matchString, start,
-			length, targetElement, idToExclude);
-	}
-
-	private static List<ICompletionProposal> proposeReference(IJavaProject project,
-		Document domDoc, String currentNamespace, String matchString, int start, int length,
-		String targetElement, String idToExclude)
-	{
 		List<ICompletionProposal> results = new ArrayList<ICompletionProposal>();
 		try
 		{
 			final int lastDot = matchString.lastIndexOf('.');
-			final String namespacePart = lastDot == -1 ? "" : matchString.substring(0, lastDot);
+			final String namespace = lastDot == -1 ? currentNamespace
+				: matchString.substring(0, lastDot);
 			final String matchStr = matchString.substring(lastDot + 1);
 			final char[] matchChrs = matchStr.toCharArray();
 			int replacementStart = lastDot == -1 ? start : start + lastDot + 1;
 			int replacementLength = lastDot == -1 ? length : length - lastDot - 1;
 
-			if (currentNamespace == null)
-			{
-				currentNamespace = MybatipseXmlUtil.getNamespace(domDoc);
-			}
-
 			final String exclude = idToExclude != null && idToExclude.length() > 0
-				&& (namespacePart.length() == 0 || namespacePart.equals(currentNamespace)) ? idToExclude
-					: null;
+				&& namespace.equals(currentNamespace) ? idToExclude : null;
 
-			final Document xmlMapper;
-			if (namespacePart.length() > 0)
+			for (Document mapper : MybatipseXmlUtil.getMapperDocument(project, namespace))
 			{
-				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespacePart, null);
-				xmlMapper = mapperFile == null ? null : MybatipseXmlUtil.getMapperDocument(mapperFile);
-			}
-			else if (domDoc != null)
-			{
-				xmlMapper = domDoc;
-			}
-			else
-			{
-				xmlMapper = null;
+				proposeXmlElements(results, mapper, targetElement, matchChrs, replacementStart,
+					replacementLength, exclude);
 			}
 
-			if (xmlMapper != null)
-			{
-				NodeList nodes = XpathUtil.xpathNodes(xmlMapper, "//" + targetElement + "/@id");
-				proposeXmlElements(results, nodes, matchChrs, replacementStart, replacementLength,
-					exclude);
-			}
-
-			proposeNamespaces(results, project, namespacePart, currentNamespace, matchChrs, start,
-				length);
+			proposeNamespaces(results, project, matchString, namespace, currentNamespace, matchChrs,
+				start, length);
 
 			if ("select".equals(targetElement))
 			{
 				proposeJavaSelect(results, project,
-					namespacePart.length() > 0 ? namespacePart : currentNamespace, matchStr,
-					replacementStart, replacementLength, exclude);
+					namespace.length() > 0 ? namespace : currentNamespace, matchStr, replacementStart,
+					replacementLength, exclude);
 			}
 			else if ("resultMap".equals(targetElement))
 			{
 				proposeJavaResultMap(results, project,
-					namespacePart.length() > 0 ? namespacePart : currentNamespace, matchStr,
-					replacementStart, replacementLength);
+					namespace.length() > 0 ? namespace : currentNamespace, matchStr, replacementStart,
+					replacementLength);
 			}
 		}
 		catch (XPathExpressionException e)
@@ -197,12 +153,13 @@ public class ProposalComputorHelper
 			Activator.log(Status.ERROR, e.getMessage(), e);
 		}
 		return results;
-
 	}
 
-	private static void proposeXmlElements(List<ICompletionProposal> results, NodeList nodes,
-		char[] matchChrs, int start, int length, String exclude)
+	private static void proposeXmlElements(List<ICompletionProposal> results, Document xmlMapper,
+		String targetElement, char[] matchChrs, int start, int length, String exclude)
+		throws XPathExpressionException
 	{
+		NodeList nodes = XpathUtil.xpathNodes(xmlMapper, "//" + targetElement + "/@id");
 		for (int j = 0; j < nodes.getLength(); j++)
 		{
 			String id = nodes.item(j).getNodeValue();
@@ -218,28 +175,31 @@ public class ProposalComputorHelper
 	}
 
 	private static void proposeNamespaces(List<ICompletionProposal> results, IJavaProject project,
-		String partialNamespace, String currentNamespace, char[] matchChrs, int start, int length)
+		String matchString, String partialNamespace, String currentNamespace, char[] matchChrs,
+		int start, int length)
 	{
 		for (String namespace : MapperNamespaceCache.getInstance()
 			.getCacheMap(project, null)
 			.keySet())
 		{
-			if (!namespace.equals(currentNamespace) && namespace.startsWith(partialNamespace)
-				&& !namespace.equals(partialNamespace))
+			if (namespace.equals(currentNamespace) || namespace.equals(partialNamespace))
+				continue;
+
+			final char[] simpleName = CharOperation.lastSegment(namespace.toCharArray(), '.');
+			if (namespace.startsWith(matchString)
+				|| (namespace.startsWith(partialNamespace)
+					&& CharOperation.camelCaseMatch(matchChrs, simpleName))
+				|| CharOperation.camelCaseMatch(matchString.toCharArray(), simpleName))
 			{
-				char[] simpleName = CharOperation.lastSegment(namespace.toCharArray(), '.');
-				if (matchChrs.length == 0 || CharOperation.camelCaseMatch(matchChrs, simpleName))
-				{
-					StringBuilder replacementStr = new StringBuilder().append(namespace).append('.');
-					int cursorPos = replacementStr.length();
-					String displayString = new StringBuilder().append(simpleName)
-						.append(" - ")
-						.append(namespace)
-						.toString();
-					results
-						.add(new JavaCompletionProposal(replacementStr.toString(), start, length, cursorPos,
-							Activator.getIcon("/icons/mybatis-ns.png"), displayString, null, null, 100));
-				}
+				StringBuilder replacementStr = new StringBuilder().append(namespace).append('.');
+				int cursorPos = replacementStr.length();
+				String displayString = new StringBuilder().append(simpleName)
+					.append(" - ")
+					.append(namespace)
+					.toString();
+				results
+					.add(new JavaCompletionProposal(replacementStr.toString(), start, length, cursorPos,
+						Activator.getIcon("/icons/mybatis-ns.png"), displayString, null, null, 100));
 			}
 		}
 	}
@@ -398,8 +358,8 @@ public class ProposalComputorHelper
 		final List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		if (includeAlias)
 		{
-			Map<String, String> aliasMap = TypeAliasCache.getInstance().searchTypeAliases(project,
-				matchString);
+			Map<String, String> aliasMap = TypeAliasCache.getInstance()
+				.searchTypeAliases(project, matchString);
 			for (Entry<String, String> entry : aliasMap.entrySet())
 			{
 				String qualifiedName = entry.getKey();

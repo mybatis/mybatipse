@@ -264,7 +264,7 @@ public class XmlValidator extends AbstractValidator
 		ValidationResult result, IDOMAttr attr, String attrValue, String targetElement,
 		IReporter reporter) throws JavaModelException, XPathExpressionException
 	{
-		if (!ValidatorHelper.isReferenceValid(project, MybatipseXmlUtil.getNamespace(doc), doc,
+		if (!ValidatorHelper.isReferenceValid(project, MybatipseXmlUtil.getNamespace(doc),
 			attrValue, targetElement))
 		{
 			addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_SQL,
@@ -306,8 +306,8 @@ public class XmlValidator extends AbstractValidator
 		IType type = project.findType(qualifiedName);
 		if (type == null)
 		{
-			qualifiedName = TypeAliasCache.getInstance().resolveAlias(project, qualifiedName,
-				reporter);
+			qualifiedName = TypeAliasCache.getInstance()
+				.resolveAlias(project, qualifiedName, reporter);
 			if (qualifiedName != null)
 				type = project.findType(qualifiedName);
 		}

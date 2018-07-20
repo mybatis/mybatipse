@@ -11,6 +11,8 @@
 
 package net.harawata.mybatipse.mybatis;
 
+import java.util.Set;
+
 import javax.xml.xpath.XPathExpressionException;
 
 import org.eclipse.core.runtime.Status;
@@ -28,30 +30,21 @@ import net.harawata.mybatipse.util.XpathUtil;
 public class ValidatorHelper
 {
 	public static boolean isReferenceValid(IJavaProject project, String localNamespace,
-		IDOMDocument localDoc, String reference, String targetElement)
+		String reference, String targetElement)
 	{
 		try
 		{
 			if (reference.indexOf("${") > -1)
 				return true;
 
-			IDOMDocument domDoc = null;
-			String namespace = null;
-			String id = null;
+			final String namespace;
+			final String id;
 
 			if (reference.indexOf('.') == -1)
 			{
 				// Local reference
 				id = reference;
 				namespace = localNamespace;
-				if (localDoc == null)
-				{
-					domDoc = MybatipseXmlUtil.getMapperDocument(project, localNamespace);
-				}
-				else
-				{
-					domDoc = localDoc;
-				}
 			}
 			else
 			{
@@ -59,7 +52,6 @@ public class ValidatorHelper
 				int lastDot = reference.lastIndexOf('.');
 				namespace = reference.substring(0, lastDot);
 				id = reference.substring(lastDot + 1);
-				domDoc = MybatipseXmlUtil.getMapperDocument(project, namespace);
 			}
 
 			// Check Java mapper
@@ -79,15 +71,23 @@ public class ValidatorHelper
 			}
 
 			// Check XML mapper
-			if (domDoc != null)
-			{
-				String xpath = "count(//" + targetElement + "[@id='" + id + "']) > 0";
-				return XpathUtil.xpathBool(domDoc, xpath);
-			}
+			return elementExists(targetElement,
+				MybatipseXmlUtil.getMapperDocument(project, namespace), id);
 		}
 		catch (XPathExpressionException e)
 		{
 			Activator.log(Status.ERROR, "Error occurred while validating reference: " + reference, e);
+		}
+		return false;
+	}
+
+	private static boolean elementExists(String targetElement, Set<IDOMDocument> domDocs,
+		String id) throws XPathExpressionException
+	{
+		for (IDOMDocument domDoc : domDocs)
+		{
+			if (XpathUtil.xpathBool(domDoc, "count(//" + targetElement + "[@id='" + id + "']) > 0"))
+				return true;
 		}
 		return false;
 	}

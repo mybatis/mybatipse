@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
@@ -62,6 +63,7 @@ import org.eclipse.swt.widgets.Display;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
+import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
 import net.harawata.mybatipse.util.NameUtil;
 
 /**
@@ -135,15 +137,25 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 							}
 						});
 					// Move statement to XML
-					proposals.add(new MoveStatementToXmlQuickAssist(
-						"Move @" + annoName + " statement to <" + annoName.toLowerCase() + " />", project,
-						mapperFqn, mapperMethod, astNode));
+					for (IFile xmlMapperFile : MapperNamespaceCache.getInstance()
+						.get(project, mapperFqn, null))
+					{
+						proposals.add(new MoveStatementToXmlQuickAssist(
+							"Move @" + annoName + " statement to <" + annoName.toLowerCase() + " /> in "
+								+ xmlMapperFile.getFullPath(),
+							xmlMapperFile, mapperMethod, astNode));
+					}
 				}
 				if (mapperMethod.getResultsAnno() != null
 					|| mapperMethod.getConstructorArgsAnno() != null)
 				{
-					proposals.add(new MoveResultMapToXmlQuickAssist("Move @Results to <resultMap />",
-						project, mapperFqn, mapperMethod, astNode));
+					for (IFile xmlMapperFile : MapperNamespaceCache.getInstance()
+						.get(project, mapperFqn, null))
+					{
+						proposals.add(new MoveResultMapToXmlQuickAssist(
+							"Move @Results to <resultMap /> in " + xmlMapperFile.getFullPath(), xmlMapperFile,
+							mapperMethod, astNode));
+					}
 				}
 				return proposals.toArray(new IJavaCompletionProposal[proposals.size()]);
 			}
@@ -190,8 +202,9 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 		@Override
 		public boolean visit(TypeDeclaration node)
 		{
-			String targetType = targetMethod.getDeclaringType().getFullyQualifiedName().replace('$',
-				'.');
+			String targetType = targetMethod.getDeclaringType()
+				.getFullyQualifiedName()
+				.replace('$', '.');
 			String currentType = node.resolveBinding().getQualifiedName();
 			if (targetType.equals(currentType))
 				nestLevel = 1;

@@ -277,7 +277,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				for (String paramFqn : paramMap.values())
 				{
 					Collection<String> fieldFqns = BeanPropertyCache
-						.searchFields(project, paramFqn, collection, true, -1, true).values();
+						.searchFields(project, paramFqn, collection, true, -1, true)
+						.values();
 					if (!fieldFqns.isEmpty())
 					{
 						collectionFqn = fieldFqns.iterator().next();
@@ -352,8 +353,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				if (!typeParamRawTypeFqn.equals(typeParam))
 				{
 					IType typeParamRawType = project.findType(typeParamRawTypeFqn);
-					if (SupertypeHierarchyCache.getInstance().isSubtype(typeParamRawType,
-						"java.util.Map.Entry"))
+					if (SupertypeHierarchyCache.getInstance()
+						.isSubtype(typeParamRawType, "java.util.Map.Entry"))
 					{
 						putMapItemAndIndex(foreachParams, item, index,
 							NameUtil.extractTypeParams(typeParam));
@@ -567,17 +568,22 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 					break;
 				case ResultMap:
 					String ownId = "resultMap".equals(tagName) && "extends".equals(attributeName)
-						? XpathUtil.xpathString(node, "@id") : null;
+						? XpathUtil.xpathString(node, "@id")
+						: null;
 					addProposals(contentAssistRequest, proposeResultMapReference(project,
 						node.getOwnerDocument(), start, currentValue, matchString.length(), ownId));
 					break;
 				case Include:
-					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
-						node.getOwnerDocument(), matchString, start, length, "sql", null));
+					addProposals(contentAssistRequest,
+						ProposalComputorHelper.proposeReference(project,
+							MybatipseXmlUtil.getNamespace(node.getOwnerDocument()), matchString, start,
+							length, "sql", null));
 					break;
 				case SelectId:
-					addProposals(contentAssistRequest, ProposalComputorHelper.proposeReference(project,
-						node.getOwnerDocument(), matchString, start, length, "select", null));
+					addProposals(contentAssistRequest,
+						ProposalComputorHelper.proposeReference(project,
+							MybatipseXmlUtil.getNamespace(node.getOwnerDocument()), matchString, start,
+							length, "select", null));
 					break;
 				case KeyProperty:
 					addProposals(contentAssistRequest,
@@ -614,8 +620,9 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		int newStart = start + offsetInCurrentValue - newMatchString.length();
 		int newLength = currentValue.length() - (offsetInCurrentValue - newMatchString.length())
 			- (rightComma > -1 ? currentValue.length() - rightComma : 0);
-		return ProposalComputorHelper.proposeReference(project, domDoc, newMatchString, newStart,
-			newLength, "resultMap", exclude);
+		return ProposalComputorHelper.proposeReference(project,
+			MybatipseXmlUtil.getNamespace(domDoc), newMatchString, newStart, newLength, "resultMap",
+			exclude);
 	}
 
 	private void proposeMapperNamespace(ContentAssistRequest contentAssistRequest,

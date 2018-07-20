@@ -12,8 +12,10 @@
 package net.harawata.mybatipse.mybatis;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.xml.xpath.XPathExpressionException;
 
@@ -169,14 +171,14 @@ public class MybatipseXmlUtil
 		return null;
 	}
 
-	public static IDOMDocument getMapperDocument(IJavaProject project, String namespace)
+	public static Set<IDOMDocument> getMapperDocument(IJavaProject project, String namespace)
 	{
-		IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
-		if (mapperFile != null)
+		Set<IDOMDocument> results = new HashSet<>();
+		for (IFile mapperFile : MapperNamespaceCache.getInstance().get(project, namespace, null))
 		{
-			return MybatipseXmlUtil.getMapperDocument(mapperFile);
+			results.add(MybatipseXmlUtil.getMapperDocument(mapperFile));
 		}
-		return null;
+		return results;
 	}
 
 	public static IDOMDocument getMapperDocument(IFile mapperXmlFile)

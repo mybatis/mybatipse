@@ -161,58 +161,35 @@ public class XmlHyperlinkDetector extends HyperlinkDetector
 			return null;
 
 		final int lastDot = attrValue.lastIndexOf('.');
-		final String namespace = lastDot == -1 ? "" : attrValue.substring(0, lastDot);
+		final String namespace = lastDot == -1 ? MybatipseXmlUtil.getNamespace(domDoc)
+			: attrValue.substring(0, lastDot);
 		final String elementId = attrValue.substring(lastDot + 1);
 
 		if (elementId.length() == 0)
 			return null;
 
-		final Document xmlMapper;
-		IHyperlink hyperlink = null;
-		IFile xmlMapperFile = null;
-		if (namespace.length() == 0)
+		final String elementXpath = "//" + targetElement + "[@id='" + elementId + "']";
+		for (IFile xmlMapperFile : MapperNamespaceCache.getInstance().get(project, namespace, null))
 		{
-			xmlMapper = domDoc;
-		}
-		else
-		{
-			xmlMapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
-			xmlMapper = xmlMapperFile == null ? null
-				: MybatipseXmlUtil.getMapperDocument(xmlMapperFile);
-		}
-
-		if (xmlMapper != null)
-		{
-			IDOMNode node = (IDOMNode)XpathUtil.xpathNode(xmlMapper,
-				"//" + targetElement + "[@id='" + elementId + "']");
+			IDOMNode node = (IDOMNode)XpathUtil
+				.xpathNode(MybatipseXmlUtil.getMapperDocument(xmlMapperFile), elementXpath);
 			if (node != null)
 			{
 				IRegion destRegion = new Region(node.getStartOffset(),
 					node.getEndOffset() - node.getStartOffset());
-				hyperlink = xmlMapperFile != null
-					? hyperlink = new ToXmlHyperlink(xmlMapperFile, linkRegion, attrValue, destRegion)
-					: new ToXmlHyperlink(textViewer, linkRegion, attrValue, destRegion);
+				return new ToXmlHyperlink(xmlMapperFile, linkRegion, attrValue, destRegion);
 			}
-		}
-
-		if (hyperlink != null)
-		{
-			return hyperlink;
 		}
 
 		// Couldn't find matching XML element. Search java element if applicable.
 		if ("select".equals(targetElement))
 		{
-			String mapperFqn = namespace.length() > 0 ? namespace
-				: MybatipseXmlUtil.getNamespace(domDoc);
-			return linkToJavaMapperMethod(project, mapperFqn, linkRegion,
+			return linkToJavaMapperMethod(project, namespace, linkRegion,
 				new HasSelectAnnotation(elementId, true));
 		}
 		else if ("resultMap".equals(targetElement))
 		{
-			String mapperFqn = namespace.length() > 0 ? namespace
-				: MybatipseXmlUtil.getNamespace(domDoc);
-			return linkToJavaMapperMethod(project, mapperFqn, linkRegion,
+			return linkToJavaMapperMethod(project, namespace, linkRegion,
 				new ResultsAnnotationWithId(elementId, true));
 		}
 
@@ -262,8 +239,8 @@ public class XmlHyperlinkDetector extends HyperlinkDetector
 		IType javaType = project.findType(qualifiedName);
 		if (javaType == null)
 		{
-			String resolvedAlias = TypeAliasCache.getInstance().resolveAlias(project, qualifiedName,
-				null);
+			String resolvedAlias = TypeAliasCache.getInstance()
+				.resolveAlias(project, qualifiedName, null);
 			if (resolvedAlias != null)
 			{
 				javaType = project.findType(resolvedAlias);
