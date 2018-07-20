@@ -239,6 +239,26 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 								annotationValueAt((Annotation)annotationValueAt((Annotation)resultAnno,
 									Arrays.asList("one", "many"), offset), "select", offset),
 								offset));
+						if (hyperlink == null)
+						{
+							Expression propertyName = annotationValueAt((Annotation)resultAnno, "property",
+								offset);
+							if (propertyName == null)
+								return;
+							String returnType = method.resolveBinding().getReturnType().getQualifiedName();
+							if (returnType == null || "void".equals(returnType))
+								return;
+							try
+							{
+								hyperlink = linkToJavaProperty(project, returnType,
+									(String)propertyName.resolveConstantExpressionValue(),
+									new Region(propertyName.getStartPosition(), propertyName.getLength()));
+							}
+							catch (JavaModelException e)
+							{
+								Activator.log(Status.ERROR, e.getMessage(), e);
+							}
+						}
 						break;
 					}
 				}

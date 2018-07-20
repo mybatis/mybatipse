@@ -12,14 +12,12 @@
 package net.harawata.mybatipse.hyperlink;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 
 import javax.xml.xpath.XPathExpressionException;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -227,41 +225,6 @@ public class XmlHyperlinkDetector extends HyperlinkDetector
 			return new ToJavaHyperlink(javaType, linkRegion, javaLinkLabel("class"));
 		}
 		return null;
-	}
-
-	private IHyperlink linkToJavaProperty(IJavaProject project, String qualifiedName,
-		String propertyName, Region linkRegion) throws JavaModelException
-	{
-		// Ignore default type aliases.
-		if (MybatipseXmlUtil.isDefaultTypeAlias(qualifiedName))
-			return null;
-
-		IType javaType = project.findType(qualifiedName);
-		if (javaType == null)
-		{
-			String resolvedAlias = TypeAliasCache.getInstance()
-				.resolveAlias(project, qualifiedName, null);
-			if (resolvedAlias != null)
-			{
-				javaType = project.findType(resolvedAlias);
-			}
-		}
-		if (javaType != null)
-		{
-			// TODO: should search setter first?
-			// TODO: field of super type, nested property
-			IField field = javaType.getField(propertyName);
-			if (field != null)
-			{
-				return new ToJavaHyperlink(field, linkRegion, javaLinkLabel("property"));
-			}
-		}
-		return null;
-	}
-
-	private String javaLinkLabel(String target)
-	{
-		return MessageFormat.format("Open {0} in Java Editor", target);
 	}
 
 	private Region getLinkRegion(IStructuredDocumentRegion documentRegion,
