@@ -39,6 +39,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.internal.core.PackageFragment;
+import org.eclipse.jdt.internal.ui.text.java.JavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
@@ -49,6 +50,7 @@ import org.eclipse.wst.sse.core.internal.provisional.text.ITextRegion;
 import org.eclipse.wst.sse.core.internal.provisional.text.ITextRegionList;
 import org.eclipse.wst.sse.ui.contentassist.CompletionProposalInvocationContext;
 import org.eclipse.wst.sse.ui.internal.contentassist.ContentAssistUtils;
+import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
 import org.eclipse.wst.xml.core.internal.regions.DOMRegionContext;
 import org.eclipse.wst.xml.ui.internal.contentassist.ContentAssistRequest;
@@ -643,10 +645,23 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		String qualifiedName = MybatipseXmlUtil.getNamespace(node.getOwnerDocument());
 		JavaMapperUtil.findMapperMethod(methodStore, project, qualifiedName,
 			new RejectStatementAnnotation(matchString, false));
+		// Collect IDs that are already declared in the XML mapper(s). #87
+		List<String> existingIds = new ArrayList<>();
+		for (IDOMDocument xmlMapper : MybatipseXmlUtil.getMapperDocument(project, qualifiedName))
+		{
+			NodeList idNodes = XpathUtil.xpathNodes(xmlMapper,
+				"//select/@id|//insert/@id|//update/@id|//delete/@id");
+			for (int i = 0; i < idNodes.getLength(); i++)
+			{
+				existingIds.add(idNodes.item(i).getNodeValue());
+			}
+		}
 		for (String methodName : methodStore.getMethodNames())
 		{
-			results.add(new CompletionProposal(methodName, start, length, methodName.length(),
-				Activator.getIcon(), methodName, null, null));
+			boolean idExists = existingIds.contains(methodName);
+			results.add(new JavaCompletionProposal(methodName, start, length,
+				Activator.getIcon(idExists ? "/icons/mybatis-alias.png" : "/icons/mybatis.png"),
+				methodName, idExists ? 100 : 200));
 		}
 		addProposals(contentAssistRequest, results);
 	}
