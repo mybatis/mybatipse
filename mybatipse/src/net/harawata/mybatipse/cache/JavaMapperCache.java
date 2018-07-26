@@ -203,7 +203,7 @@ public class JavaMapperCache
 	{
 		ICompilationUnit compilationUnit = (ICompilationUnit)mapperType
 			.getAncestor(IJavaElement.COMPILATION_UNIT);
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		ASTParser parser = ASTParser.newParser(AST.JLS10);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(compilationUnit);
 		parser.setResolveBindings(true);

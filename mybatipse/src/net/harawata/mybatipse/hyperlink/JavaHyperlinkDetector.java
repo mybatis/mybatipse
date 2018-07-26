@@ -96,7 +96,7 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 			else if (srcElements.length == 0)
 			{
 				// Annotation value?
-				final ASTParser parser = ASTParser.newParser(AST.JLS8);
+				final ASTParser parser = ASTParser.newParser(AST.JLS10);
 				parser.setKind(ASTParser.K_COMPILATION_UNIT);
 				parser.setSource(typeRoot);
 				parser.setResolveBindings(true);

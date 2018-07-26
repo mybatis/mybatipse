@@ -344,7 +344,7 @@ public class TypeAliasCache
 
 			for (ITypeRoot typeRoot : typeRoots)
 			{
-				ASTParser parser = ASTParser.newParser(AST.JLS8);
+				ASTParser parser = ASTParser.newParser(AST.JLS10);
 				parser.setSource(typeRoot);
 				parser.setResolveBindings(true);
 				CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
