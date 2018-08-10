@@ -55,8 +55,7 @@ public class SupertypeHierarchyCache
 		}
 		catch (JavaModelException e)
 		{
-			Activator.log(Status.ERROR, "Error while checking type hierarchy of "
-				+ type.getFullyQualifiedName() + " and " + supertypeFqn, e);
+			// This can be safely ignored.
 		}
 		return false;
 	}
