@@ -189,6 +189,8 @@ public class MybatipseXmlUtil
 		try
 		{
 			model = StructuredModelManager.getModelManager().getModelForRead(mapperXmlFile);
+			if (model == null)
+				return null;
 			IDOMModel domModel = (IDOMModel)model;
 			IDOMDocument mapperDocument = domModel.getDocument();
 			return mapperDocument;
