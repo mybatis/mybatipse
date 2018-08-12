@@ -158,6 +158,7 @@ There are several ways to install MyBatipse.
 - Choose __Eclipse Marketplace...__ in __Help__ menu of your Eclipse and search __MyBatipse__.
 - Choose __Install New Software...__ in __Help__ menu and enter the following URL.  
 http://dl.bintray.com/harawata/eclipse
+- For offline installation, see [here](https://github.com/mybatis/mybatipse/issues/88#issuecomment-411817801).
 
 ## Bugs, questions, suggestions, etc.
 Please use the [issue tracker](https://github.com/harawata/mybatipse/issues).  
