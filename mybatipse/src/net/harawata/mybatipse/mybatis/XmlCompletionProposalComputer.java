@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    Iwao AVE! - initial API and implementation and/or initial documentation
+ *    Ken Davidson - JPA result mapping
  *******************************************************************************/
 
 package net.harawata.mybatipse.mybatis;
@@ -355,8 +356,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				if (!typeParamRawTypeFqn.equals(typeParam))
 				{
 					IType typeParamRawType = project.findType(typeParamRawTypeFqn);
-					if (SupertypeHierarchyCache.getInstance()
-						.isSubtype(typeParamRawType, "java.util.Map.Entry"))
+					if (SupertypeHierarchyCache.getInstance().isSubtype(typeParamRawType,
+						"java.util.Map.Entry"))
 					{
 						putMapItemAndIndex(foreachParams, item, index,
 							NameUtil.extractTypeParams(typeParam));
@@ -418,11 +419,10 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				String propName = prop.getKey();
 				if (!existingProps.contains(propName))
 				{
-					resultTags.append("<result property=\"")
-						.append(propName)
-						.append("\" column=\"")
-						.append(propName)
-						.append("\" />\n");
+					// TODO: Expand this into a ResultBuilder/JPAResultBuilder for expansion
+					resultTags.append(ResultBuilder.create(propName)
+						.annotations(beanProps.getFieldAnnotations().get(propName))
+						.build());
 				}
 			}
 			contentAssistRequest

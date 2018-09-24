@@ -44,6 +44,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 
@@ -148,8 +149,10 @@ public class BeanPropertyCache
 		{
 			final Map<String, String> readableFields = new LinkedHashMap<String, String>();
 			final Map<String, String> writableFields = new LinkedHashMap<String, String>();
-			parseBean(javaProject, qualifiedName, readableFields, writableFields, subclassMap);
-			beanProps = new BeanPropertyInfo(readableFields, writableFields);
+			final Map<String, Map<String, Annotation>> fieldAnnotations = new LinkedHashMap<String, Map<String, Annotation>>();
+			parseBean(javaProject, qualifiedName, readableFields, writableFields, fieldAnnotations,
+				subclassMap);
+			beanProps = new BeanPropertyInfo(readableFields, writableFields, fieldAnnotations);
 		}
 		beans.put(qualifiedName, beanProps);
 		return beanProps;
@@ -168,6 +171,7 @@ public class BeanPropertyCache
 
 	protected static void parseBean(IJavaProject project, String qualifiedNameWithArgs,
 		final Map<String, String> readableFields, final Map<String, String> writableFields,
+		Map<String, Map<String, Annotation>> fieldAnnotations,
 		final Map<String, Set<String>> subclassMap)
 	{
 		try
@@ -183,7 +187,7 @@ public class BeanPropertyCache
 							"Parsing properties of a binary class " + qualifiedName);
 					parseBinary(project, type, qualifiedName,
 						NameUtil.extractTypeParams(qualifiedNameWithArgs), readableFields, writableFields,
-						subclassMap);
+						fieldAnnotations, subclassMap);
 				}
 				else
 				{
@@ -192,7 +196,7 @@ public class BeanPropertyCache
 							"Parsing properties of a source class " + qualifiedName);
 					parseSource(project, type, qualifiedName,
 						NameUtil.extractTypeParams(qualifiedNameWithArgs), readableFields, writableFields,
-						subclassMap);
+						fieldAnnotations, subclassMap);
 				}
 			}
 		}
@@ -205,6 +209,7 @@ public class BeanPropertyCache
 	protected static void parseBinary(IJavaProject project, final IType type,
 		final String qualifiedName, List<String> actualTypeParams,
 		final Map<String, String> readableFields, final Map<String, String> writableFields,
+		final Map<String, Map<String, Annotation>> fieldAnnotations,
 		final Map<String, Set<String>> subclassMap) throws JavaModelException
 	{
 		final List<String> typeParams = new ArrayList<String>();
@@ -223,7 +228,7 @@ public class BeanPropertyCache
 		if (!Object.class.getName().equals(superclassFqn))
 		{
 			parseSuper(project, superclassFqn, currentClassFqn, typeParams, actualTypeParams,
-				readableFields, writableFields, subclassMap);
+				readableFields, writableFields, fieldAnnotations, subclassMap);
 		}
 
 		String[] superInterfaceTypes = type.getSuperInterfaceTypeSignatures();
@@ -232,7 +237,7 @@ public class BeanPropertyCache
 			if (!superInterfaceType.startsWith("java") && !superInterfaceType.startsWith("javax."))
 			{
 				parseSuper(project, superInterfaceType, currentClassFqn, typeParams, actualTypeParams,
-					readableFields, writableFields, subclassMap);
+					readableFields, writableFields, fieldAnnotations, subclassMap);
 			}
 		}
 	}
@@ -240,6 +245,7 @@ public class BeanPropertyCache
 	protected static void parseSuper(IJavaProject project, String superclassFqn,
 		String currentClassFqn, final List<String> typeParams, List<String> actualTypeParams,
 		final Map<String, String> readableFields, final Map<String, String> writableFields,
+		final Map<String, Map<String, Annotation>> fieldAnnotations,
 		final Map<String, Set<String>> subclassMap)
 	{
 		String rawSuperclass = superclassFqn;
@@ -266,7 +272,8 @@ public class BeanPropertyCache
 			subclassMap.put(superclassFqn, subclasses);
 		}
 		subclasses.add(currentClassFqn);
-		parseBean(project, superclassFqn, readableFields, writableFields, subclassMap);
+		parseBean(project, superclassFqn, readableFields, writableFields, fieldAnnotations,
+			subclassMap);
 	}
 
 	protected static void parseBinaryMethods(final IType type,
@@ -331,6 +338,7 @@ public class BeanPropertyCache
 	protected static void parseSource(IJavaProject project, final IType type,
 		final String qualifiedName, List<String> typeParams,
 		final Map<String, String> readableFields, final Map<String, String> writableFields,
+		final Map<String, Map<String, Annotation>> fieldAnnotations,
 		final Map<String, Set<String>> subclassMap) throws JavaModelException
 	{
 		ICompilationUnit compilationUnit = (ICompilationUnit)type
@@ -342,7 +350,7 @@ public class BeanPropertyCache
 		// parser.setIgnoreMethodBodies(true);
 		CompilationUnit astUnit = (CompilationUnit)parser.createAST(null);
 		astUnit.accept(new BeanPropertyVisitor(project, qualifiedName, typeParams, readableFields,
-			writableFields, subclassMap));
+			writableFields, fieldAnnotations, subclassMap));
 	}
 
 	public static Map<String, String> searchFields(IJavaProject project, String qualifiedName,
