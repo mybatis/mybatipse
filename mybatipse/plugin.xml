@@ -284,6 +284,27 @@
             description="Rename MyBatis statement/resultMap ID in Java mapper."
             categoryId="org.eclipse.ui.category.edit">
       </command>
+      <command
+      		defaultHandler="net.harawata.mybatipse.source.handler.ResultMapSelectSqlHandler"
+      		id="net.harawata.mybatipse.source.ResultMapSelectSql"
+      		name="ResultMap Select SQL"
+      		description="Generate select SQL for ResultMap"
+      		categoryId="org.eclipse.ui.category.source">
+      </command>
+      <command
+      		defaultHandler="net.harawata.mybatipse.source.handler.ResultMapInsertSqlHandler"
+      		id="net.harawata.mybatipse.source.ResultMapInsertSql"
+      		name="ResultMap Insert SQL"
+      		description="Generate insert SQL for ResultMap"
+      		categoryId="org.eclipse.ui.category.source">
+      </command>    
+      <command
+      		defaultHandler="net.harawata.mybatipse.source.handler.ResultMapUpdateSqlHandler"
+      		id="net.harawata.mybatipse.source.ResultMapUpdateSql"
+      		name="ResultMap Update SQL"
+      		description="Generate update SQL for ResultMap"
+      		categoryId="org.eclipse.ui.category.source">
+      </command>    
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -391,6 +412,24 @@
                </visibleWhen>
             </command>
          </menu>
+      </menuContribution>
+      <menuContribution
+      	allPopups="false"
+      	locationURI="popup:sourcePopupMenuId">
+      	<menu label="ResultMap SQL">
+      		<command
+      			commandId="net.harawata.mybatipse.source.ResultMapSelectSql"
+      			label="Select Columns">      			 
+      		</command>
+      		<command
+      			commandId="net.harawata.mybatipse.source.ResultMapInsertSql"
+      			label="Insert Columns">      			 
+      		</command>   
+      		<command
+      			commandId="net.harawata.mybatipse.source.ResultMapUpdateSql"
+      			label="Update Columns">      			 
+      		</command>  
+      	</menu>   	   
       </menuContribution>
    </extension>
    <extension point="org.eclipse.ui.bindings">
