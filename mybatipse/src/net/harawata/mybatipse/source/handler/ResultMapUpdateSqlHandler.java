@@ -30,14 +30,13 @@ public class ResultMapUpdateSqlHandler extends ResultMapSqlSourceHandler
 	@Override
 	protected String buildSqlId(Element resultMap)
 	{
-		return resultMap.getAttribute("id").replaceAll("Map", "") + "InsertColumns";
+		return resultMap.getAttribute("id").replaceAll("Map", "") + "UpdateColumns";
 	}
 
 	@Override
 	protected String buildSqlStatement(Element resultMap)
 	{
-		final StringBuilder columns = new StringBuilder("\n(");
-		final StringBuilder values = new StringBuilder("VALUES (");
+		final StringBuilder sql = new StringBuilder("\n");
 
 		try
 		{
@@ -50,13 +49,12 @@ public class ResultMapUpdateSqlHandler extends ResultMapSqlSourceHandler
 					? nodes.item(i).getAttributes().getNamedItem("column")
 					: id;
 
-				columns.append(col.getNodeValue());
-				values.append("#{" + (id == null ? col.getNodeValue() : id.getNodeValue()) + "}");
+				sql.append(col.getNodeValue()).append("=");
+				sql.append("#{" + id.getNodeValue() + "}");
 
 				if (i < nodes.getLength() - 1)
 				{
-					columns.append(",");
-					values.append(",");
+					sql.append(",\n");
 				}
 			}
 		}
@@ -65,10 +63,7 @@ public class ResultMapUpdateSqlHandler extends ResultMapSqlSourceHandler
 			// no child nodes
 		}
 
-		columns.append(")");
-		values.append(")");
-
-		return columns.toString() + "\n" + values.toString();
+		return sql.toString();
 	}
 
 }
