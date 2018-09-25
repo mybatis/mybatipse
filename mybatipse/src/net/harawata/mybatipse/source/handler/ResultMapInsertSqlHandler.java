@@ -51,7 +51,7 @@ public class ResultMapInsertSqlHandler extends ResultMapSqlSourceHandler
 					: id;
 
 				columns.append(col.getNodeValue());
-				values.append("#{" + (id == null ? col.getNodeValue() : id.getNodeValue()) + "}");
+				values.append("#{" + id.getNodeValue() + "}");
 
 				if (i < nodes.getLength() - 1)
 				{
