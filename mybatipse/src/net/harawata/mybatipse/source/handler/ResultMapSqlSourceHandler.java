@@ -80,6 +80,12 @@ public abstract class ResultMapSqlSourceHandler extends AbstractHandler
 		return false;
 	}
 
+	/**
+	 * Created and add the SQL element.
+	 * 
+	 * @param resultMap
+	 * @return
+	 */
 	protected Element addSqlElement(Element resultMap)
 	{
 		Document document = resultMap.getOwnerDocument();
@@ -87,6 +93,7 @@ public abstract class ResultMapSqlSourceHandler extends AbstractHandler
 		sql.setAttribute("id", buildSqlId(resultMap));
 		sql.appendChild(document.createTextNode(buildSqlStatement(resultMap)));
 
+		// TODO: Update with properties for Overwriting current or adding version suffix
 		Node mapper = document.getElementsByTagName("mapper").item(0);
 		Node next = resultMap.getNextSibling();
 		mapper.insertBefore(sql, next);
