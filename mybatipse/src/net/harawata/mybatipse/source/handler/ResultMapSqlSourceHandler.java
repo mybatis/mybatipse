@@ -102,6 +102,39 @@ public abstract class ResultMapSqlSourceHandler extends AbstractHandler
 		return sql;
 	}
 
+	protected String nodeColumnValue(Node node)
+	{
+		Node col = node.getAttributes().getNamedItem("column") != null
+			? node.getAttributes().getNamedItem("column")
+			: node.getAttributes().getNamedItem("property");
+
+		return col.getNodeValue();
+	}
+
+	protected String nodeParameterValue(Node node)
+	{
+		StringBuilder sb = new StringBuilder();
+
+		Node col = node.getAttributes().getNamedItem("column") != null
+			? node.getAttributes().getNamedItem("column")
+			: node.getAttributes().getNamedItem("property");
+		sb.append(col.getNodeValue());
+
+		if (node.getAttributes().getNamedItem("jdbcType") != null)
+		{
+			col = node.getAttributes().getNamedItem("jdbcType");
+			sb.append(String.format(", %s=%s", col.getNodeName(), col.getNodeValue()));
+		}
+
+		if (node.getAttributes().getNamedItem("javaType") != null)
+		{
+			col = node.getAttributes().getNamedItem("javaType");
+			sb.append(String.format(", %s=%s", col.getNodeName(), col.getNodeValue()));
+		}
+
+		return sb.toString();
+	}
+
 	protected abstract String buildSqlId(Element resultMap);
 
 	protected abstract String buildSqlStatement(Element resultMap);

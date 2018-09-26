@@ -50,9 +50,12 @@ public class ResultMapSelectSqlHandler extends ResultMapSqlSourceHandler
 
 				if (node != null)
 				{
+					if (i > 0)
+					{
+						sql.append("\n, ");
+					}
+
 					sql.append(node.getNodeValue());
-					if (i < nodes.getLength() - 1)
-						sql.append(",\n");
 				}
 			}
 		}

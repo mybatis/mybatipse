@@ -14,7 +14,6 @@ package net.harawata.mybatipse.source.handler;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import net.harawata.mybatipse.util.XpathUtil;
@@ -45,19 +44,14 @@ public class ResultMapInsertSqlHandler extends ResultMapSqlSourceHandler
 
 			for (int i = 0; i < nodes.getLength(); i++)
 			{
-				Node id = nodes.item(i).getAttributes().getNamedItem("property");
-				Node col = nodes.item(i).getAttributes().getNamedItem("column") != null
-					? nodes.item(i).getAttributes().getNamedItem("column")
-					: id;
-
-				columns.append(col.getNodeValue());
-				values.append("#{" + id.getNodeValue() + "}");
-
-				if (i < nodes.getLength() - 1)
+				if (i > 0)
 				{
-					columns.append(",");
-					values.append(",");
+					columns.append("\n, ");
+					values.append("\n, ");
 				}
+
+				columns.append(nodeColumnValue(nodes.item(i)));
+				values.append("#{" + nodeParameterValue(nodes.item(i)) + "}");
 			}
 		}
 		catch (XPathExpressionException e)
@@ -70,5 +64,4 @@ public class ResultMapInsertSqlHandler extends ResultMapSqlSourceHandler
 
 		return columns.toString() + "\n" + values.toString();
 	}
-
 }
