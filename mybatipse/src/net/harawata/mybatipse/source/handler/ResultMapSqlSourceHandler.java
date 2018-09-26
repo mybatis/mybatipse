@@ -115,9 +115,7 @@ public abstract class ResultMapSqlSourceHandler extends AbstractHandler
 	{
 		StringBuilder sb = new StringBuilder();
 
-		Node col = node.getAttributes().getNamedItem("column") != null
-			? node.getAttributes().getNamedItem("column")
-			: node.getAttributes().getNamedItem("property");
+		Node col = node.getAttributes().getNamedItem("property");
 		sb.append(col.getNodeValue());
 
 		if (node.getAttributes().getNamedItem("jdbcType") != null)
