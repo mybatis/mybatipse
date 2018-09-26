@@ -39,13 +39,14 @@ public class ResultMapUpdateSqlHandler extends ResultMapSqlSourceHandler
 
 		try
 		{
-			NodeList nodes = XpathUtil.xpathNodes(resultMap, "id|result");
+			// Id Result items are never changed
+			NodeList nodes = XpathUtil.xpathNodes(resultMap, "result");
 
 			for (int i = 0; i < nodes.getLength(); i++)
 			{
 				if (i > 0)
 				{
-					sql.append(",\n");
+					sql.append("\n, ");
 				}
 
 				sql.append(nodeColumnValue(nodes.item(i))).append(" = ");
