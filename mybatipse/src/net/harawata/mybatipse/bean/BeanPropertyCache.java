@@ -335,7 +335,7 @@ public class BeanPropertyCache
 	{
 		ICompilationUnit compilationUnit = (ICompilationUnit)type
 			.getAncestor(IJavaElement.COMPILATION_UNIT);
-		ASTParser parser = ASTParser.newParser(AST.JLS10);
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(compilationUnit);
 		parser.setResolveBindings(true);

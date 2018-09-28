@@ -165,7 +165,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 
 	private CompilationUnit getAstNode(ICompilationUnit compilationUnit)
 	{
-		ASTParser parser = ASTParser.newParser(AST.JLS10);
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setSource(compilationUnit);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setResolveBindings(true);
