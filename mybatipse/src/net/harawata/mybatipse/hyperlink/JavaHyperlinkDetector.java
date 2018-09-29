@@ -67,12 +67,16 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 	{
 		IHyperlink[] links = null;
 		ITextEditor editor = (ITextEditor)getAdapter(ITextEditor.class);
+		if (editor == null)
+			return links;
 		IEditorInput input = editor.getEditorInput();
 		IJavaElement element = JavaUI.getEditorInputJavaElement(input);
 
 		if (element == null)
 			return links;
 		ITypeRoot typeRoot = (ITypeRoot)element.getAdapter(ITypeRoot.class);
+		if (typeRoot == null)
+			return links;
 		try
 		{
 			IJavaElement[] srcElements = typeRoot.codeSelect(region.getOffset(), region.getLength());
