@@ -103,6 +103,8 @@ public class ProposalComputorHelper
 				"STDOUT_LOGGING", "NO_LOGGING"));
 			put("configurationFactory", empty);
 			put("vfsImpl", empty);
+			put("defaultEnumTypeHandler", empty);
+			put("returnInstanceForEmptyRow", Arrays.asList("true", "false"));
 		}
 
 		private static final long serialVersionUID = 1L;
@@ -337,6 +339,11 @@ public class ProposalComputorHelper
 		{
 			proposals.addAll(proposeImplementation(project, offset, length, matchString,
 				MybatipseConstants.TYPE_LANGUAGE_DRIVER));
+		}
+		else if ("defaultEnumTypeHandler".equals(settingName))
+		{
+			proposals.addAll(proposeImplementation(project, offset, length, matchString,
+				MybatipseConstants.TYPE_TYPE_HANDLER));
 		}
 		return proposals;
 	}
