@@ -25,7 +25,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
- * Adds <sql> select template to mapper file.
+ * Parent {@link AbstractHandler} for implementation of &lt;sql&gt; statement generation.
+ * Statements generated should be as generic as possible, taking into account the functionality
+ * described at:
+ * <p>
+ * {@code http://www.mybatis.org/mybatis-3/sqlmap-xml.html }
+ * <p>
  * 
  * @author kdavidson
  */

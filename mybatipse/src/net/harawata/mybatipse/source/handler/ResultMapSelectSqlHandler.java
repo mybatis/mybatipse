@@ -20,7 +20,13 @@ import org.w3c.dom.NodeList;
 import net.harawata.mybatipse.util.XpathUtil;
 
 /**
- * <sql id="selectResultMap"></sql>
+ * Generates &lt;sql&gt; to provide quick access to the &lt;select&gt; statement(s). All columns
+ * are pulled from the &lt;resultMap&gt; and placed in the &lt;sql&gt; entry. A default
+ * {@code id} of {@code selectResultMap} is used.
+ * <p>
+ * Note that this is a basic select statement containing all columns with no table aliasing.
+ * <p>
+ * TODO provide customization of id through properties.
  * 
  * @author kdavidson
  */

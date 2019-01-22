@@ -19,7 +19,13 @@ import org.w3c.dom.NodeList;
 import net.harawata.mybatipse.util.XpathUtil;
 
 /**
- * Adds <sql> insert template to mapper file.
+ * Generates &lt;sql&gt; to provide quick access to the &lt;insert&gt; statement(s). All columns
+ * are pulled from the &lt;resultMap&gt; and placed in the &lt;sql&gt; entry. A default
+ * {@code id} of {@code insertResultMap} is used.
+ * <p>
+ * Note that this is a basic insert statement containing all columns with no table aliasing.
+ * <p>
+ * TODO provide customization of id through properties.
  * 
  * @author kdavidson
  */
