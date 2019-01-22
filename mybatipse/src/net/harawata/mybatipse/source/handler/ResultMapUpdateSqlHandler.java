@@ -19,7 +19,15 @@ import org.w3c.dom.NodeList;
 import net.harawata.mybatipse.util.XpathUtil;
 
 /**
- * Adds <sql> insert template to mapper file.
+ * Generates &lt;sql&gt; to provide quick access to the &lt;update&gt; statement(s). All columns
+ * are pulled from the &lt;resultMap&gt; and placed in the &lt;sql&gt; entry. A default
+ * {@code id} of {@code updateResultMap} is used.
+ * <p>
+ * Note that this is a basic update statement containing all columns with no table aliasing. It
+ * all columns except those specified as &lt;id&gt; in the resultMap. Those are expected to be
+ * used in the where clause within the &lt;update&gt; element.
+ * <p>
+ * TODO provide customization of id through properties.
  * 
  * @author kdavidson
  */
