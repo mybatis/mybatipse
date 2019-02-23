@@ -24,8 +24,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ltk.ui.refactoring,
  org.eclipse.search,
  org.eclipse.jdt.core.manipulation,
- org.eclipse.core.expressions,
- org.eclipse.epp.logging.aeri.ide;bundle-version="[2.0.0,3.0.0)";resolution:=optional
+ org.eclipse.core.expressions
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Automatic-Module-Name: net.harawata.mybatipse

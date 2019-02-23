@@ -529,25 +529,4 @@
             type="org.eclipse.ui.texteditor.ITextEditor">
       </propertyTester>
    </extension>
-   <extension
-         point="org.eclipse.epp.logging.aeri.ide.servers">
-      <server
-            class="org.eclipse.epp.internal.logging.aeri.ide.server.mars.ServerConnection"
-            description="Help MyBatis team improve the plugin by sending error report."
-            icon16="icons/mybatis.png"
-            icon32="icons/mybatis32.png"
-            id="net.harawata.aer.mybatipse"
-            name="MyBatipse">
-         <link
-               href="https://github.com/mybatis/mybatipse"
-               rel="provider"
-               title="MyBatis team">
-         </link>
-         <link
-               href="https://aer.ctrlflow.com/harawata/community/discovery"
-               rel="discovery"
-               title="Discovery URL">
-         </link>
-      </server>
-   </extension>
 </plugin>
