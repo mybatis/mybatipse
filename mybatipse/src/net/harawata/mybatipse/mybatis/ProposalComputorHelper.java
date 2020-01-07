@@ -105,6 +105,8 @@ public class ProposalComputorHelper
 			put("vfsImpl", empty);
 			put("defaultEnumTypeHandler", empty);
 			put("returnInstanceForEmptyRow", Arrays.asList("true", "false"));
+			put("defaultResultSetType",
+				Arrays.asList("FORWARD_ONLY", "SCROLL_INSENSITIVE", "SCROLL_SENSITIVE"));
 		}
 
 		private static final long serialVersionUID = 1L;
