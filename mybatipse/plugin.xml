@@ -8,7 +8,7 @@
             file-extensions="xml"
             id="mapper"
             name="MyBatis XML Mapper"
-            priority="normal">
+            priority="high">
          <describer
                class="org.eclipse.core.runtime.content.XMLRootElementContentDescriber2">
             <parameter
@@ -30,7 +30,7 @@
             file-extensions="xml"
             id="config"
             name="MyBatis XML Config"
-            priority="normal">
+            priority="high">
          <describer
                class="org.eclipse.core.runtime.content.XMLRootElementContentDescriber2">
             <parameter
@@ -55,7 +55,7 @@
             id="springConfig"
             alias-for="org.springframework.ide.eclipse.beans.ui.editor.beansConfig"
             name="MyBatis Spring XML Config"
-            priority="normal">
+            priority="high">
          <describer
                class="org.eclipse.core.runtime.content.XMLRootElementContentDescriber2">
             <parameter
