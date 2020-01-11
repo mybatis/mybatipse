@@ -67,6 +67,9 @@ public class MybatipseConstants
 		"org.apache.ibatis.annotations.UpdateProvider",
 		"org.apache.ibatis.annotations.DeleteProvider");
 
+	public static final List<String> PROVIDER_ANNOTATION_NAMES = Arrays.asList("SelectProvider",
+		"InsertProvider", "UpdateProvider", "DeleteProvider");
+
 	public static final String TYPE_ROW_BOUNDS = "org.apache.ibatis.session.RowBounds";
 
 	public static final String TYPE_TYPE_HANDLER = "org.apache.ibatis.type.TypeHandler";

@@ -33,11 +33,16 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
+import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextViewer;
@@ -49,6 +54,7 @@ import org.eclipse.wst.xml.core.internal.provisional.document.IDOMDocument;
 import org.eclipse.wst.xml.core.internal.provisional.document.IDOMNode;
 
 import net.harawata.mybatipse.Activator;
+import net.harawata.mybatipse.MybatipseConstants;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.HasSelectAnnotation;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.ResultsAnnotationWithId;
 import net.harawata.mybatipse.mybatis.MapperNamespaceCache;
@@ -211,7 +217,6 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 			return false;
 		}
 
-		@SuppressWarnings("unchecked")
 		private void parseAnnotation(Annotation anno)
 		{
 			String name = anno.getTypeName().getFullyQualifiedName();
@@ -222,49 +227,84 @@ public class JavaHyperlinkDetector extends HyperlinkDetector
 			}
 			else if ("Results".equals(name))
 			{
-				Expression expr = annotationValueAt(anno, "value", offset);
-				if (expr == null)
-					return;
-				List<Expression> resultAnnos;
-				if (expr.getNodeType() == Expression.ARRAY_INITIALIZER)
+				parseResults(anno);
+			}
+			else if (MybatipseConstants.PROVIDER_ANNOTATION_NAMES.contains(name))
+			{
+				parseProvider(anno);
+			}
+		}
+
+		private void parseProvider(Annotation anno)
+		{
+			Expression expr = annotationValueAt(anno, "method", offset);
+			if (expr == null)
+				return;
+			IAnnotationBinding annoBinding = anno.resolveAnnotationBinding();
+			for (IMemberValuePairBinding valuePair : annoBinding.getAllMemberValuePairs())
+			{
+				String pairName = valuePair.getName();
+				if ("type".equals(pairName) || "value".equals(pairName))
 				{
-					resultAnnos = ((ArrayInitializer)expr).expressions();
-				}
-				else
-				{
-					resultAnnos = Arrays.asList((Expression)expr);
-				}
-				for (Expression resultAnno : resultAnnos)
-				{
-					if (isInRange(resultAnno, offset))
+					String methodName = ((StringLiteral)expr).getLiteralValue();
+					ITypeBinding providerClass = (ITypeBinding)valuePair.getValue();
+					for (IMethodBinding method : providerClass.getDeclaredMethods())
 					{
-						createHyperlink("select",
-							expressionAt(
-								annotationValueAt((Annotation)annotationValueAt((Annotation)resultAnno,
-									Arrays.asList("one", "many"), offset), "select", offset),
-								offset));
-						if (hyperlink == null)
+						if (methodName.equals(method.getName()))
 						{
-							Expression propertyName = annotationValueAt((Annotation)resultAnno, "property",
-								offset);
-							if (propertyName == null)
-								return;
-							String returnType = method.resolveBinding().getReturnType().getQualifiedName();
-							if (returnType == null || "void".equals(returnType))
-								return;
-							try
-							{
-								hyperlink = linkToJavaProperty(project, returnType,
-									(String)propertyName.resolveConstantExpressionValue(),
-									new Region(propertyName.getStartPosition(), propertyName.getLength()));
-							}
-							catch (JavaModelException e)
-							{
-								Activator.log(Status.ERROR, e.getMessage(), e);
-							}
+							linkRegion = new Region(expr.getStartPosition(), expr.getLength());
+							hyperlink = new ToJavaHyperlink(method.getJavaElement(), linkRegion,
+								javaLinkLabel("method"));
+							return;
 						}
-						break;
 					}
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		private void parseResults(Annotation anno)
+		{
+			Expression expr = annotationValueAt(anno, "value", offset);
+			if (expr == null)
+				return;
+			List<Expression> resultAnnos;
+			if (expr.getNodeType() == Expression.ARRAY_INITIALIZER)
+			{
+				resultAnnos = ((ArrayInitializer)expr).expressions();
+			}
+			else
+			{
+				resultAnnos = Arrays.asList((Expression)expr);
+			}
+			for (Expression resultAnno : resultAnnos)
+			{
+				if (isInRange(resultAnno, offset))
+				{
+					createHyperlink("select",
+						expressionAt(annotationValueAt((Annotation)annotationValueAt((Annotation)resultAnno,
+							Arrays.asList("one", "many"), offset), "select", offset), offset));
+					if (hyperlink == null)
+					{
+						Expression propertyName = annotationValueAt((Annotation)resultAnno, "property",
+							offset);
+						if (propertyName == null)
+							return;
+						String returnType = method.resolveBinding().getReturnType().getQualifiedName();
+						if (returnType == null || "void".equals(returnType))
+							return;
+						try
+						{
+							hyperlink = linkToJavaProperty(project, returnType,
+								(String)propertyName.resolveConstantExpressionValue(),
+								new Region(propertyName.getStartPosition(), propertyName.getLength()));
+						}
+						catch (JavaModelException e)
+						{
+							Activator.log(Status.ERROR, e.getMessage(), e);
+						}
+					}
+					break;
 				}
 			}
 		}
