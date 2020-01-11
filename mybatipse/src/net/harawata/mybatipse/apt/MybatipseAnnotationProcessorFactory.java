@@ -30,9 +30,16 @@ import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.apt.pluggable.core.dispatch.IdeProcessingEnvImpl;
 
+import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
 import net.harawata.mybatipse.bean.BeanPropertyCache;
 import net.harawata.mybatipse.mybatis.ValidatorHelper;
@@ -44,7 +51,9 @@ import net.harawata.mybatipse.util.NameUtil;
 @SuppressWarnings("restriction")
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 @SupportedAnnotationTypes({
-	MybatipseConstants.ANNOTATION_RESULT_MAP, MybatipseConstants.ANNOTATION_RESULTS
+	MybatipseConstants.ANNOTATION_RESULT_MAP, MybatipseConstants.ANNOTATION_RESULTS,
+	MybatipseConstants.ANNOTATION_SELECT_PROVIDER, MybatipseConstants.ANNOTATION_INSERT_PROVIDER,
+	MybatipseConstants.ANNOTATION_UPDATE_PROVIDER, MybatipseConstants.ANNOTATION_DELETE_PROVIDER
 })
 public class MybatipseAnnotationProcessorFactory extends AbstractProcessor
 {
@@ -71,11 +80,86 @@ public class MybatipseAnnotationProcessorFactory extends AbstractProcessor
 						{
 							validateResultsAnnotation(element, annotationMirror, messager);
 						}
+						else if (MybatipseConstants.PROVIDER_ANNOTATIONS.contains(annotationType))
+						{
+							validateProviderAnnotation(element, annotationMirror, messager);
+						}
 					}
 				}
 			}
 		}
 		return false;
+	}
+
+	private void validateProviderAnnotation(Element element, AnnotationMirror annotationMirror,
+		Messager messager)
+	{
+		AnnotationValue annotationValue = null;
+		String providerFqn = null;
+		String methodName = null;
+		Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues = annotationMirror
+			.getElementValues();
+		for (Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : elementValues
+			.entrySet())
+		{
+			String memberName = entry.getKey().getSimpleName().toString();
+			if ("type".equals(memberName) || "value".equals(memberName))
+			{
+				providerFqn = entry.getValue().getValue().toString();
+			}
+			else if ("method".equals(memberName))
+			{
+				annotationValue = entry.getValue();
+				methodName = (String)annotationValue.getValue();
+			}
+		}
+		if (providerFqn != null && methodName != null)
+		{
+			try
+			{
+				IJavaProject project = getJavaProject();
+				IType providerType = project.findType(providerFqn);
+				boolean found = false;
+				for (IMethod method : providerType.getMethods())
+				{
+					if (methodName.equals(method.getElementName()))
+					{
+						found = true;
+						String returnTypeFqn = resolvedTypeToRawTypeFqn(
+							providerType.resolveType(Signature.toString(method.getReturnType())));
+						if (returnTypeFqn == null || !project.findType(returnTypeFqn)
+							.newSupertypeHierarchy(new NullProgressMonitor())
+							.contains(project.findType(CharSequence.class.getName())))
+						{
+							messager.printMessage(Kind.ERROR,
+								"The return type must be assignable to CharSequence.", element,
+								annotationMirror, annotationValue);
+						}
+						break;
+					}
+				}
+				if (!found)
+				{
+					messager.printMessage(Kind.ERROR,
+						"Method '" + providerFqn + "." + methodName + "' not found.", element,
+						annotationMirror, annotationValue);
+				}
+			}
+			catch (JavaModelException e)
+			{
+				Activator.log(Status.ERROR, "Could not find provider class: " + providerFqn, e);
+			}
+		}
+	}
+
+	private String resolvedTypeToRawTypeFqn(String[][] resolvedType)
+	{
+		if (resolvedType == null || resolvedType.length == 0)
+		{
+			return null;
+		}
+		String[] arr = resolvedType[0];
+		return arr[0] + "." + arr[1];
 	}
 
 	protected void validateResultsAnnotation(Element element, AnnotationMirror annotationMirror,

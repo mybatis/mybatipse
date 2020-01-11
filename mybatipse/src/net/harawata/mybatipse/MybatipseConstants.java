@@ -41,6 +41,12 @@ public class MybatipseConstants
 
 	public static final String ANNOTATION_SELECT_PROVIDER = "org.apache.ibatis.annotations.SelectProvider";
 
+	public static final String ANNOTATION_INSERT_PROVIDER = "org.apache.ibatis.annotations.InsertProvider";
+
+	public static final String ANNOTATION_UPDATE_PROVIDER = "org.apache.ibatis.annotations.UpdateProvider";
+
+	public static final String ANNOTATION_DELETE_PROVIDER = "org.apache.ibatis.annotations.DeleteProvider";
+
 	public static final String ANNOTATION_UPDATE = "org.apache.ibatis.annotations.Update";
 
 	public static final String ANNOTATION_INSERT = "org.apache.ibatis.annotations.Insert";
@@ -63,9 +69,11 @@ public class MybatipseConstants
 
 	public static final List<String> STATEMENT_ANNOTATIONS = Arrays.asList(ANNOTATION_SELECT,
 		ANNOTATION_INSERT, ANNOTATION_UPDATE, ANNOTATION_DELETE, ANNOTATION_SELECT_PROVIDER,
-		"org.apache.ibatis.annotations.InsertProvider",
-		"org.apache.ibatis.annotations.UpdateProvider",
-		"org.apache.ibatis.annotations.DeleteProvider");
+		ANNOTATION_INSERT_PROVIDER, ANNOTATION_UPDATE_PROVIDER, ANNOTATION_DELETE_PROVIDER);
+
+	public static final List<String> PROVIDER_ANNOTATIONS = Arrays.asList(
+		ANNOTATION_SELECT_PROVIDER, ANNOTATION_INSERT_PROVIDER, ANNOTATION_UPDATE_PROVIDER,
+		ANNOTATION_DELETE_PROVIDER);
 
 	public static final List<String> PROVIDER_ANNOTATION_NAMES = Arrays.asList("SelectProvider",
 		"InsertProvider", "UpdateProvider", "DeleteProvider");
