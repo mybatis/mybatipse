@@ -25,10 +25,14 @@ import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMemberValuePair;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.ui.text.java.ContentAssistInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposalComputer;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
@@ -37,6 +41,7 @@ import org.eclipse.jface.text.contentassist.IContextInformation;
 
 import net.harawata.mybatipse.Activator;
 import net.harawata.mybatipse.MybatipseConstants;
+import net.harawata.mybatipse.bean.JavaCompletionProposal;
 import net.harawata.mybatipse.bean.SupertypeHierarchyCache;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodNameMatcher;
 import net.harawata.mybatipse.mybatis.JavaMapperUtil.MethodParametersStore;
@@ -106,6 +111,10 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 					{
 						return proposeKeyProperty(project, mapperFqn, offset, annotation, method);
 					}
+					else if (MybatipseConstants.PROVIDER_ANNOTATION_NAMES.contains(elementName))
+					{
+						return proposeProviderMethod(project, offset, annotation, monitor);
+					}
 				}
 			}
 			catch (JavaModelException e)
@@ -114,6 +123,69 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 			}
 		}
 		return Collections.emptyList();
+	}
+
+	private List<ICompletionProposal> proposeProviderMethod(final IJavaProject project,
+		int offset, IAnnotation annotation, IProgressMonitor monitor) throws JavaModelException
+	{
+		List<ICompletionProposal> proposals = new ArrayList<>();
+		final AnnotationParser parser = new AnnotationParser(annotation, offset);
+		String key = parser.getKey();
+		if ("method".equals(key))
+		{
+			for (IMemberValuePair valuePair : annotation.getMemberValuePairs())
+			{
+				String pairName = valuePair.getMemberName();
+				if ("type".equals(pairName) || "value".equals(pairName))
+				{
+					String pairValue = (String)valuePair.getValue();
+					IType ancestor = (IType)annotation.getAncestor(IJavaElement.TYPE);
+					String providerFqn = resolvedTypeToRawTypeFqn(ancestor.resolveType(pairValue));
+					if (providerFqn == null)
+					{
+						Activator.log(Status.ERROR, "Couldn't resolve " + pairValue + "Z.");
+						break;
+					}
+					IType providerType = project.findType(providerFqn);
+					IType charSequence = project.findType(CharSequence.class.getName());
+					for (IMethod targetMethod : providerType.getMethods())
+					{
+						String targetNameStr = targetMethod.getElementName();
+						char[] targetName = targetNameStr.toCharArray();
+						char[] input = parser.getValue().toCharArray();
+						if (CharOperation.prefixEquals(input, targetName)
+							|| CharOperation.camelCaseMatch(input, targetName))
+						{
+							String returnTypeFqn = resolvedTypeToRawTypeFqn(
+								ancestor.resolveType(Signature.toString(targetMethod.getReturnType())));
+							if (returnTypeFqn == null)
+								continue;
+							IType returnType = project.findType(returnTypeFqn);
+							if (returnType == null)
+								continue;
+							ITypeHierarchy returnTypeHierarchy = returnType.newSupertypeHierarchy(monitor);
+							if (returnTypeHierarchy.contains(charSequence))
+							{
+								proposals.add(new JavaCompletionProposal(targetNameStr, offset - input.length,
+									parser.getValueLength(), targetName.length, Activator.getIcon(),
+									targetNameStr, null, null, 100));
+							}
+						}
+					}
+				}
+			}
+		}
+		return proposals;
+	}
+
+	private String resolvedTypeToRawTypeFqn(String[][] resolvedType)
+	{
+		if (resolvedType == null || resolvedType.length == 0)
+		{
+			return null;
+		}
+		String[] arr = resolvedType[0];
+		return arr[0] + "." + arr[1];
 	}
 
 	private List<ICompletionProposal> proposeConstructorArgs(final IJavaProject project,
