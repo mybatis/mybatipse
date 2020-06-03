@@ -26,6 +26,7 @@ import net.harawata.mybatipse.mybatis.result.IdElementWriter;
 import net.harawata.mybatipse.mybatis.result.ResultElementWriter;
 import net.harawata.mybatipse.mybatis.result.ResultMapElementWriter;
 import net.harawata.mybatipse.mybatis.result.ToManyElementWriter;
+import net.harawata.mybatipse.mybatis.result.ToOneElementWriter;
 
 public class ResultMapContentBuilder
 {
@@ -104,7 +105,7 @@ public class ResultMapContentBuilder
 		else if (annotations.containsKey(AnnotationMapping.ManyToOne.name())
 			|| annotations.containsKey(AnnotationMapping.OneToOne.name()))
 		{
-			writer = new ToManyElementWriter(bean, fieldName);
+			writer = new ToOneElementWriter(bean, fieldName);
 		}
 		else
 		{

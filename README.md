@@ -17,7 +17,7 @@ And __MyBatipse__ is an Eclipse plug-in which provids content assists and valida
 ![autocomplete property](screen/ac-prop1.png) ![autocomplete property](screen/ac-prop2.png)
 - Statement ID : If corresponding mapper interface exists, propose the method name as a statement ID.  
 ![autocomplete statement id](screen/ac-stmt.png)
-- Reference to resultMap/select/sql : Propose ID of the referenced resultMap/select/sql. External reference is supported (blue icons).  
+- Reference to resultMap/select/sql : Propose ID of the referenced resultMap/select/sql. External reference is supported (blue icons). 
 ![autocomplete reference](screen/ac-ref.png)
 - Parameter properties : #{} and ${} in select/insert/udpate/delte statements. Also works in some attributes.  
 ![autocomplete properties](screen/ac-stmt-prop-xml.png) ![autocomplete properties 2](screen/ac-prop-test.png)
@@ -143,6 +143,50 @@ For example, with the above settings:
 - If 'Store information about method parameters' option is enabled in the Java Compiler -> Classfile Generation setting, MyBatipse proposes the declared method parameter names.  
 ![xml proposal order](screen/actual-parameters.png)  
 
+
+### JPA Annotations
+
+JPA annotation support has been introduced at the basic level while automatically generating `resultMap` details.  
+
+```java
+
+@Entity
+@Table(name="people")
+public class Person {
+
+	@Id
+	@Column(name="person_id")
+	private long id;
+	
+	@Column(name="given_name")
+	private String givenName;
+	
+	@Column(name="surname")
+	private String surname;
+	
+	@OneToOne(mappedBy = "father_id", targetEntity = Person.class)
+	private Person father;
+	
+	@OneToOne(mappedBy = "mother_id", targetEntity = Person.class)
+	private Person mother;
+
+  // Getters/Setters omitted for brevity
+}
+```
+
+Would result in the following `<resultMap>` auto-generation:
+
+```xml
+	<resultMap id="personMap" type="kjd.mybatipse.model.Person">
+		<id property="id" column="person_id"/>
+		<result property="givenName" column="given_name"/>
+		<result property="surname" column="surname"/>
+		<association property="father" javaType="" />
+		<association property="mother" javaType="" />
+	</resultMap>
+```
+
+Basic `<association>` and `<collection>` entries are created, more functionality with associated columns and entity resolution will be added later.
 
 ## Tips
 - To move MyBatis proposals to the top of the XML proposal list, quit Eclipse and open the following file in the workspace: ```.metadata/.plugins/org.eclipse.core.runtime/.settings/org.eclipse.wst.xml.ui.prefs``` Find the line started with ```xml_content_assist_default_page_sort_order=``` and insert ```net.harawata.mybatis.proposalCategory.xml\u0000``` right after the equal sign.  
