@@ -429,6 +429,7 @@
             activate="true"
             categoryId="net.harawata.mybatipse.javaStringProposalCategory"
             class="net.harawata.mybatipse.mybatis.JavaCompletionProposalComputer"
+            requiresUIThread="false"
             needsSortingAfterFiltering="false">
          <partition
                type="__java_string">
