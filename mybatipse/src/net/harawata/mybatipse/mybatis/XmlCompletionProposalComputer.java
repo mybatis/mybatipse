@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    Iwao AVE! - initial API and implementation and/or initial documentation
+ *    Ken Davidson - JPA result mapping
  *******************************************************************************/
 
 package net.harawata.mybatipse.mybatis;
@@ -355,8 +356,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 				if (!typeParamRawTypeFqn.equals(typeParam))
 				{
 					IType typeParamRawType = project.findType(typeParamRawTypeFqn);
-					if (SupertypeHierarchyCache.getInstance()
-						.isSubtype(typeParamRawType, "java.util.Map.Entry"))
+					if (SupertypeHierarchyCache.getInstance().isSubtype(typeParamRawType,
+						"java.util.Map.Entry"))
 					{
 						putMapItemAndIndex(foreachParams, item, index,
 							NameUtil.extractTypeParams(typeParam));
@@ -403,28 +404,13 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 			// Assumed to be FQN.
 			qualifiedName = MybatipseXmlUtil.normalizeTypeName(typeValue);
 		}
-		BeanPropertyInfo beanProps = BeanPropertyCache.getBeanPropertyInfo(project, qualifiedName);
 		try
 		{
-			Set<String> existingProps = new HashSet<String>();
+			BeanPropertyInfo beanProps = BeanPropertyCache.getBeanPropertyInfo(project,
+				qualifiedName);
 			NodeList existingPropNodes = XpathUtil.xpathNodes(parentNode, "*[@property]/@property");
-			for (int i = 0; i < existingPropNodes.getLength(); i++)
-			{
-				existingProps.add(existingPropNodes.item(i).getNodeValue());
-			}
-			StringBuilder resultTags = new StringBuilder();
-			for (Entry<String, String> prop : beanProps.getWritableFields().entrySet())
-			{
-				String propName = prop.getKey();
-				if (!existingProps.contains(propName))
-				{
-					resultTags.append("<result property=\"")
-						.append(propName)
-						.append("\" column=\"")
-						.append(propName)
-						.append("\" />\n");
-				}
-			}
+			String resultTags = ResultMapContentBuilder.create(beanProps, existingPropNodes).build();
+
 			contentAssistRequest
 				.addProposal(new CompletionProposal(resultTags.toString(), offset, length,
 					resultTags.length(), Activator.getIcon(), "<result /> for properties", null, null));
