@@ -21,11 +21,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import net.harawata.mybatipse.bean.BeanPropertyInfo;
+import net.harawata.mybatipse.mybatis.result.AssociationElementWriter;
+import net.harawata.mybatipse.mybatis.result.CollectionElementWriter;
 import net.harawata.mybatipse.mybatis.result.ColumnElementWriter;
 import net.harawata.mybatipse.mybatis.result.IdElementWriter;
 import net.harawata.mybatipse.mybatis.result.ResultElementWriter;
 import net.harawata.mybatipse.mybatis.result.ResultMapElementWriter;
-import net.harawata.mybatipse.mybatis.result.ToManyElementWriter;
 
 public class ResultMapContentBuilder
 {
@@ -99,12 +100,12 @@ public class ResultMapContentBuilder
 		else if (annotations.containsKey(AnnotationMapping.OneToMany.name())
 			|| annotations.containsKey(AnnotationMapping.ManyToMany.name()))
 		{
-			writer = new ToManyElementWriter(bean, fieldName);
+			writer = new CollectionElementWriter(bean, fieldName);
 		}
 		else if (annotations.containsKey(AnnotationMapping.ManyToOne.name())
 			|| annotations.containsKey(AnnotationMapping.OneToOne.name()))
 		{
-			writer = new ToManyElementWriter(bean, fieldName);
+			writer = new AssociationElementWriter(bean, fieldName);
 		}
 		else
 		{
