@@ -1,5 +1,5 @@
 /*-******************************************************************************
- * Copyright (c) 2018 Sc122.
+ * Copyright (c) 2018 Ken Davidson.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -28,6 +28,16 @@ import net.harawata.mybatipse.mybatis.result.ResultMapElementWriter;
 import net.harawata.mybatipse.mybatis.result.ToManyElementWriter;
 import net.harawata.mybatipse.mybatis.result.ToOneElementWriter;
 
+/**
+ * Performs the generation of XML elements within the {@code <resultMap>}. Standard
+ * functionality is to wrap each bean property in a {@code <result property="" column""/>} based
+ * on the property name (with no manipulation); if the bean has the JPA {@code @Entity}
+ * annotation, then it will attempt to wrap the bean property in the appropriate result tag.
+ * <p>
+ * See the {@link AnnotationMapping} for available options for JPA annotations.
+ * 
+ * @author kenjdavidson
+ */
 public class ResultMapContentBuilder
 {
 
