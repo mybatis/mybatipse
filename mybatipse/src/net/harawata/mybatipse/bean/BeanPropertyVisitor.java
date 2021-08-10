@@ -14,6 +14,7 @@ package net.harawata.mybatipse.bean;
 import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -50,6 +52,8 @@ public class BeanPropertyVisitor extends ASTVisitor
 
 	private final Map<String, String> writableFields;
 
+	private final Map<String, Map<String, Annotation>> fieldAnnotations;
+
 	private final Map<String, Set<String>> subclassMap;
 
 	private List<String> typeParams = new ArrayList<String>();
@@ -62,6 +66,7 @@ public class BeanPropertyVisitor extends ASTVisitor
 		List<String> actualTypeParams,
 		Map<String, String> readableFields,
 		Map<String, String> writableFields,
+		Map<String, Map<String, Annotation>> fieldAnnotations,
 		Map<String, Set<String>> subclassMap)
 	{
 		super();
@@ -70,6 +75,7 @@ public class BeanPropertyVisitor extends ASTVisitor
 		this.actualTypeParams = actualTypeParams;
 		this.readableFields = readableFields;
 		this.writableFields = writableFields;
+		this.fieldAnnotations = fieldAnnotations;
 		this.subclassMap = subclassMap;
 	}
 
@@ -118,15 +124,37 @@ public class BeanPropertyVisitor extends ASTVisitor
 				if (qualifiedName != null)
 				{
 					if (Modifier.isPublic(modifiers))
+					{
 						readableFields.put(fieldName,
 							NameUtil.resolveTypeParam(actualTypeParams, typeParams, qualifiedName));
+						fieldAnnotations.put(fieldName, fieldAnnotations(node));
+					}
 					if (!Modifier.isFinal(modifiers))
+					{
 						writableFields.put(fieldName,
 							NameUtil.resolveTypeParam(actualTypeParams, typeParams, qualifiedName));
+						fieldAnnotations.put(fieldName, fieldAnnotations(node));
+					}
 				}
 			}
 		}
 		return false;
+	}
+
+	private Map<String, Annotation> fieldAnnotations(FieldDeclaration node)
+	{
+		Map<String, Annotation> annotations = new LinkedHashMap<>();
+
+		for (Object modifier : node.modifiers())
+		{
+			if (modifier instanceof Annotation)
+			{
+				annotations.put(((Annotation)modifier).getTypeName().getFullyQualifiedName(),
+					(Annotation)modifier);
+			}
+		}
+
+		return annotations;
 	}
 
 	@Override
@@ -254,7 +282,7 @@ public class BeanPropertyVisitor extends ASTVisitor
 		}
 		subclasses.add(qualifiedName);
 		BeanPropertyCache.parseBean(project, superclassFqn, readableFields, writableFields,
-			subclassMap);
+			fieldAnnotations, subclassMap);
 	}
 
 	public static String getFieldNameFromAccessor(String methodName)
