@@ -156,7 +156,8 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 
 	private void proposeStatementText(ContentAssistRequest contentAssistRequest, Node parentNode)
 	{
-		int offset = contentAssistRequest.getReplacementBeginPosition();
+		int offset = contentAssistRequest.getReplacementBeginPosition()
+			+ contentAssistRequest.getReplacementLength();
 		String text = contentAssistRequest.getText();
 		int offsetInText = offset - contentAssistRequest.getStartOffset() - 1;
 		ExpressionProposalParser parser = new ExpressionProposalParser(text, offsetInText);
