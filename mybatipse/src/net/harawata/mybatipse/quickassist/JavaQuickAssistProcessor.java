@@ -48,6 +48,7 @@ import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.TextBlock;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeLiteral;
@@ -165,7 +166,7 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 
 	private CompilationUnit getAstNode(ICompilationUnit compilationUnit)
 	{
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		ASTParser parser = ASTParser.newParser(AST.JLS15);
 		parser.setSource(compilationUnit);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setResolveBindings(true);
@@ -382,6 +383,10 @@ public class JavaQuickAssistProcessor implements IQuickAssistProcessor
 			if (valueType == ASTNode.STRING_LITERAL)
 			{
 				return ((StringLiteral)value).getLiteralValue();
+			}
+			else if (valueType == ASTNode.TEXT_BLOCK)
+			{
+				return ((TextBlock)value).getLiteralValue();
 			}
 			else if (valueType == ASTNode.ARRAY_INITIALIZER)
 			{

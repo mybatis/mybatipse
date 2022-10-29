@@ -434,6 +434,9 @@
          <partition
                type="__java_string">
          </partition>
+         <partition
+               type="__java_multiline_string">
+         </partition>
       </javaCompletionProposalComputer>
    </extension>
    <extension
